@@ -1,0 +1,1 @@
+Implements a Lindblad model of a qubit and a number of coherently coupled two-level defects with an available set of Lindblad operators to act on each subsystem. Contains methods to generate dynamics and learn model parameters based on imported dynamics data.
