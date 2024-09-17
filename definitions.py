@@ -42,6 +42,19 @@ class Constants():
 
 T = q.tensor 
 
+# now how about something really clever...
+# because NOW I should be able to start tensor products with just temp = 1
+
+def T(arg1, arg2):
+    
+    if type(arg1) == type(q.Qobj()):
+        
+        return q.tensor(arg1, arg2)
+    
+    elif type(arg1) in [int, float]: # usually defined as 1
+    
+        return arg2
+
 
 
 # 2-D operators definition using dictionary keys:

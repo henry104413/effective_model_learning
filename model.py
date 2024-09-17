@@ -211,8 +211,52 @@ class Model():
         # add coupling terms for each TLS that has any coupling:
         # note: for now coupling is only recorded in one of each coupled pair -- later to change
         
-        for TLS
+        for TLS in self.TLSs:
             
+            
+            # go over all partners to this TLS:
+            
+            for partner in TLS.couplings:
+                
+                
+                # go over all couplings to this partner:
+                # note: this may be a single tuple or a list of them (in case of multiple types of coupling to this partner)
+                # hence type check here and convert to list to allow loop
+                
+                all_couplings_properties = TLS.couplings[partner]
+                
+                if type(all_couplings_properties) in [int, float]: # ie. if not a list
+                    
+                    all_couplings_properties = [all_couplings_properties]
+                    
+                
+                for single_coupling_properties in all_couplings_properties:
+               
+               
+                   # add Hamiltonian term for this partner and this type of coupling:
+               
+                    strength, op_on_TLS, op_on_partner = single_coupling_properties
+                    
+                    
+                    temp = 1
+                    
+                    # go over all places, putting correct operators in right places and identities elsewhere
+                    
+                    for place in self.TLSs:
+                        
+                        if place == TLS:
+                            
+                            temp = T(temp, ops[op_on_TLS]*strength) # rescaled by strength here - do not rescale at partner!
+                            
+                        elif place == partner:
+                            
+                            temp = T(temp, ops[op_on_partner])
+                            
+                        else:
+                            
+                            temp = T(temp, ops['identity'])
+                
+                    H = H + temp
             
         self.H = H
         
