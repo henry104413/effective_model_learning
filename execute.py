@@ -33,3 +33,5 @@ ground_truth.add_TLS(is_qubit = False,
                            'sigmaz' : 0.01
                            }
                      )
+
+ground_truth.build_operators()

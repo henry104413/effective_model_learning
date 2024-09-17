@@ -38,9 +38,6 @@ class Constants():
 
 
 
-# Qutip tensor product function shorthand:
-
-T = q.tensor 
 
 # now how about something really clever...
 # because NOW I should be able to start tensor products with just temp = 1
@@ -51,7 +48,7 @@ def T(arg1, arg2):
         
         return q.tensor(arg1, arg2)
     
-    elif type(arg1) in [int, float]: # usually defined as 1
+    elif type(arg1) in [int, float]: # usually passed as 1
     
         return arg2
 
@@ -60,15 +57,23 @@ def T(arg1, arg2):
 # 2-D operators definition using dictionary keys:
 
 ops = {'sigma z' : q.sigmaz(),
+       'sigmaz' : q.sigmaz(),
        'sigma x' : q.sigmax(),
+       'sigmax' : q.sigmax(),
        'sigma y' : q.sigmay(),
+       'sigmay' : q.sigmay(),
        'sigma plus' : q.sigmap(),
+       'sigmap' : q.sigmap(),
        'sigma minus' : q.sigmam(),
-       'identity' : q.identity(2)
+       'sigmam' : q.sigmam(),
+       'identity' : q.identity(2),
+       'id' : q.identity(2),
+       'id2' : q.identity(2),
+       'gnd' : q.sigmam()*q.sigmap(),
+       'exc' : q.sigmap()*q.sigmam()
        }
 
 
-tensor_product_starter = q.identity(1)
 
 
 # operator parameter labels for plotting:

@@ -4,17 +4,26 @@
 """
 
 
-from definitions import T, ops, tensor_product_starter
+from definitions import T, ops
 
 from TLS import TLS
+
+from qutip import mesolve as qutip_mesolve
+
+from qutip import Options as qutip_Options
+
+
+
 
 class Model():
 
     
+
     
     # container for references to all existing Model instances:
     
     existing_models = []
+    
     
     
     
@@ -50,10 +59,16 @@ class Model():
         self.H = None
         
         
+        # default system initial state:
+            
+        self.initial_DM = None
+        
+        
         # save this instance to existing models:
         
         Model.existing_models.append(self)
         
+    
     
     
     # adds a TLS to this model with given specifications
@@ -97,15 +112,22 @@ class Model():
         self.TLSs.append(new_TLS)
         
             
+        
+        
+    # builds all full system operators -- currently to call after any changes:    
     
     def build_operators(self):
         
         self.build_Ls()
+        
+        self.build_H()
+        
+        self.build_initial_DM()
     
         
-        pass
     
     
+    # builds full system Lindblad operators (dissipators)
     
     def build_Ls(self):
         
@@ -169,6 +191,9 @@ class Model():
         return temp_Ls_container
         
         
+        
+    
+    # builds full system Hamiltonian:
     
     def build_H(self):
 
@@ -200,10 +225,10 @@ class Model():
             
                     temp = T(temp, ops['sigmaz']*TLS.energy)
             
-            else:    
-            
-                temp = T(temp, ops['identity'])
+                else:    
                 
+                    temp = T(temp, ops['identity'])
+                    
             H = H + temp
             
             
@@ -225,15 +250,22 @@ class Model():
                 
                 all_couplings_properties = TLS.couplings[partner]
                 
-                if type(all_couplings_properties) in [int, float]: # ie. if not a list
+                if type(all_couplings_properties) != list:
                     
                     all_couplings_properties = [all_couplings_properties]
+                    
+                    
+                    print(all_couplings_properties)
                     
                 
                 for single_coupling_properties in all_couplings_properties:
                
                
                    # add Hamiltonian term for this partner and this type of coupling:
+                       
+                    print(single_coupling_properties)
+                    
+                    print(type(single_coupling_properties))
                
                     strength, op_on_TLS, op_on_partner = single_coupling_properties
                     
@@ -265,13 +297,79 @@ class Model():
     
     
     
-    def build_initial_DM():
+    # builds default initial state density matrix:
+    # assumes all defects are in ground state and all qubits excited
+    
+    def build_initial_DM(self):
         
-        pass
+        temp = 1
+        
+        for TLS in self.TLSs:
+            
+            if TLS.is_qubit:
+                
+                temp = T(temp, ops['exc'])
+                
+            else:
+                
+                temp = T(temp, ops['gnd'])
+                
+        self.initial_DM = temp
+        
+        
     
     
-    def evaluate_dynamics(evaluation_times,
-                          observable_operator = False):
+    def calculate_dynamics(self, 
+                          evaluation_times,
+                          observable_op = False):
         
         
-        pass
+        
+        # check H and initial state available:
+            
+        if self.H == None:
+            
+            raise RuntimeError('Hamiltonian not defined -- cannot calculate dynamics')
+            
+        if self.initial_DM == None:
+            
+            raise RuntimeError('initial not defined -- cannot calculate dynamics')
+            
+            
+            
+        # default observable operator unless another specified:
+        # now using excited population of first qubit in TLSs
+        
+        if type(observable_op) == bool and not observable_op:
+        
+            temp = 1
+            
+            already_got_one = False
+        
+            for TLS in self.TLSs:
+                
+                if TLS.is_qubit and not already_got_one:
+                    
+                    temp = T(temp, ops['exc'])
+                    
+                else:
+                    
+                    temp = T(temp, ops['identity'])
+        
+            observable_op = temp
+            
+            
+            
+        # solve ME and return observable data array:
+        
+        dynamics = qutip_mesolve(self.H,
+                                 self.initial_DM,
+                                 evaluation_times,
+                                 c_ops = self.Ls,
+                                 e_ops = [observable_op],
+                                 options = qutip_Options(nsteps = 1e9)
+                                 )
+        
+        return observable.expect[-1]
+
+        
