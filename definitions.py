@@ -1,4 +1,102 @@
 """
 
+Global definitions used throughout the Effective Model Learning codebase.
+
 @author: henry
+
 """
+
+import qutip as q
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import matplotlib.ticker as tkr
+from copy import deepcopy
+from scipy.optimize import minimize
+from scipy import interpolate
+
+
+
+
+#%% global definitions:
+
+
+
+# constants:
+
+class Constants():
+    
+        
+    # note: h_bar=1, e=1
+    
+    
+    # conversion factors:
+    
+    K_to_eV = 1.381/1.602*1e-4 # multiply by T in K to get energy (k_B*T) in eV
+    
+    t_to_sec = 4.136e-15 # multiply by time values before plotting to get the value in seconds
+
+
+
+# Qutip tensor product function shorthand:
+
+T = q.tensor 
+
+
+
+# 2-D operators definition using dictionary keys:
+
+ops = {'sigma z' : q.sigmaz(),
+       'sigma x' : q.sigmax(),
+       'sigma y' : q.sigmay(),
+       'sigma plus' : q.sigmap(),
+       'sigma minus' : q.sigmam(),
+       'identity' : q.identity(2)
+       }
+
+
+tensor_product_starter = q.identity(1)
+
+
+# operator parameter labels for plotting:
+    
+ops_labels = {'defects energies' : 'energy (eV)',
+              'defects couplings' : 'coupling (eV)',
+              'sigma z' : r'$\sigma_z$' + ' rate (eV)',
+              'sigma x' : r'$\sigma_x$' + ' rate (eV)',
+              'sigma y' : r'$\sigma_y$' + ' rate (eV)',
+              'sigma plus' : r'$\sigma_+$' + ' rate (eV)',
+              'sigma minus' : r'$\sigma_-$' + ' rate (eV)'
+              }
+
+
+
+
+#%% global functions:
+
+    
+
+# calculates mean squared error of two arrays:
+# arguments: (numpy array, numpy array)
+
+
+def MSE(A, B):
+    
+    
+    # check type: (must be numpy arrays to use operators below)
+    
+    if type(A) != type(np.array([])) or type(B) != type(np.array([])):
+    
+        raise RuntimeError('error calculating MSE: arguments must be numpy arrays!\n')
+        
+    
+    # check matching length:
+    
+    if len(A) != len(B):
+        
+        raise RuntimeError('error calculating MSE: arguments must be same length!\n')
+        
+        
+    # calculate mean squared error:    
+    
+    return np.sum(np.square(np.abs(A-B)))/len(A)
