@@ -6,11 +6,15 @@
 
 from definitions import T, ops
 
-from TLS import TLS
+from TLS import Two_level_system
 
 from qutip import mesolve as qutip_mesolve
 
 from qutip import Options as qutip_Options
+
+# import numpy as np
+
+from numpy import sqrt
 
 
 
@@ -96,7 +100,7 @@ class Model():
             
         # make new TLS instance:
         
-        new_TLS = TLS(self, TLS_label, is_qubit, energy, couplings, Ls)        
+        new_TLS = Two_level_system(self, TLS_label, is_qubit, energy, couplings, Ls)        
             
         
         # add label to reference dictionary if one is specified
@@ -132,10 +136,6 @@ class Model():
     def build_Ls(self):
         
         
-        # total number of subsystems (includes defects and qubits):
-            
-        n = len(self.TLSs)
-        
         
         # temporary operators container:
         
@@ -160,7 +160,7 @@ class Model():
                
                 if self.TLSs.index(TLS) == 0: # i. e. this is first TLS
                 
-                    temp = ops[L]
+                    temp = ops[L]*sqrt(TLS.Ls[L])
                     
                 else: # else start with identity
                     
@@ -173,7 +173,7 @@ class Model():
                     
                     if place == TLS:
                         
-                        temp = T(temp, ops[L])
+                        temp = T(temp, ops[L]*sqrt(TLS.Ls[L]))
                         
                     else:
                         
@@ -254,19 +254,12 @@ class Model():
                     
                     all_couplings_properties = [all_couplings_properties]
                     
-                    
-                    print(all_couplings_properties)
-                    
-                
                 for single_coupling_properties in all_couplings_properties:
                
                
                    # add Hamiltonian term for this partner and this type of coupling:
                        
-                    print(single_coupling_properties)
-                    
-                    print(type(single_coupling_properties))
-               
+                
                     strength, op_on_TLS, op_on_partner = single_coupling_properties
                     
                     
@@ -370,6 +363,6 @@ class Model():
                                  options = qutip_Options(nsteps = 1e9)
                                  )
         
-        return observable.expect[-1]
+        return dynamics.expect[-1]
 
         

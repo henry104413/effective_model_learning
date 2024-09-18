@@ -28,13 +28,4 @@ later:
 
 
 
-now:
 
-- build operators:
-- model methods:
-- build Lindblads
-- build Hamiltonian
-- makes sense to not store this in TLS as its whole model dependent (dimensionality)
-
-
-- also need to build the initial DM

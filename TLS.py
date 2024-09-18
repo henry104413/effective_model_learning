@@ -3,7 +3,7 @@
 @author: henry
 """
 
-class TLS():
+class Two_level_system():
     
     
     # makes new TLS instance:
