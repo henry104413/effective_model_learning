@@ -6,7 +6,7 @@
 
 from definitions import T, ops
 
-from TLS import Two_level_system
+from two_level_system import TwoLevelSystem
 
 from qutip import mesolve as qutip_mesolve
 
@@ -100,7 +100,7 @@ class Model():
             
         # make new TLS instance:
         
-        new_TLS = Two_level_system(self, TLS_label, is_qubit, energy, couplings, Ls)        
+        new_TLS = TwoLevelSystem(self, TLS_label, is_qubit, energy, couplings, Ls)        
             
         
         # add label to reference dictionary if one is specified
@@ -126,7 +126,7 @@ class Model():
         
         self.build_H()
         
-        self.build_initial_DM()
+        self.build_initial_DM() # note: sometimes not required but included for simplicity as cost fairly low
     
         
     
@@ -164,7 +164,7 @@ class Model():
                     
                 else: # else start with identity
                     
-                    temp = ops['identity']
+                    temp = ops['id2']
                 
             
                 # put subsequent identities or this L in correct places: 
@@ -177,7 +177,7 @@ class Model():
                         
                     else:
                         
-                        temp = T(temp, ops['identity'])
+                        temp = T(temp, ops['id2'])
                                  
                 
                 # save finished operator:
@@ -206,7 +206,7 @@ class Model():
         
         for i in range(len(self.TLSs[1:])):
             
-            H = T(H, ops['identity'])
+            H = T(H, ops['id2'])
             
             
             
@@ -217,7 +217,7 @@ class Model():
             
             # build term for this TLS with energy-setting in correct place and identities elsewhere:
             
-            temp = ops['identity']
+            temp = ops['id2']
         
             for place in self.TLSs[1:]:
             
@@ -227,7 +227,7 @@ class Model():
             
                 else:    
                 
-                    temp = T(temp, ops['identity'])
+                    temp = T(temp, ops['id2'])
                     
             H = H + temp
             
@@ -279,7 +279,7 @@ class Model():
                             
                         else:
                             
-                            temp = T(temp, ops['identity'])
+                            temp = T(temp, ops['id2'])
                 
                     H = H + temp
             
@@ -347,7 +347,7 @@ class Model():
                     
                 else:
                     
-                    temp = T(temp, ops['identity'])
+                    temp = T(temp, ops['id2'])
         
             observable_op = temp
             
@@ -364,5 +364,61 @@ class Model():
                                  )
         
         return dynamics.expect[-1]
-
+    
+    
+    
+    
+    # prints full model parameters: 
+    
+    def print_params(self):
         
+        print('....................\nModel consisting of ' + str(len(self.TLSs)) + ' two-level-systems:')
+        
+        for TLS in self.TLSs:
+            
+            print('\nTLS no. (' + str(self.TLSs.index(TLS)) + '):')
+            
+            if TLS.is_qubit: print('Qubit')
+            
+            else: print('Defect')
+            
+            
+            print('Energy: ' + str(TLS.energy))
+            
+            print('Couplings:')
+            
+            
+            if False: # verbose version
+                
+                for partner in TLS.couplings: # note: each iterand: partner TLS
+                    
+                    print('   Partner: TLS ' + str(self.TLSs.index(partner)))
+                    
+                    for coupling in TLS.couplings[partner]: # note: each iterand: tuple of individual coupling term details 
+                        
+                        print('      Strength: ' + str(coupling[0]))
+                        print('      On this: ' + (coupling[1]))
+                        print('      On partner: ' + (coupling[2]))
+                        
+                print('Lindblad processes:')
+                
+                for L in TLS.Ls: # note: each iterand: Lindblad process        
+                    
+                    print('   Type: ' + L + ' Rate: ' + str(TLS.Ls[L]))
+            
+            else: # concise version
+
+                for partner in TLS.couplings: # note: each iterand: partner TLS
+                    
+                    print('   Partner: TLS (' + str(self.TLSs.index(partner)) + ')')
+                    
+                    for coupling in TLS.couplings[partner]: # note: each iterand: tuple of individual coupling term details 
+                        
+                        print('      (' + str(coupling[0]) + ', ' + (coupling[1]) + ', ' + (coupling[2]) + ')')
+                        
+                print('Lindblad processes:')
+                
+                for L in TLS.Ls: # note: each iterand: Lindblad process        
+                    
+                    print('   ' + L + ': ' + str(TLS.Ls[L]))
+            

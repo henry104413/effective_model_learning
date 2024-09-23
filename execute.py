@@ -5,6 +5,8 @@
 
 from model import Model
 
+from learning_model import LearningModel
+
 # from learning_model import LearningModel
 
 # from definitions import ops, T
@@ -17,10 +19,12 @@ import matplotlib.pyplot as plt
 
 
 
-ground_truth = Model()
+# set up ground truth model:
+
+GT = LearningModel()
 
 
-ground_truth.add_TLS(TLS_label = 'qubit',
+GT.add_TLS(TLS_label = 'qubit',
                      is_qubit = True,
                      energy = 5,
                      couplings = {
@@ -32,7 +36,7 @@ ground_truth.add_TLS(TLS_label = 'qubit',
                      )
 
 
-ground_truth.add_TLS(is_qubit = False,
+GT.add_TLS(is_qubit = False,
                      energy = 4.5,
                      couplings = {'qubit': [(0.5, 'sigmap', 'sigmam'), (0.5, 'sigmam', 'sigmap')]
                                   },
@@ -42,14 +46,23 @@ ground_truth.add_TLS(is_qubit = False,
                      )
     
     
-ground_truth.build_operators()
+GT.build_operators()
 
+
+
+guess = LearningModel()
+
+
+# ADD MODEL PRINTING METHOD!
 
 
 #%%
-GT_times = np.linspace(0, 1e1, int(1000))
 
-GT_qubit_evo = ground_truth.calculate_dynamics(GT_times)
+# test plot:
+
+GT_times = np.linspace(0, 3e1, int(1000))
+
+GT_qubit_evo = GT.calculate_dynamics(GT_times)
 
 
 plt.figure()

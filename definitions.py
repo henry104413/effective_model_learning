@@ -56,18 +56,18 @@ def T(arg1, arg2):
 
 # 2-D operators definition using dictionary keys:
 
-ops = {'sigma z' : q.sigmaz(),
+ops = {#'sigma z' : q.sigmaz(),
        'sigmaz' : q.sigmaz(),
-       'sigma x' : q.sigmax(),
+       #sigma x' : q.sigmax(),
        'sigmax' : q.sigmax(),
-       'sigma y' : q.sigmay(),
+       #'sigma y' : q.sigmay(),
        'sigmay' : q.sigmay(),
-       'sigma plus' : q.sigmap(),
+       #'sigma plus' : q.sigmap(),
        'sigmap' : q.sigmap(),
-       'sigma minus' : q.sigmam(),
+       #'sigma minus' : q.sigmam(),
        'sigmam' : q.sigmam(),
-       'identity' : q.identity(2),
-       'id' : q.identity(2),
+       #'identity' : q.identity(2),
+       #'id' : q.identity(2),
        'id2' : q.identity(2),
        'gnd' : q.sigmam()*q.sigmap(),
        'exc' : q.sigmap()*q.sigmam()
