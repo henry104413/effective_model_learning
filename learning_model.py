@@ -59,7 +59,7 @@ class LearningModel(Model):
         
     
     
-    def change_parameters(self, passed_jump_lengths = False):
+    def change_params(self, passed_jump_lengths = False):
         
         
         
@@ -97,11 +97,20 @@ class LearningModel(Model):
                 
                 for partner in TLS.couplings: # partner is key and value is list of tuples
                     
-                    for coupling in TLS.couplings[partner]: # coupling is a 3-tuple from the list
+                    # disabled - this would be good if the coupling tuple were a mutable array:
+                    # for coupling in TLS.couplings[partner]: # coupling is a 3-tuple from the list
                         
-                        coupling = (coupling[0] + random.normal(0, self.jump_lenths['coupling']),
-                                    coupling[1], coupling[2]) # note: this reassigns the tuple so not sure if efficient
+                    #     coupling = (coupling[0] + random.normal(0, self.jump_lengths['couplings']),
+                    #                 coupling[1], coupling[2]) # note: this reassigns the tuple so not sure if efficient
                     
+                    current_list = TLS.couplings[partner] # list of couplings to current partner
+                    
+                    for i in range(len(current_list)):
+                        
+                        current_list[i] = (current_list[i][0] + random.normal(0, self.jump_lengths['couplings']),
+                                           current_list[i][1], current_list[i][2])
+                        
+                        
                 
                 # Lindblad ops:
                     
@@ -114,7 +123,7 @@ class LearningModel(Model):
                     
                     for _ in range(max_attempts):    
                         
-                        proposal = TLS.Ls[L] + random.normal(0, self.jump_lenths['coupling'])
+                        proposal = TLS.Ls[L] + random.normal(0, self.jump_lengths['Ls'])
                         
                         if proposal >= 0:
                             

@@ -370,7 +370,7 @@ class Model():
     
     # prints full model parameters: 
     
-    def print_params(self):
+    def print_params(self, concise = True):
         
         print('....................\nModel consisting of ' + str(len(self.TLSs)) + ' two-level-systems:')
         
@@ -388,7 +388,23 @@ class Model():
             print('Couplings:')
             
             
-            if False: # verbose version
+            if concise: # concise version
+
+                for partner in TLS.couplings: # note: each iterand: partner TLS
+                    
+                    print('   Partner: TLS (' + str(self.TLSs.index(partner)) + ')')
+                    
+                    for coupling in TLS.couplings[partner]: # note: each iterand: tuple of individual coupling term details 
+                        
+                        print('      (' + str(coupling[0]) + ', ' + (coupling[1]) + ', ' + (coupling[2]) + ')')
+                        
+                print('Lindblad processes:')
+                
+                for L in TLS.Ls: # note: each iterand: Lindblad process        
+                    
+                    print('   ' + L + ': ' + str(TLS.Ls[L]))
+            
+            else: # verbose version
                 
                 for partner in TLS.couplings: # note: each iterand: partner TLS
                     
@@ -406,19 +422,4 @@ class Model():
                     
                     print('   Type: ' + L + ' Rate: ' + str(TLS.Ls[L]))
             
-            else: # concise version
-
-                for partner in TLS.couplings: # note: each iterand: partner TLS
-                    
-                    print('   Partner: TLS (' + str(self.TLSs.index(partner)) + ')')
-                    
-                    for coupling in TLS.couplings[partner]: # note: each iterand: tuple of individual coupling term details 
-                        
-                        print('      (' + str(coupling[0]) + ', ' + (coupling[1]) + ', ' + (coupling[2]) + ')')
-                        
-                print('Lindblad processes:')
-                
-                for L in TLS.Ls: # note: each iterand: Lindblad process        
-                    
-                    print('   ' + L + ': ' + str(TLS.Ls[L]))
             
