@@ -14,8 +14,7 @@ from qutip import Options as qutip_Options
 
 # import numpy as np
 
-from numpy import sqrt
-
+import numpy as np
 
 
 
@@ -160,7 +159,7 @@ class Model():
                
                 if self.TLSs.index(TLS) == 0: # i. e. this is first TLS
                 
-                    temp = ops[L]*sqrt(TLS.Ls[L])
+                    temp = ops[L]*np.sqrt(TLS.Ls[L])
                     
                 else: # else start with identity
                     
@@ -173,7 +172,7 @@ class Model():
                     
                     if place == TLS:
                         
-                        temp = T(temp, ops[L]*sqrt(TLS.Ls[L]))
+                        temp = T(temp, ops[L]*np.sqrt(TLS.Ls[L]))
                         
                     else:
                         
@@ -311,6 +310,8 @@ class Model():
         
         
     
+    # calculates dynamics and returns observable measurements at evaluation_times,
+    # 1st qubit excited population used unless otherwise specified
     
     def calculate_dynamics(self, 
                           evaluation_times,

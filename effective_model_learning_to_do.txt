@@ -27,5 +27,10 @@ later:
 - add methods to only remove specific operators or subtract bits of Hamiltonian (as opposed to rebuilding everything)
 
 
+- hermitianity - way to bind operators when learning to only change their coupling together...
+...for now just use sigma x
 
+
+- possibly move from tuples to custom numpy arrays to do dynamics allocation (mutable)
+- also maybe have a form for storing coupling with a rate and then a bunch of ALL operators that go with it (hermitian conjugates etc)
 

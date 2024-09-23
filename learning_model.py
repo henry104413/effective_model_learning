@@ -8,7 +8,7 @@ Created on Wed Sep 11 16:01:39 2024
 
 from model import Model
 
-from numpy import random
+import numpy as np
 
 
 # enhanced model with ability to modify itself
@@ -90,7 +90,7 @@ class LearningModel(Model):
                     
                 if not TLS.is_qubit:
                 
-                    TLS.energy += random.normal(0, self.jump_lengths['energy'])
+                    TLS.energy += np.random.normal(0, self.jump_lengths['energy'])
                 
                 
                 # couplings:
@@ -107,7 +107,7 @@ class LearningModel(Model):
                     
                     for i in range(len(current_list)):
                         
-                        current_list[i] = (current_list[i][0] + random.normal(0, self.jump_lengths['couplings']),
+                        current_list[i] = (current_list[i][0] + np.random.normal(0, self.jump_lengths['couplings']),
                                            current_list[i][1], current_list[i][2])
                         
                         
@@ -123,7 +123,7 @@ class LearningModel(Model):
                     
                     for _ in range(max_attempts):    
                         
-                        proposal = TLS.Ls[L] + random.normal(0, self.jump_lengths['Ls'])
+                        proposal = TLS.Ls[L] + np.random.normal(0, self.jump_lengths['Ls'])
                         
                         if proposal >= 0:
                             
