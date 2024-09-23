@@ -373,15 +373,17 @@ class Model():
     
     def print_params(self, concise = True):
         
-        print('....................\nModel consisting of ' + str(len(self.TLSs)) + ' two-level-systems:')
+        if not concise:       
+            
+            print('....................\nModel consisting of ' + str(len(self.TLSs)) + ' two-level-systems:')
         
         for TLS in self.TLSs:
             
-            print('\nTLS no. (' + str(self.TLSs.index(TLS)) + '):')
+            # print('\nTLS no. (' + str(self.TLSs.index(TLS)) + '):')
             
-            if TLS.is_qubit: print('Qubit')
+            if TLS.is_qubit: continue #print('(' + str(self.TLSs.index(TLS)) + ') - Qubit')
             
-            else: print('Defect')
+            else: print('(' + str(self.TLSs.index(TLS)) + ') - Defect')
             
             
             print('Energy: ' + str(TLS.energy))

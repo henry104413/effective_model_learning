@@ -24,9 +24,9 @@ class LearningModel(Model):
     # later still: individual distributions
     
     default_jump_lengths = {
-                            'couplings' : 0.01,
-                            'energy' : 0.1,
-                            'Ls' : 0.001
+                            'couplings' : 0.05,
+                            'energy' : 0.5,
+                            'Ls' : 0#0.001
                             }
     
     
