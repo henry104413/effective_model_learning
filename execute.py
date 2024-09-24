@@ -15,6 +15,10 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
+import time
+
+import pickle
+
 
 
 # set up ground truth model:
@@ -48,7 +52,7 @@ GT.build_operators()
 # generate data measurements:
 # note: now using 1st qubit excited population at times ts
 
-ts = np.linspace(0, 5e1, int(1000))#int(1000))
+ts = np.linspace(0, 5e1, int(10000))
 
 measurements = GT.calculate_dynamics(ts)
 
@@ -92,16 +96,34 @@ quest = LearningChain(target_times = ts, target_data = measurements, initial_gue
 
 costs = quest.learn(1000)
 
-best_data = quest.best.calculate_dynamics(ts)
+best = quest.best
 
-
-#%%
-
-# test plot:
+best_data = best.calculate_dynamics(ts)
 
 
 
 
+#%% save single learning run outputs:
+
+    
+    
+# controls bundle:
+    
+class Save():    
+    comparison = True
+    cost = True
+    ground_truth = True
+    best = True
+
+
+
+# unique name (date and time stamp):
+
+timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
+
+
+
+# plot dynamics comparison:
 
 plt.figure()
 plt.plot(ts*Constants.t_to_sec, measurements, 'r-', label = 'ground truth')
@@ -109,10 +131,37 @@ plt.plot(ts*Constants.t_to_sec, best_data, 'b--', label = 'learned model')
 plt.xlabel('time (fs)')
 plt.ylabel('qubit excited population')
 plt.ylim([0,1.1])
+plt.legend()
+if Save.comparison: plt.savefig(timestamp + '_comparison.svg')
 
 
+
+# plot cost function progression:
+    
 plt.figure()
-plt.plot(costs[0:], 'm-')
+plt.plot(costs, 'm-', linewidth = 0.1, markersize = 0.1)
 plt.yscale('log')
 plt.xlabel('iteration')
 plt.ylabel('cost')
+if Save.cost: plt.savefig(timestamp + '_cost.svg')
+
+
+
+# save ground truth instance:
+
+with open(timestamp + '_GT.pickle', 'wb') as filestream:
+    pickle.dump(GT,  filestream)
+    
+    
+    
+# save best model instance:
+
+with open(timestamp + '_best.pickle', 'wb') as filestream:
+    pickle.dump(best,  filestream)
+    
+    
+    
+#%% works!
+
+with open(timestamp + '_best.pickle', 'rb') as filestream:
+    test = pickle.load(filestream)

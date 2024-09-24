@@ -381,7 +381,7 @@ class Model():
             
             # print('\nTLS no. (' + str(self.TLSs.index(TLS)) + '):')
             
-            if TLS.is_qubit: continue #print('(' + str(self.TLSs.index(TLS)) + ') - Qubit')
+            if TLS.is_qubit: print('(' + str(self.TLSs.index(TLS)) + ') - Qubit')
             
             else: print('(' + str(self.TLSs.index(TLS)) + ') - Defect')
             

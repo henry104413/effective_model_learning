@@ -26,7 +26,7 @@ class LearningModel(Model):
     default_jump_lengths = {
                             'couplings' : 0.005,
                             'energy' : 0.05,
-                            'Ls' : 0.0001
+                            'Ls' : 0.00005
                             }
     
     
