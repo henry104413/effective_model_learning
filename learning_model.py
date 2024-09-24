@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Sep 11 16:01:39 2024
-
-@author: henry
+Effective model learning
+@author: Henry (henry104413)
 """
+
 
 from model import Model
 
@@ -24,9 +24,9 @@ class LearningModel(Model):
     # later still: individual distributions
     
     default_jump_lengths = {
-                            'couplings' : 0.005,
-                            'energy' : 0.05,
-                            'Ls' : 0.00005
+                            'couplings' : 0.001,
+                            'energy' : 0.01,
+                            'Ls' : 0.00001
                             }
     
     

@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-
-@author: henry
+Effective model learning
+@author: Henry (henry104413)
 """
 
 from model import Model
@@ -21,7 +23,7 @@ import pickle
 
 
 
-# set up ground truth model:
+#%% set up ground truth model:
 
 GT = Model()
 
@@ -38,10 +40,20 @@ GT.add_TLS(TLS_label = 'qubit',
 
 GT.add_TLS(is_qubit = False,
                      energy = 4.5,
-                     couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
+                     couplings = {'qubit': [(0.4, 'sigmax', 'sigmax')]
                                   },
                      Ls = {
                            'sigmaz' : 0.02
+                           }
+                     )
+
+
+GT.add_TLS(is_qubit = False,
+                     energy = 4.0,
+                     couplings = {'qubit': [(0.7, 'sigmax', 'sigmax')]
+                                  },
+                     Ls = {
+                           'sigmaz' : 0.03
                            }
                      )
         
@@ -52,13 +64,14 @@ GT.build_operators()
 # generate data measurements:
 # note: now using 1st qubit excited population at times ts
 
-ts = np.linspace(0, 5e1, int(10000))
+ts = np.linspace(0, 5e1, int(1000))
 
 measurements = GT.calculate_dynamics(ts)
 
 
 
-# initial guess:
+
+#%% initial guess:
 
 initial_guess = LearningModel()
 
@@ -76,25 +89,36 @@ initial_guess.add_TLS(TLS_label = 'qubit',
 
 
 initial_guess.add_TLS(is_qubit = False,
-                     energy = 4.0,
-                     couplings = {'qubit': [(0.4, 'sigmax', 'sigmax')]
+                     energy = 5.0,
+                     couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
                                   },
                      Ls = {
                            'sigmaz' : 0.01
                            }
                      )
 
+initial_guess.add_TLS(is_qubit = False,
+                     energy = 5.0,
+                     couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
+                                  },
+                     Ls = {
+                           'sigmaz' : 0.01
+                           }
+                     )
+
+
 initial_guess.build_operators()
 
 
 
-# learning:
+
+#%% perform learning:
 
 
-# create instance of learning (quest for best model):
+# instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements, initial_guess = initial_guess)
 
-costs = quest.learn(1000)
+costs = quest.learn(100000)
 
 best = quest.best
 
@@ -106,14 +130,15 @@ best_data = best.calculate_dynamics(ts)
 #%% save single learning run outputs:
 
     
-    
 # controls bundle:
     
 class Save():    
     comparison = True
     cost = True
-    ground_truth = True
-    best = True
+    GT_model = True
+    best_model = True
+    GT_text = True
+    best_text = True
 
 
 
@@ -149,19 +174,51 @@ if Save.cost: plt.savefig(timestamp + '_cost.svg')
 
 # save ground truth instance:
 
-with open(timestamp + '_GT.pickle', 'wb') as filestream:
-    pickle.dump(GT,  filestream)
+if Save.GT_model:
+    with open(timestamp + '_GT.pickle', 'wb') as filestream:
+        pickle.dump(GT,  filestream)
     
     
     
 # save best model instance:
 
-with open(timestamp + '_best.pickle', 'wb') as filestream:
-    pickle.dump(best,  filestream)
+if Save.best_model:
+    with open(timestamp + '_best.pickle', 'wb') as filestream:
+        pickle.dump(best,  filestream)
+    
+    
+    
+# save ground truth text descritpion:
+
+if Save.GT_text:
+    with open(timestamp + '_GT.txt', 'w') as filestream:
+        filestream.write(GT.description())
+    
+
+
+# save ground truth text descritpion:
+
+if Save.GT_text:
+    with open(timestamp + '_best.txt', 'w') as filestream:
+        filestream.write(best.description())
+    
+
+
     
     
     
 #%% works!
+# add accompanying document with quick description or something
+# could be jason or really a txt will do
 
-with open(timestamp + '_best.pickle', 'rb') as filestream:
-    test = pickle.load(filestream)
+
+# next: wrap this into ouput class in another file
+# add lindblad adding or removing step
+# how to decide?
+# multiple chain for stats and add paralelisation
+# run on gauge
+
+# add random initial guess
+# run multiple chains
+# see best outcome etc
+

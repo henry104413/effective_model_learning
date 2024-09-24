@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-
-@author: henry
+Effective model learning
+@author: Henry (henry104413)
 """
 
 class TwoLevelSystem():

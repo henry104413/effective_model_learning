@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Sep 11 16:01:39 2024
-
-@author: henry
+Effective model learning
+@author: Henry (henry104413)
 """
+
 
 from learning_model import LearningModel
 
@@ -63,57 +63,13 @@ class LearningChain():
         
     def learn(self, iterations):    
         
-        self.current = self.initial
-        
-        current_cost = self.cost(self.current)
         
         costs = []
-        
-        costs.append(current_cost)
-        
-        for i in range(iterations):
-            
-            self.proposed = deepcopy(self.current) # as if this doesn't get carried out...
-        
-            self.proposed.change_params() # and this neither
-            
-            proposed_cost = self.cost(self.proposed)
-            
-            costs.append(proposed_cost)
-        
-            # # print current and proposed parameters for debugging purposes:
-            # print('...........................................')
-            # print('\n\n***Current***')
-            # self.current.print_params()
-            # print('\n\n***Proposed***')
-            # self.proposed.print_params()
-            # #
                 
-            if proposed_cost < current_cost: # ie improvement so accept
-                
-                self.current = self.proposed # this assignment now makes proposed.change_params() STOP working!! ...why?
-                # tested in console...
-                # probably self.current also cannot change params now... WTF
-                # interestingly, params can be changed directly through assignment!
-                # so maybe the problem is in the change_params method??
-                # its probably because of the pointers...
-                
-                current_cost = proposed_cost
-                
-            else:
-               
-                continue # quite an awkward step back this... need to deepcopy again
-               
-               
-        self.best = self.current   
+        costs = costs + self.optimise_parameters(iterations)
         
         return costs
-                
-        
-        
-        # by the way:
-        # only update best at the end (to current) or when taking a worse step - metropolis hastings
-        
+             
         
         
     
@@ -181,15 +137,64 @@ class LearningChain():
         
         
 
-    def optimise_parameters(self):
+    def optimise_parameters(self, iterations):
         
-        pass
-    
-    
-    def save_best(self):
+            self.current = self.initial
+            
+            current_cost = self.cost(self.current)
+            
+            costs = []
+            
+            costs.append(current_cost)
+            
+            
+            
+            for i in range(iterations):
+                
+                
+                # make copy of model, propose new parameters and evaluate cost:
+                
+                self.proposed = deepcopy(self.current) 
+            
+                self.proposed.change_params() #
+                
+                proposed_cost = self.cost(self.proposed)
+                
+                costs.append(proposed_cost)
+                
+                
+                # if improvement, accept and update current:
+                
+                if proposed_cost < current_cost: 
+                    
+                    self.current = self.proposed 
+                    
+                    current_cost = proposed_cost
+                    
+                
+                # if detriment, still accept with given likelyhood (like in Metropolis-Hastings)
+                # AND update best to current AND update current to proposal (now worse than previous current)
+                
+                elif False: 
+                    
+                    pass
+                
+                
+                # else reject: (proposal will be discarded and fresh one made from current at start of loop)
+                else:
+                   
+                    continue # proposed will be discarded and a fresh one made from current
+                    
+                   
+            self.best = self.current   
+            
+            return costs
+                    
+            
+            
+            # by the way:
+            # only update best at the end (to current) or when taking a worse step - metropolis hastings
+            
         
-        pass          
     
-    
-    # after first improvement on CURRENT there seems to be no change ever after in either direction!!!!
-    # 
+   

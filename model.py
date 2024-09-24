@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Effective model learning
+@author: Henry (henry104413)
 """
 
-@author: henry
-"""
 
 
 from definitions import T, ops
@@ -369,66 +372,73 @@ class Model():
     
     
     
-    # prints full model parameters: 
+    # display full model parameters: 
     
-    def print_params(self, concise = True):
+    def disp(self):
         
-        if not concise:       
+        print(self.description())
+                    
             
-            print('....................\nModel consisting of ' + str(len(self.TLSs)) + ' two-level-systems:')
+    
+    # return model description as a string (to either print or save to file):
+    
+    def description(self, concise = True):
         
+        # self.print_params(concise = True)
+        
+        # make big string:
+        outstring = '______Model:______'    
+                
         for TLS in self.TLSs:
             
-            # print('\nTLS no. (' + str(self.TLSs.index(TLS)) + '):')
             
-            if TLS.is_qubit: print('(' + str(self.TLSs.index(TLS)) + ') - Qubit')
+            if TLS.is_qubit: outstring += ('\n\n(' + str(self.TLSs.index(TLS)) + ') - Qubit')
             
-            else: print('(' + str(self.TLSs.index(TLS)) + ') - Defect')
+            else: outstring += ('\n\n(' + str(self.TLSs.index(TLS)) + ') - Defect')
             
             
-            print('Energy: ' + str(TLS.energy))
+            outstring += ('\nEnergy: ' + str(TLS.energy))
             
-            print('Couplings:')
+            outstring += ('\nCouplings:')
             
             
             if concise: # concise version
 
                 for partner in TLS.couplings: # note: each iterand: partner TLS
                     
-                    print('   Partner: TLS (' + str(self.TLSs.index(partner)) + ')')
+                    outstring += ('\n   Partner: TLS (' + str(self.TLSs.index(partner)) + ')')
                     
                     for coupling in TLS.couplings[partner]: # note: each iterand: tuple of individual coupling term details 
                         
-                        print('      (' + str(coupling[0]) + ', ' + (coupling[1]) + ', ' + (coupling[2]) + ')')
+                        outstring += ('\n      (' + str(coupling[0]) + ', ' + (coupling[1]) + ', ' + (coupling[2]) + ')')
                         
-                print('Lindblad processes:')
+                outstring += ('\nLindblad processes:')
                 
                 for L in TLS.Ls: # note: each iterand: Lindblad process        
                     
-                    print('   ' + L + ': ' + str(TLS.Ls[L]))
-            
+                    outstring += ('\n   ' + L + ': ' + str(TLS.Ls[L]))
+                    
+                    
             else: # verbose version
                 
                 for partner in TLS.couplings: # note: each iterand: partner TLS
                     
-                    print('   Partner: TLS ' + str(self.TLSs.index(partner)))
+                    outstring += ('\n   Partner: TLS ' + str(self.TLSs.index(partner)))
                     
                     for coupling in TLS.couplings[partner]: # note: each iterand: tuple of individual coupling term details 
                         
-                        print('      Strength: ' + str(coupling[0]))
-                        print('      On this: ' + (coupling[1]))
-                        print('      On partner: ' + (coupling[2]))
+                        outstring += (' \n      Strength: ' + str(coupling[0]))
+                        outstring += (' \n      On this: ' + (coupling[1]))
+                        outstring += (' \n      On partner: ' + (coupling[2]))
                         
-                print('Lindblad processes:')
+                outstring += (' \nLindblad processes:')
                 
                 for L in TLS.Ls: # note: each iterand: Lindblad process        
                     
-                    print('   Type: ' + L + ' Rate: ' + str(TLS.Ls[L]))
+                    outstring += (' \n   Type: ' + L + ' Rate: ' + str(TLS.Ls[L]))
+                    
             
+        outstring += '\n__________________'
             
-    
-    # shorthand for printing:
-    
-    def disp(self):
+        return outstring
         
-        self.print_params(concise = True)
