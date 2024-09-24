@@ -426,3 +426,9 @@ class Model():
                     print('   Type: ' + L + ' Rate: ' + str(TLS.Ls[L]))
             
             
+    
+    # shorthand for printing:
+    
+    def disp(self):
+        
+        self.print_params(concise = True)

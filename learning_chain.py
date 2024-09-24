@@ -73,9 +73,6 @@ class LearningChain():
         
         for i in range(iterations):
             
-            
-            # actually do loops until a step is accepted here
-        
             self.proposed = deepcopy(self.current) # as if this doesn't get carried out...
         
             self.proposed.change_params() # and this neither
@@ -84,25 +81,26 @@ class LearningChain():
             
             costs.append(proposed_cost)
         
-            ##
-            print('...........................................')
-            print('\n\n***Current***')
-            self.current.print_params()
-            print('\n\n***Proposed***')
-            self.proposed.print_params()
-            #
+            # # print current and proposed parameters for debugging purposes:
+            # print('...........................................')
+            # print('\n\n***Current***')
+            # self.current.print_params()
+            # print('\n\n***Proposed***')
+            # self.proposed.print_params()
+            # #
                 
             if proposed_cost < current_cost: # ie improvement so accept
                 
-                self.current = self.proposed
+                self.current = self.proposed # this assignment now makes proposed.change_params() STOP working!! ...why?
+                # tested in console...
+                # probably self.current also cannot change params now... WTF
+                # interestingly, params can be changed directly through assignment!
+                # so maybe the problem is in the change_params method??
+                # its probably because of the pointers...
                 
                 current_cost = proposed_cost
                 
-                print('\n\nACCEPTED\n')
-            
             else:
-               
-                print('rejected')
                
                 continue # quite an awkward step back this... need to deepcopy again
                

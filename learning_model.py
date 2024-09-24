@@ -24,9 +24,9 @@ class LearningModel(Model):
     # later still: individual distributions
     
     default_jump_lengths = {
-                            'couplings' : 0.05,
-                            'energy' : 0.5,
-                            'Ls' : 0#0.001
+                            'couplings' : 0.005,
+                            'energy' : 0.05,
+                            'Ls' : 0.0001
                             }
     
     
@@ -83,57 +83,57 @@ class LearningModel(Model):
             
         # go over all TLSs:
             
-            for TLS in self.TLSs:
+        for TLS in self.TLSs:
                 
                     
-                # modify energy but not on qubit:
-                    
-                if not TLS.is_qubit:
+            # modify energy but not on qubit:
                 
-                    TLS.energy += np.random.normal(0, self.jump_lengths['energy'])
+            if not TLS.is_qubit:
+            
+                TLS.energy += np.random.normal(0, self.jump_lengths['energy'])
+            
+            
+            # couplings:
+            
+            for partner in TLS.couplings: # partner is key and value is list of tuples
+                
+                # disabled - this would be good if the coupling tuple were a mutable array:
+                # for coupling in TLS.couplings[partner]: # coupling is a 3-tuple from the list
+                    
+                #     coupling = (coupling[0] + random.normal(0, self.jump_lengths['couplings']),
+                #                 coupling[1], coupling[2]) # note: this reassigns the tuple so not sure if efficient
+                
+                current_list = TLS.couplings[partner] # list of couplings to current partner
+                
+                for i in range(len(current_list)):
+                    
+                    current_list[i] = (current_list[i][0] + np.random.normal(0, self.jump_lengths['couplings']),
+                                       current_list[i][1], current_list[i][2])
+                    
+                    
+            
+            # Lindblad ops:
+                
+            for L in TLS.Ls:
                 
                 
-                # couplings:
+                # make up to specified number of proposals ensuring result positive
+                    
+                max_attempts = 10
                 
-                for partner in TLS.couplings: # partner is key and value is list of tuples
+                for _ in range(max_attempts):    
                     
-                    # disabled - this would be good if the coupling tuple were a mutable array:
-                    # for coupling in TLS.couplings[partner]: # coupling is a 3-tuple from the list
-                        
-                    #     coupling = (coupling[0] + random.normal(0, self.jump_lengths['couplings']),
-                    #                 coupling[1], coupling[2]) # note: this reassigns the tuple so not sure if efficient
+                    proposal = TLS.Ls[L] + np.random.normal(0, self.jump_lengths['Ls'])
                     
-                    current_list = TLS.couplings[partner] # list of couplings to current partner
-                    
-                    for i in range(len(current_list)):
+                    if proposal >= 0:
                         
-                        current_list[i] = (current_list[i][0] + np.random.normal(0, self.jump_lengths['couplings']),
-                                           current_list[i][1], current_list[i][2])
+                        TLS.Ls[L] = proposal
+                                
+                        break
                         
                         
+                                        
                 
-                # Lindblad ops:
-                    
-                for L in TLS.Ls:
-                    
-                    
-                    # make up to specified number of proposals ensuring result positive
-                        
-                    max_attempts = 10
-                    
-                    for _ in range(max_attempts):    
-                        
-                        proposal = TLS.Ls[L] + np.random.normal(0, self.jump_lengths['Ls'])
-                        
-                        if proposal >= 0:
-                            
-                            TLS.Ls[L] = proposal
-                                    
-                            break
-                            
-                            
-                                            
-                    
                     
                     
                     

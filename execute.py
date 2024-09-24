@@ -28,7 +28,7 @@ GT.add_TLS(TLS_label = 'qubit',
                                   
                                   },
                      Ls = {
-                           'sigmaz' : 0.01
+                           'sigmaz' : 0.005
                            }
                      )
 
@@ -37,7 +37,7 @@ GT.add_TLS(is_qubit = False,
                      couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
                                   },
                      Ls = {
-                           'sigmaz' : 0.01
+                           'sigmaz' : 0.02
                            }
                      )
         
@@ -90,7 +90,7 @@ initial_guess.build_operators()
 # create instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements, initial_guess = initial_guess)
 
-costs = quest.learn(5)
+costs = quest.learn(1000)
 
 best_data = quest.best.calculate_dynamics(ts)
 
@@ -112,7 +112,7 @@ plt.ylim([0,1.1])
 
 
 plt.figure()
-#plt.plot(list(range(len(costs))),costs)
-plt.plot(costs[0:10])
+plt.plot(costs[0:], 'm-')
+plt.yscale('log')
 plt.xlabel('iteration')
 plt.ylabel('cost')
