@@ -525,9 +525,8 @@ class Model():
         
             for L, val in allowed_Ls.items(): 
             # note: val[0] is probability, val[1] is range given by tuple - unpackl using *val[1]
-
                 
-                # decide if included based on probaboloty:
+                # decide if included based on probability:
                 
                 if not np.random.uniform() < val[0]: # ie. allowed_Ls[key] NOT included
                 
@@ -536,12 +535,12 @@ class Model():
                 else: # ie. included
                 
                     Ls[L] = np.random.uniform(*val[1]) 
-                    
-            # print(Ls)
             
             return Ls
         
         
+        
+        # returns dictionary of couplings generated according to input to configure single TLS:                                      
         
         def get_couplings():
             
@@ -555,6 +554,8 @@ class Model():
                 
                 for coupling in val:
             
+                    # decide if included based on probability:        
+            
                     if not np.random.uniform() < coupling[0]: # ie. NOT included 
                     
                         continue
@@ -565,9 +566,8 @@ class Model():
                         
                 couplings[partner] = complete
             
-            # print(couplings)
-                    
             return couplings
+        
         
                     
         # make one qubit: (assumed to only be one)        
@@ -586,26 +586,6 @@ class Model():
         defects_number = np.random.randint(defects_number_range[0], defects_number_range[1]+1)
         
         for i in range(defects_number):
-            
-            
-            # energy = np.random.uniform(*defects_energies_range)
-            # couplings = get_couplings()
-            # Ls = get_Ls()
-            
-            # print(energy)
-            
-            # print(couplings)
-            
-            # print(Ls)
-            
-            # self.add_TLS(
-            #               is_qubit = False,
-            #               energy = energy,
-            #               couplings = couplings,
-            #               Ls = Ls
-            #               )
-            
-            
             
             self.add_TLS(
                           is_qubit = False,
