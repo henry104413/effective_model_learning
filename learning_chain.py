@@ -65,7 +65,7 @@ class LearningChain():
         
         
         
-        # jumplength setting:   
+        # jump length and its annealing setting:   
         
         self.default_jump_lengths = {
                                 'couplings' : 0.001,
@@ -87,7 +87,7 @@ class LearningChain():
         
         
         
-        # maximum iterations for parameter optimisation setting:
+        # maximum iterations for parameters optimisation setting:
             
         self.default_optimise_param_max_iter = int(1e3)
         
@@ -105,7 +105,11 @@ class LearningChain():
         
     # here will go all the tiers:    
         
-    def learn(self, iterations):    
+    def learn(self):    
+        
+        print(self.jump_lengths)
+        
+        print(self.jump_annealing_rate)
         
         
         costs = []
@@ -204,14 +208,14 @@ class LearningChain():
             
             
             
-            for i in range(self.optimise_params_max_iter):
+            for i in range(self.optimise_params_max_iter): # add plateau condition
                 
                 
                 # make copy of model, propose new parameters and evaluate cost:
                 
                 self.proposed = deepcopy(self.current) 
             
-                self.proposed.change_params(self.jump_lengths)
+                self.proposed.change_params(passed_jump_lengths = self.jump_lengths)
                 
                 proposed_cost = self.cost(self.proposed)
                 

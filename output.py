@@ -102,12 +102,12 @@ class Output():
         # save chain hyperparameters dictionary as JSON:      
                     
         if toggles.hyperparams:
-        
+            
             def get_chain_name():
                 if not chain_name: return ''
                 else: return chain_name    
         
-            with open(filename + get_chain_name + 'hyperparameters.json', 'w') as filestream:
+            with open(filename + get_chain_name() + 'hyperparameters.json', 'w') as filestream:
                 json.dump(chain_hyperparams,  filestream)
             
             

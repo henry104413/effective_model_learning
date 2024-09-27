@@ -54,14 +54,14 @@ GT.add_TLS(is_qubit = False,
            )
 
 
-GT.add_TLS(is_qubit = False,
-           energy = 5.3,
-           couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
-                        },
-           Ls = {
-                 'sigmaz' : 0.01
-                 }
-           )
+# GT.add_TLS(is_qubit = False,
+#            energy = 5.3,
+#            couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
+#                         },
+#            Ls = {
+#                  'sigmaz' : 0.01
+#                  }
+#            )
 
 
         
@@ -124,9 +124,15 @@ initial_guess.build_operators()
 
 
 # instance of learning (quest for best model):
-quest = LearningChain(target_times = ts, target_data = measurements, initial_guess = initial_guess)
+quest = LearningChain(target_times = ts, target_data = measurements, initial_guess = initial_guess,
+                      optimise_params_max_iter = int(1e3),
+                      jump_lengths = {'couplings' : 0.001,
+                                      'energy' : 0.01,
+                                      'Ls' : 0.00001},
+                      jump_annealing_rate = 0
+                      )
 
-costs = quest.learn(int(3e5))
+costs = quest.learn()
 
 best = quest.best
 
@@ -145,7 +151,7 @@ class Toggles():
     cost = True # plot cost function progression
     pickle = True # save selected models as pickles
     text = True # save selected models as text
-    hyperparams = True 
+    hyperparams = True # save chain hyperparameters as json
     
     
 

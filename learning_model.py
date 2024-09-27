@@ -18,19 +18,6 @@ class LearningModel(Model):
     
     
     
-    # note: for now simple structure:
-    # only takes different rate distribution widths, one for couplings and one for Lindblad ops
-    # later to be individualised for different types of coupling and Lindblad ops
-    # later still: individual distributions
-    
-    default_jump_lengths = {
-                            'couplings' : 0.001,
-                            'energy' : 0.01,
-                            'Ls' : 0.00001
-                            }
-    
-    
-    
     def __init__(self, *args, initial_guess = False, jump_lengths = False, **kwargs):
         
         
@@ -43,10 +30,9 @@ class LearningModel(Model):
         
         
         # dictionary of standard jump lengths for each type of operator
-        # note: this might need to change to allow more customisation
+        # note: modified with direct method or with argument to parameter changing method
         
         self.jump_lengths = jump_lengths
-        
         
         
         
@@ -62,21 +48,18 @@ class LearningModel(Model):
         
         
         # check jump lengths specified:
-        
-        if ((type(self.jump_lengths) == bool and not self.jump_lengths)
-            and (type(passed_jump_lengths) == bool and not passed_jump_lengths)):
             
+        if (type(passed_jump_lengths) == bool and not passed_jump_lengths):
             
-            if not hasattr(self, 'default_jump_lengths'):
+            if (type(self.jump_lengths) == bool and not self.jump_lengths):
             
                 raise RuntimeError('need to specify jump lengths for the operators present')
+        
+        else:
             
-            else:
-            
-                self.jump_lengths = self.default_jump_lengths
-                
-                
-                
+            self.jump_lengths = passed_jump_lengths
+               
+        
         # execute jump in arbitrary direction, ie change all parameters:
             
         # go over all TLSs:
