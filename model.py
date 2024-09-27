@@ -11,11 +11,7 @@ from definitions import T, ops
 
 from two_level_system import TwoLevelSystem
 
-from qutip import mesolve as qutip_mesolve
-
-from qutip import Options as qutip_Options
-
-# import numpy as np
+import qutip
 
 import numpy as np
 
@@ -359,12 +355,12 @@ class Model():
             
         # solve ME and return observable data array:
         
-        dynamics = qutip_mesolve(self.H,
+        dynamics = qutip.mesolve(self.H,
                                  self.initial_DM,
                                  evaluation_times,
                                  c_ops = self.Ls,
                                  e_ops = [observable_op],
-                                 options = qutip_Options(nsteps = 1e9)
+                                 options = qutip.Options(nsteps = 1e9)
                                  )
         
         return dynamics.expect[-1]
@@ -382,9 +378,8 @@ class Model():
     
     # return model description as a string (to either print or save to file):
     
-    def description(self, concise = True):
+    def model_description_str(self, concise = True):
         
-        # self.print_params(concise = True)
         
         # make big string:
         outstring = '______Model:______'    

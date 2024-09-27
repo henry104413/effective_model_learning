@@ -8,6 +8,8 @@ Effective model learning
 
 import pickle
 
+import json
+
 import matplotlib.pyplot as plt
 
 from definitions import Constants
@@ -19,6 +21,8 @@ from definitions import Constants
 class Output():
     
     # to do: set font here for all plots
+    # each chain can call this and pass it its own things to save...
+    # maybe this should be a chain method then? maybe not
 
 
     def __init__(self, *, toggles, filename,
@@ -26,6 +30,8 @@ class Output():
                  cost = [],
                  models_to_save = [],
                  model_names = [],
+                 chain_hyperparams = False,
+                 chain_name = False,
                  fontsize = False):
         
         
@@ -70,7 +76,7 @@ class Output():
     
     
         
-        # save model instances (as text and/or pickle as specified):
+        # save specified model instances (as text and/or pickle):
             
         # ensure name selector doesn't go out of bounds:
         def get_model_name(i):
@@ -89,5 +95,22 @@ class Output():
             
             if toggles.text:
                 with open(filename + get_model_name(i) + '.txt', 'w') as filestream:
-                    filestream.write(models_to_save[i].description())
+                    filestream.write(models_to_save[i].model_description_str())
+                    
+                    
+                    
+        # save chain hyperparameters dictionary as JSON:      
+                    
+        if toggles.hyperparams:
+        
+            def get_chain_name():
+                if not chain_name: return ''
+                else: return chain_name    
+        
+            with open(filename + get_chain_name + 'hyperparameters.json', 'w') as filestream:
+                json.dump(chain_hyperparams,  filestream)
+            
+            
+            
+            
          

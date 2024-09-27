@@ -51,16 +51,14 @@ class LearningModel(Model):
         
         
     
-    def set_jump_lengths(self):
+    def set_jump_lengths(self, passed_jump_lengths):
         
-        
-        pass
+        self.jump_lengths = passed_jump_lengths
         
         
     
     
     def change_params(self, passed_jump_lengths = False):
-        
         
         
         # check jump lengths specified:

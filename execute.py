@@ -24,34 +24,46 @@ import time
 GT = Model()
 
 GT.add_TLS(TLS_label = 'qubit',
-                     is_qubit = True,
-                     energy = 5,
-                     couplings = {
-                                  
-                                  },
-                     Ls = {
-                           'sigmaz' : 0.005
-                           }
-                     )
+           is_qubit = True,
+           energy = 5,
+           couplings = {
+               
+                        },
+           Ls = {
+                 'sigmaz' : 0.005
+                 }
+           )
 
 GT.add_TLS(is_qubit = False,
-                     energy = 4.5,
-                     couplings = {'qubit': [(0.4, 'sigmax', 'sigmax')]
-                                  },
-                     Ls = {
-                           'sigmaz' : 0.02
-                           }
-                     )
+           energy = 4.5,
+           couplings = {'qubit': [(0.4, 'sigmax', 'sigmax')]
+                        },
+           Ls = {
+                 'sigmaz' : 0.02
+                 }
+           )
 
 
 GT.add_TLS(is_qubit = False,
-                     energy = 4.0,
-                     couplings = {'qubit': [(0.7, 'sigmax', 'sigmax')]
-                                  },
-                     Ls = {
-                           'sigmaz' : 0.03
-                           }
-                     )
+           energy = 4.0,
+           couplings = {'qubit': [(0.7, 'sigmax', 'sigmax')]
+                        },
+           Ls = {
+                 'sigmaz' : 0.03
+                 }
+           )
+
+
+GT.add_TLS(is_qubit = False,
+           energy = 5.3,
+           couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
+                        },
+           Ls = {
+                 'sigmaz' : 0.01
+                 }
+           )
+
+
         
 GT.build_operators()
 
@@ -114,7 +126,7 @@ initial_guess.build_operators()
 # instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements, initial_guess = initial_guess)
 
-costs = quest.learn(50)
+costs = quest.learn(int(3e5))
 
 best = quest.best
 
@@ -133,7 +145,9 @@ class Toggles():
     cost = True # plot cost function progression
     pickle = True # save selected models as pickles
     text = True # save selected models as text
-
+    hyperparams = True 
+    
+    
 
 # unique name (date and time stamp):
 
@@ -143,10 +157,11 @@ timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
 # create outputs:
 
 Output(toggles = Toggles, filename = timestamp,
-       dynamics_ts = ts, dynamics_datasets = [measurements, best_data], dynamics_labels = ['GT', 'learned'],
+       dynamics_ts = ts, dynamics_datasets = [measurements, best_data], dynamics_labels = ['ground truth', 'learned model'],
        cost = costs,
        models_to_save = [GT, best],
-       model_names = ['GT', 'best']
+       model_names = ['GT', 'best'],
+       chain_hyperparams = quest.chain_hyperparams_dict()
        )
     
 
@@ -165,3 +180,8 @@ Output(toggles = Toggles, filename = timestamp,
 # run multiple chains
 # see best outcome etc
 
+# add central font etc
+
+# add another file to output with hyperparameters - json or text - to keep track of how it was generated
+
+# possibly profile
