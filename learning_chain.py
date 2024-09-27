@@ -179,14 +179,6 @@ class LearningChain():
 
      
     
-    def anneal_jump_lengths(self):
-        
-        for key in self.jump_lengths:
-            
-            self.jump_lengths[key] = self.jump_lengths[key]*np.exp(-self.jump_annealing_rate)
-   
-
-        
 
     def optimise_params(self):
         
@@ -200,6 +192,8 @@ class LearningChain():
             costs = []
             
             costs.append(current_cost)
+            
+            self.rescale_jump_lengths(10)
             
             
             
@@ -221,7 +215,7 @@ class LearningChain():
                     
                 if self.jump_annealing_rate:
                     
-                    self.anneal_jump_lengths()
+                    self.rescale_jump_lengths(np.exp(-self.jump_annealing_rate))
                 
                 
                 # if improvement, accept and update current:
@@ -258,6 +252,7 @@ class LearningChain():
             
         
     
+    
     # returns JSON compatible dictionary of hyperparameters (relevant heuristics):
     # namely: initial jump lengths, annealing rate
     
@@ -268,4 +263,14 @@ class LearningChain():
                 'initial guess': self.initial.model_description_dict()            
                 }
         
+    
+
+
+    # rescales all jump lengths by given factors: (also used for annealing)
+    
+    def rescale_jump_lengths(self, factor):
         
+        for key in self.jump_lengths:
+            
+            self.jump_lengths[key] = self.jump_lengths[key]*factor
+       

@@ -79,7 +79,11 @@ measurements = GT.calculate_dynamics(ts)
 
 
 
-#%% initial guess:
+#%% chain hyperparameters:
+    
+    
+    
+# initial guesss generation:
 
 initial_guess = LearningModel()
 
@@ -126,11 +130,11 @@ initial_guess.build_operators()
 # instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements,
                       initial_guess = initial_guess,
-                      optimise_params_max_iter = int(1e2),
+                      optimise_params_max_iter = int(5e4),
                       jump_lengths = {'couplings' : 0.01,
                                       'energy' : 0.1,
                                       'Ls' : 0.0001},
-                      jump_annealing_rate = 1e-3
+                      jump_annealing_rate = 1e-4
                       )
 
 costs = quest.learn()
@@ -174,7 +178,6 @@ Output(toggles = Toggles, filename = timestamp,
 
 #%% works!
 
-# add model method to output description as dictionary for json (strings get saved with \n which is ugly)
 
 # test annealing
 
@@ -185,14 +188,9 @@ Output(toggles = Toggles, filename = timestamp,
 # (this is with same initial parameters)
 
 
-# add lindblad adding or removing step
-# how to decide?
-# multiple chain for stats and add paralelisation
-# run on gauge
+# add lindblad adding or removing step - with some decision as to when
 
 # add random initial guess
-# run multiple chains
-# see best outcome etc
 
 # add central font etc
 
