@@ -372,7 +372,7 @@ class Model():
     
     def disp(self):
         
-        print(self.description())
+        print(self.model_description_str())
                     
             
     
@@ -490,4 +490,133 @@ class Model():
         return outdict
     
     
+    
+    
+    # randomly populate model: (used for initial conditions)
+    # ! calling this replaces any previous configuration
+    # now assuming 1 qubit and couplings only between it and single defects
+    
+    def random_setup(self,
+                     qubits_number = 1, # now assumed one
+                     defects_number_range = (2,2), # range given by two-element tuple
+                     qubits_energies = [5], # list of floats the length of qubits_number - assumed known
+                     defects_energies_range = (3, 7), # tuple of two floats for range
+                     allowed_couplings = { # identifier: now should be qubit due to restrictions
+                                         'qubit': [(1, (0.1, 1) , 'sigmax', 'sigmax')] # partner: [(probability, rate range, type)]
+                                                   #...list for different couplings to this partner
+                                         },
+                     allowed_Ls = {'sigmaz': (1, (0.005, 0.1)) # type: (probability, rate range)
+                                         }
+                     ):
+    
+    
         
+        # remove old constituents: (operators get replaced by #calling build_operators() later)
+        
+        self.TLSs = []
+        self.TLS_labels = {}
+                       
+                   
+        # returns dictionary of Ls generated according to input to configure single TLS:                                      
+                                              
+        def get_Ls(): 
+            
+            Ls = {}
+        
+            for L, val in allowed_Ls.items(): 
+            # note: val[0] is probability, val[1] is range given by tuple - unpackl using *val[1]
+
+                
+                # decide if included based on probaboloty:
+                
+                if not np.random.uniform() < val[0]: # ie. allowed_Ls[key] NOT included
+                
+                    continue
+                
+                else: # ie. included
+                
+                    Ls[L] = np.random.uniform(*val[1]) 
+                    
+            # print(Ls)
+            
+            return Ls
+        
+        
+        
+        def get_couplings():
+            
+            couplings = {}
+            
+            for partner, val in allowed_couplings.items(): # now redundant since only assuming coupling to qubit
+            
+            # for this partner now go over all possible couplings:
+                
+                complete = []
+                
+                for coupling in val:
+            
+                    if not np.random.uniform() < coupling[0]: # ie. NOT included 
+                    
+                        continue
+                    
+                    else: # ie. included
+                        
+                        complete.append((np.random.uniform(*coupling[1]), coupling[2], coupling[3]))
+                        
+                couplings[partner] = complete
+            
+            # print(couplings)
+                    
+            return couplings
+        
+                    
+        # make one qubit: (assumed to only be one)        
+        
+        self.add_TLS(TLS_label = 'qubit',
+                     is_qubit = True,
+                     energy = qubits_energies[0],
+                     couplings = {},
+                     Ls = get_Ls()
+                     )
+        
+        
+        
+        # make defects:
+            
+        defects_number = np.random.randint(defects_number_range[0], defects_number_range[1]+1)
+        
+        for i in range(defects_number):
+            
+            
+            # energy = np.random.uniform(*defects_energies_range)
+            # couplings = get_couplings()
+            # Ls = get_Ls()
+            
+            # print(energy)
+            
+            # print(couplings)
+            
+            # print(Ls)
+            
+            # self.add_TLS(
+            #               is_qubit = False,
+            #               energy = energy,
+            #               couplings = couplings,
+            #               Ls = Ls
+            #               )
+            
+            
+            
+            self.add_TLS(
+                          is_qubit = False,
+                          energy = np.random.uniform(*defects_energies_range),
+                          couplings = get_couplings(),
+                          Ls = get_Ls()
+                          )
+            
+        
+        
+        # build operators: 
+        
+        self.build_operators()
+            

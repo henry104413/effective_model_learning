@@ -30,7 +30,6 @@ class TwoLevelSystem():
         
         self.couplings = couplings
         
-        self.add_couplings(couplings)
         
                  
         # to add: call coupling method to also add coupling to the other system
@@ -51,9 +50,12 @@ class TwoLevelSystem():
                 
     
     
-    # to add coupling information to the other TLS
+    # to add later: coupling information to the other TLS
     # rename this to something more explicit
-    def add_couplings(self, couplings):
+    # then each TLS will have full information about the couplings
+    # but operator creating methods will have to be amended to avoid double counting!
+    
+    def update_couplings_on_partner(self, couplings):
         
         pass
                  

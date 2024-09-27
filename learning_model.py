@@ -111,12 +111,7 @@ class LearningModel(Model):
                         TLS.Ls[L] = proposal
                                 
                         break
-                        
-                        
-                                        
-                
-                    
-                    
+             
                     
                     
         # remake operators:
@@ -124,9 +119,7 @@ class LearningModel(Model):
         self.build_operators()
         
                 
-                
-                
-        
+                        
             
         
         
