@@ -107,11 +107,6 @@ class LearningChain():
         
     def learn(self):    
         
-        print(self.jump_lengths)
-        
-        print(self.jump_annealing_rate)
-        
-        
         costs = []
                 
         costs = costs + self.optimise_params()
@@ -270,7 +265,7 @@ class LearningChain():
        
         return {'initial jump lengths': self.initial_jump_lengths,
                 'jump annealing rate': self.jump_annealing_rate,
-                'initial guess': self.initial.model_description_str()            
+                'initial guess': self.initial.model_description_dict()            
                 }
         
         

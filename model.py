@@ -436,4 +436,58 @@ class Model():
         outstring += '\n__________________'
             
         return outstring
+    
+    
+    
+    # return model description as a JSON compatible dictionary:
+    
+    def model_description_dict(self):
+        
+        
+        # make nested dictionary:
+            
+        outdict = {}    
+                
+        for TLS in self.TLSs:
+            
+            
+            subdict = {}
+            
+            TLS_id = str(self.TLSs.index(TLS))
+            
+            if TLS.is_qubit: subdict['type'] = 'Qubit'
+            
+            else: subdict['type'] = 'Defect'
+            
+            subdict['energy'] = TLS.energy
+            
+            
+            subsubdict = {}
+            
+            for partner in TLS.couplings: # note: each iterand: partner TLS
+                
+                subsubdict[str(self.TLSs.index(partner))] = (TLS.couplings[partner])
+                
+                # for coupling in TLS.couplings[partner]: # note: each iterand: tuple of individual coupling term details 
+                    
+                #     outstring += ('\n      (' + str(coupling[0]) + ', ' + (coupling[1]) + ', ' + (coupling[2]) + ')')
+                    
+            subdict['couplings:'] = subsubdict
+
+
+            subsubdict = {}
+            
+            for L in TLS.Ls: # note: each iterand: Lindblad process        
+                
+                subsubdict[L] = TLS.Ls[L]
+                
+            subdict['Ls:'] = subsubdict
+            
+            
+            outdict[TLS_id] = subdict
+                
+                    
+        return outdict
+    
+    
         

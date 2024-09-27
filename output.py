@@ -81,7 +81,7 @@ class Output():
         # ensure name selector doesn't go out of bounds:
         def get_model_name(i):
             if not model_names or len(model_names) < len(models_to_save): return '_' + str(i)
-            else: return model_names[i]
+            else: return '_' + model_names[i]
             
         for i, model in enumerate(models_to_save):
             
@@ -105,9 +105,9 @@ class Output():
             
             def get_chain_name():
                 if not chain_name: return ''
-                else: return chain_name    
+                else: return '_' + chain_name    
         
-            with open(filename + get_chain_name() + 'hyperparameters.json', 'w') as filestream:
+            with open(filename + get_chain_name() + '_hyperparameters.json', 'w') as filestream:
                 json.dump(chain_hyperparams,  filestream)
             
             

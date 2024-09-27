@@ -124,12 +124,13 @@ initial_guess.build_operators()
 
 
 # instance of learning (quest for best model):
-quest = LearningChain(target_times = ts, target_data = measurements, initial_guess = initial_guess,
-                      optimise_params_max_iter = int(1e3),
-                      jump_lengths = {'couplings' : 0.001,
-                                      'energy' : 0.01,
-                                      'Ls' : 0.00001},
-                      jump_annealing_rate = 0
+quest = LearningChain(target_times = ts, target_data = measurements,
+                      initial_guess = initial_guess,
+                      optimise_params_max_iter = int(1e2),
+                      jump_lengths = {'couplings' : 0.01,
+                                      'energy' : 0.1,
+                                      'Ls' : 0.0001},
+                      jump_annealing_rate = 1e-3
                       )
 
 costs = quest.learn()
@@ -169,14 +170,21 @@ Output(toggles = Toggles, filename = timestamp,
        model_names = ['GT', 'best'],
        chain_hyperparams = quest.chain_hyperparams_dict()
        )
-    
+
 
 #%% works!
-# add accompanying document with quick description or something
-# could be jason or really a txt will do
+
+# add model method to output description as dictionary for json (strings get saved with \n which is ugly)
+
+# test annealing
+
+# add parallelisation
+
+# run on gauge with different hyperparameters - see if convergence improved
+
+# (this is with same initial parameters)
 
 
-# next: wrap this into ouput class in another file
 # add lindblad adding or removing step
 # how to decide?
 # multiple chain for stats and add paralelisation
@@ -188,6 +196,6 @@ Output(toggles = Toggles, filename = timestamp,
 
 # add central font etc
 
-# add another file to output with hyperparameters - json or text - to keep track of how it was generated
-
 # possibly profile
+
+# add runtime
