@@ -12,6 +12,8 @@ import numpy as np
 
 from copy import deepcopy
 
+import time
+
 
 
 # single instance executes a learning chain (parameter space walk) by controlling learning model
@@ -100,6 +102,13 @@ class LearningChain():
             self.optimise_params_max_iter = optimise_params_max_iter
             
             
+            
+        # profiling - total time tracking variables:
+            
+        self.profiling_optimise_params_manipulations = 0.0
+        self.profiling_optimise_params_cost_eval = 0.0 
+        
+            
         
         
         
@@ -182,7 +191,8 @@ class LearningChain():
 
     def optimise_params(self):
         
-            
+        
+        
             # initialise:
         
             self.current = self.initial
@@ -200,15 +210,29 @@ class LearningChain():
             for i in range(self.optimise_params_max_iter): # add plateau condition
                 
                 
+                # profiling timer:
+                    
+                clock = time.time()
+                
+                
                 # make copy of model, propose new parameters and evaluate cost:
                 
                 self.proposed = deepcopy(self.current) 
             
                 self.proposed.change_params(passed_jump_lengths = self.jump_lengths)
                 
+                self.profiling_optimise_params_manipulations += (time.time() - clock)
+                    
+                clock = time.time()
+                
                 proposed_cost = self.cost(self.proposed)
                 
+                self.profiling_optimise_params_cost_eval += (time.time() - clock)
+                
+                clock = time.time()
+                
                 costs.append(proposed_cost)
+                
                 
                 
                 # anneal jump length:
@@ -238,9 +262,12 @@ class LearningChain():
                 # else reject: (proposal will be discarded and fresh one made from current at start of loop)
                 else:
                    
-                    continue # proposed will be discarded and a fresh one made from current
+                    pass # proposed will be discarded and a fresh one made from current
                     
-                   
+                
+                self.profiling_optimise_params_manipulations += (time.time() - clock)
+                    
+                
             self.best = self.current   
             
             return costs

@@ -13,7 +13,7 @@ from learning_chain import LearningChain
 
 from output import Output
 
-from multiprocessing import Pool
+import multiprocessing
 
 import numpy as np
 
@@ -89,7 +89,7 @@ def execute_chain():
 if __name__ == '__main__' and True:
     
 
-    with Pool() as pool:
+    with multiprocessing.Pool() as pool:
 
         
         # run parallel processes
@@ -138,6 +138,33 @@ initial_guess.add_TLS(is_qubit = False,
                            }
                      )
 
+initial_guess.add_TLS(is_qubit = False,
+                     energy = 5.0,
+                     couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
+                                  },
+                     Ls = {
+                           'sigmaz' : 0.01
+                           }
+                     )
+
+initial_guess.add_TLS(is_qubit = False,
+                     energy = 5.0,
+                     couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
+                                  },
+                     Ls = {
+                           'sigmaz' : 0.01
+                           }
+                     )
+
+
+initial_guess.add_TLS(is_qubit = False,
+                     energy = 5.0,
+                     couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
+                                  },
+                     Ls = {
+                           'sigmaz' : 0.01
+                           }
+                     )
 
 initial_guess.build_operators()
 
@@ -150,7 +177,7 @@ initial_guess.build_operators()
 # instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements,
                       initial_guess = initial_guess,
-                      optimise_params_max_iter = int(10e4),
+                      optimise_params_max_iter = int(1e3),
                       jump_lengths = {'couplings' : 0.01,
                                       'energy' : 0.1,
                                       'Ls' : 0.0001},
@@ -163,6 +190,9 @@ best = quest.best
 
 best_data = best.calculate_dynamics(ts)
 
+
+t_mani = quest.profiling_optimise_params_manipulations
+t_cost = quest.profiling_optimise_params_cost_eval
 
 
 
@@ -210,7 +240,6 @@ Output(toggles = Toggles, filename = timestamp,
 
 # add lindblad adding or removing step - with some decision as to when
 
-# add random initial guess
 
 # add central font etc
 
