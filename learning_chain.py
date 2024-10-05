@@ -31,7 +31,8 @@ class LearningChain():
               initial_guess = False,              
               optimise_params_max_iter = False, # add plateau detection hyperparameters
               jump_lengths = False,
-              jump_annealing_rate = 0
+              jump_annealing_rate = 0,
+              MH_acceptance = False
               ):
         
         
@@ -67,7 +68,10 @@ class LearningChain():
         
         
         
-        # jump length and its annealing setting:   
+        # optimise_params setting:
+        
+        
+        # jump length and its annealing:   
         
         self.default_jump_lengths = {
                                 'couplings' : 0.001,
@@ -86,6 +90,11 @@ class LearningChain():
         self.initial_jump_lengths = deepcopy(self.jump_lengths)
         
         self.jump_annealing_rate = jump_annealing_rate
+        
+        
+        # Metropolis-Hastings:
+            
+        self.MH_acceptance = MH_acceptance
         
         
         
@@ -189,94 +198,116 @@ class LearningChain():
      
     
 
-    def optimise_params(self):
+    def optimise_params(self, model_to_optimise = False):
+        
+        
+    
+        # initialise:
+    
+        if not model_to_optimise: self.current = self.initial
+       
+        else: self.current = model_to_optimise
+        
+        current_cost = self.cost(self.current)
+        
+        costs = []
+        
+        costs.append(current_cost)
+        
+        best_cost = current_cost
+        
+        self.rescale_jump_lengths(10)
         
         
         
-            # initialise:
+        for i in range(self.optimise_params_max_iter): # add plateau condition
+            
+            
+            # profiling timer:
+                
+            clock = time.time()
+            
+            
+            # make copy of model, propose new parameters and evaluate cost:
+            
+            self.proposed = deepcopy(self.current) 
         
-            self.current = self.initial
+            self.proposed.change_params(passed_jump_lengths = self.jump_lengths)
             
-            current_cost = self.cost(self.current)
-            
-            costs = []
-            
-            costs.append(current_cost)
-            
-            self.rescale_jump_lengths(10)
-            
-            
-            
-            for i in range(self.optimise_params_max_iter): # add plateau condition
+            self.profiling_optimise_params_manipulations += (time.time() - clock)
                 
+            clock = time.time()
+            
+            proposed_cost = self.cost(self.proposed)
+            
+            self.profiling_optimise_params_cost_eval += (time.time() - clock)
+            
+            clock = time.time()
+            
+            costs.append(proposed_cost)
+            
+            
+            
+            # anneal jump length:
                 
-                # profiling timer:
+            if self.jump_annealing_rate:
+                
+                self.rescale_jump_lengths(np.exp(-self.jump_annealing_rate))
+            
+            
+            
+            # if improvement -- accept and update current, check if best and save then:
+            
+            if proposed_cost < current_cost: 
+                
+                self.current = self.proposed 
+                
+                current_cost = proposed_cost
+                
+                if proposed_cost < best_cost:
                     
-                clock = time.time()
+                    best_cost = proposed_cost
+                    
+                    self.best = deepcopy(self.proposed)
                 
                 
-                # make copy of model, propose new parameters and evaluate cost:
+                # actually maybe assume that best is always current UNLESS doing MH acceptance!!!!
                 
-                self.proposed = deepcopy(self.current) 
+                #ALSO NOPE!!!!
+                
+            # if detriment, still accept with given likelyhood (like in Metropolis-Hastings)
+            # AND update best to current AND update current to proposal (now worse than previous current)
             
-                self.proposed.change_params(passed_jump_lengths = self.jump_lengths)
+            elif (self.MH_acceptance 
+                  and np.exp(proposed_cost - current_cost)*self.MH_temperature > np.random.uniform()): 
                 
-                self.profiling_optimise_params_manipulations += (time.time() - clock)
-                    
-                clock = time.time()
+                print('using MH:\nold cost: ' + str(current_cost) + '\nnew cost: ' + str(proposed_cost))
                 
-                proposed_cost = self.cost(self.proposed)
+                self.current = self.proposed 
                 
-                self.profiling_optimise_params_cost_eval += (time.time() - clock)
+                current_cost = proposed_cost
                 
-                clock = time.time()
-                
-                costs.append(proposed_cost)
-                
-                
-                
-                # anneal jump length:
-                    
-                if self.jump_annealing_rate:
-                    
-                    self.rescale_jump_lengths(np.exp(-self.jump_annealing_rate))
-                
-                
-                # if improvement, accept and update current:
-                
-                if proposed_cost < current_cost: 
-                    
-                    self.current = self.proposed 
-                    
-                    current_cost = proposed_cost
-                    
-                
-                # if detriment, still accept with given likelyhood (like in Metropolis-Hastings)
-                # AND update best to current AND update current to proposal (now worse than previous current)
-                
-                elif False: 
-                    
-                    pass
-                
-                
-                # else reject: (proposal will be discarded and fresh one made from current at start of loop)
-                else:
-                   
-                    pass # proposed will be discarded and a fresh one made from current
-                    
-                
-                self.profiling_optimise_params_manipulations += (time.time() - clock)
-                    
-                
-            self.best = self.current   
             
-            return costs
-                    
+            # else reject: (proposal will be discarded and fresh one made from current at start of loop)
+            else:
+               
+                pass # proposed will be discarded and a fresh one made from current
+                
             
-            
-            # by the way:
-            # only update best at the end (to current) or when taking a worse step - metropolis hastings
-            
+            self.profiling_optimise_params_manipulations += (time.time() - clock)
+                
+        
+        
+        return costs
+    
+        # to do: maybe the best model should also be specific to the run of optimise_params (could do more at once)
+                
+        
+        
+        # by the way:
+        # only update best at the end (to current) or when taking a worse step - metropolis hastings
+        # would require knowing in advance when things will end though... or keeping two best models...
+        # in any case probably don't have to worry - it's a small expense
         
     
     
