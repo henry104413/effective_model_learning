@@ -138,33 +138,7 @@ initial_guess.add_TLS(is_qubit = False,
                            }
                      )
 
-initial_guess.add_TLS(is_qubit = False,
-                     energy = 5.0,
-                     couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
-                                  },
-                     Ls = {
-                           'sigmaz' : 0.01
-                           }
-                     )
 
-initial_guess.add_TLS(is_qubit = False,
-                     energy = 5.0,
-                     couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
-                                  },
-                     Ls = {
-                           'sigmaz' : 0.01
-                           }
-                     )
-
-
-initial_guess.add_TLS(is_qubit = False,
-                     energy = 5.0,
-                     couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
-                                  },
-                     Ls = {
-                           'sigmaz' : 0.01
-                           }
-                     )
 
 initial_guess.build_operators()
 
@@ -177,11 +151,14 @@ initial_guess.build_operators()
 # instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements,
                       initial_guess = initial_guess,
-                      optimise_params_max_iter = int(1e3),
+                      optimise_params_max_iter = int(1e5),
                       jump_lengths = {'couplings' : 0.01,
                                       'energy' : 0.1,
                                       'Ls' : 0.0001},
-                      jump_annealing_rate = 1e-4
+                      jump_annealing_rate = 0,
+                      MH_acceptance = True,
+                      MH_temperature = 0.01
+                      
                       )
 
 costs = quest.learn()

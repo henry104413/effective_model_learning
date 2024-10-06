@@ -32,7 +32,8 @@ class LearningChain():
               optimise_params_max_iter = False, # add plateau detection hyperparameters
               jump_lengths = False,
               jump_annealing_rate = 0,
-              MH_acceptance = False
+              MH_acceptance = False,
+              MH_temperature = 1
               ):
         
         
@@ -95,6 +96,8 @@ class LearningChain():
         # Metropolis-Hastings:
             
         self.MH_acceptance = MH_acceptance
+        
+        self.MH_temperature = MH_temperature
         
         
         
@@ -216,7 +219,9 @@ class LearningChain():
         
         best_cost = current_cost
         
-        self.rescale_jump_lengths(10)
+        self.rescale_jump_lengths(0.1)
+        
+        counter_MH_accepted = 0
         
         
         
@@ -281,11 +286,11 @@ class LearningChain():
             elif (self.MH_acceptance 
                   and np.exp(proposed_cost - current_cost)*self.MH_temperature > np.random.uniform()): 
                 
-                print('using MH:\nold cost: ' + str(current_cost) + '\nnew cost: ' + str(proposed_cost))
-                
                 self.current = self.proposed 
                 
                 current_cost = proposed_cost
+                
+                counter_MH_accepted += 1
                 
             
             # else reject: (proposal will be discarded and fresh one made from current at start of loop)
@@ -297,6 +302,7 @@ class LearningChain():
             self.profiling_optimise_params_manipulations += (time.time() - clock)
                 
         
+        # print('MH acceptance counts: ' + str(counter_MH_accepted))
         
         return costs
     
@@ -318,6 +324,8 @@ class LearningChain():
        
         return {'initial jump lengths': self.initial_jump_lengths,
                 'jump annealing rate': self.jump_annealing_rate,
+                'M-H acceptance': self.MH_acceptance,
+                'M-H temperature': self.MH_temperature,
                 'initial guess': self.initial.model_description_dict()            
                 }
         
