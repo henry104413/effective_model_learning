@@ -29,11 +29,11 @@ class LearningChain():
     
     def __init__(self, target_data, target_times, *,
               initial_guess = False,              
-              optimise_params_max_iter = False, # add plateau detection hyperparameters
-              jump_lengths = False,
-              jump_annealing_rate = 0,
-              MH_acceptance = False,
-              MH_temperature = 1
+              # optimise_params_max_iter = False, # add plateau detection hyperparameters
+              # jump_lengths = False,
+              # jump_annealing_rate = 0,
+              # MH_acceptance = False,
+              # MH_temperature = 1
               ):
         
         
@@ -219,7 +219,7 @@ class LearningChain():
         
         best_cost = current_cost
         
-        self.rescale_jump_lengths(0.1)
+        # self.rescale_jump_lengths(0.1)
         
         counter_MH_accepted = 0
         
@@ -339,4 +339,4 @@ class LearningChain():
         for key in self.jump_lengths:
             
             self.jump_lengths[key] = self.jump_lengths[key]*factor
-       
+        
