@@ -114,11 +114,6 @@ class LearningChain():
             self.optimise_params_max_iter = optimise_params_max_iter
             
             
-            
-        # profiling - total time tracking variables:
-            
-        self.profiling_optimise_params_manipulations = 0.0
-        self.profiling_optimise_params_cost_eval = 0.0 
         
             
         
@@ -332,11 +327,5 @@ class LearningChain():
     
 
 
-    # rescales all jump lengths by given factors: (also used for annealing)
-    
-    def rescale_jump_lengths(self, factor):
-        
-        for key in self.jump_lengths:
-            
-            self.jump_lengths[key] = self.jump_lengths[key]*factor
+
         
