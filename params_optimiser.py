@@ -196,13 +196,22 @@ class ParamsOptimiser():
             # if detriment, still accept with given likelyhood (like in Metropolis-Hastings)
             # AND update current to proposal (now worse than previous current)
             
-            elif (self.MH_acceptance 
-                  and np.exp(proposed_cost - current_cost)*self.MH_temperature > np.random.uniform()): 
+            elif (self.MH_acceptance): 
+                  
+                if self.MH_temperature == 0:
+                    
+                    MH_likelyhood = 0
+                    
+                else:
+                    
+                    MH_likelyhood = np.exp(-(proposed_cost - current_cost)/self.MH_temperature)
                 
-                current = proposed 
-                
-                current_cost = proposed_cost
-                
+                if np.random.uniform() < MH_likelyhood:
+                    
+                    current = proposed 
+                    
+                    current_cost = proposed_cost
+                    
                 
             
             # else reject: (proposal will be discarded and fresh one made from current at start of loop)
