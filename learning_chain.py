@@ -8,6 +8,8 @@ Effective model learning
 
 from learning_model import LearningModel
 
+from params_optimiser import ParamsOptimiser
+
 import numpy as np
 
 from copy import deepcopy
@@ -74,44 +76,40 @@ class LearningChain():
         
         # jump length and its annealing:   
         
-        self.default_jump_lengths = {
-                                'couplings' : 0.001,
-                                'energy' : 0.01,
-                                'Ls' : 0.00001
-                                }
         
-        if type(jump_lengths) == bool and not jump_lengths:
+        
+        # if type(jump_lengths) == bool and not jump_lengths:
             
-            self.jump_lengths = self.default_jump_lengths
+        #     self.jump_lengths = self.default_jump_lengths
             
-        else:
+        # else:
             
-            self.jump_lengths = jump_lengths
+        #     self.jump_lengths = jump_lengths
         
-        self.initial_jump_lengths = deepcopy(self.jump_lengths)
+        # self.initial_jump_lengths = deepcopy(self.jump_lengths)
         
-        self.jump_annealing_rate = jump_annealing_rate
+        # self.jump_annealing_rate = jump_annealing_rate
         
         
-        # Metropolis-Hastings:
+        # # Metropolis-Hastings:
             
-        self.MH_acceptance = MH_acceptance
+        # self.MH_acceptance = MH_acceptance
         
-        self.MH_temperature = MH_temperature
+        # self.MH_temperature = MH_temperature
         
         
         
-        # maximum iterations for parameters optimisation setting:
+        # # maximum iterations for parameters optimisation setting:
             
-        self.default_optimise_param_max_iter = int(1e3)
+        # self.default_optimise_param_max_iter = int(1e3)
         
-        if type(optimise_params_max_iter) == bool and not optimise_params_max_iter:
+        # if type(optimise_params_max_iter) == bool and not optimise_params_max_iter:
             
-            self.optimise_params_max_iter = self.default_optimise_param_max_iter
+        #     self.optimise_params_max_iter = self.default_optimise_param_max_iter
             
-        else:
+        # else:
             
-            self.optimise_params_max_iter = optimise_params_max_iter
+        #     self.optimise_params_max_iter = optimise_params_max_iter
             
             
         
@@ -198,119 +196,12 @@ class LearningChain():
 
     def optimise_params(self, model_to_optimise = False):
         
+        params_optimisation = ParamsOptimiser(self)
+        
+        params_optimisation.do_optimisation()
         
     
-        # initialise:
-    
-        if not model_to_optimise: self.current = self.initial
-       
-        else: self.current = model_to_optimise
         
-        current_cost = self.cost(self.current)
-        
-        costs = []
-        
-        costs.append(current_cost)
-        
-        best_cost = current_cost
-        
-        # self.rescale_jump_lengths(0.1)
-        
-        counter_MH_accepted = 0
-        
-        
-        
-        for i in range(self.optimise_params_max_iter): # add plateau condition
-            
-            
-            # profiling timer:
-                
-            clock = time.time()
-            
-            
-            # make copy of model, propose new parameters and evaluate cost:
-            
-            self.proposed = deepcopy(self.current) 
-        
-            self.proposed.change_params(passed_jump_lengths = self.jump_lengths)
-            
-            self.profiling_optimise_params_manipulations += (time.time() - clock)
-                
-            clock = time.time()
-            
-            proposed_cost = self.cost(self.proposed)
-            
-            self.profiling_optimise_params_cost_eval += (time.time() - clock)
-            
-            clock = time.time()
-            
-            costs.append(proposed_cost)
-            
-            
-            
-            # anneal jump length:
-                
-            if self.jump_annealing_rate:
-                
-                self.rescale_jump_lengths(np.exp(-self.jump_annealing_rate))
-            
-            
-            
-            # if improvement -- accept and update current, check if best and save then:
-            
-            if proposed_cost < current_cost: 
-                
-                self.current = self.proposed 
-                
-                current_cost = proposed_cost
-                
-                if proposed_cost < best_cost:
-                    
-                    best_cost = proposed_cost
-                    
-                    self.best = deepcopy(self.proposed)
-                
-                
-                # actually maybe assume that best is always current UNLESS doing MH acceptance!!!!
-                
-                #ALSO NOPE!!!!
-                
-            # if detriment, still accept with given likelyhood (like in Metropolis-Hastings)
-            # AND update best to current AND update current to proposal (now worse than previous current)
-            
-            elif (self.MH_acceptance 
-                  and np.exp(proposed_cost - current_cost)*self.MH_temperature > np.random.uniform()): 
-                
-                self.current = self.proposed 
-                
-                current_cost = proposed_cost
-                
-                counter_MH_accepted += 1
-                
-            
-            # else reject: (proposal will be discarded and fresh one made from current at start of loop)
-            else:
-               
-                pass # proposed will be discarded and a fresh one made from current
-                
-            
-            self.profiling_optimise_params_manipulations += (time.time() - clock)
-                
-        
-        # print('MH acceptance counts: ' + str(counter_MH_accepted))
-        
-        return costs
-    
-        # to do: maybe the best model should also be specific to the run of optimise_params (could do more at once)
-                
-        
-        
-        # by the way:
-        # only update best at the end (to current) or when taking a worse step - metropolis hastings
-        # would require knowing in advance when things will end though... or keeping two best models...
-        # in any case probably don't have to worry - it's a small expense
-        
-    
     
     # returns JSON compatible dictionary of hyperparameters (relevant heuristics):
     # namely: initial jump lengths, annealing rate
@@ -318,13 +209,15 @@ class LearningChain():
     def chain_hyperparams_dict(self):
        
         return {'initial jump lengths': self.initial_jump_lengths,
-                'jump annealing rate': self.jump_annealing_rate,
+                 'jump annealing rate': self.jump_annealing_rate,
                 'M-H acceptance': self.MH_acceptance,
-                'M-H temperature': self.MH_temperature,
-                'initial guess': self.initial.model_description_dict()            
-                }
+                 'M-H temperature': self.MH_temperature,
+                 'initial guess': self.initial.model_description_dict()            
+                 }
         
+        pass
     
+# also need to redefine hyperparams output!!
 
 
 

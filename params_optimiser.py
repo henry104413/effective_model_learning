@@ -59,10 +59,12 @@ class ParamsOptimiser():
         
         
         
-        
         # default values (keys are also instance attributes to be set):
         
-        default_jump_lengths = {}   
+        default_jump_lengths = {'couplings' : 0.001,
+                                'energy' : 0.01,
+                                'Ls' : 0.00001
+                                }   
         
         default_vals = {'max_steps': int(1e3), 
                         'MH_acceptance': False, 
@@ -72,7 +74,9 @@ class ParamsOptimiser():
                         }
         
         
-        # set all attributes:
+        # set all attributes, also save in dictionary for output:
+            
+        self.hyperparams_output = {}
         
         for key in default_vals:
             
@@ -80,9 +84,11 @@ class ParamsOptimiser():
                 
                 setattr(self, key, hyperparams[key])
                 
-            else:
+            else: # else assign default
     
                 setattr(self, key, default_vals[key])
+                
+            self.hyperparams_output[key] = getattr(self, key)
                                 
         self.jump_lengths = self.initial_jump_lengths
                 
@@ -90,8 +96,14 @@ class ParamsOptimiser():
         # mark done:
         
         self.config_done = True
-
-
+        
+    
+    
+    def output_hyperparams(self):
+        
+        return self.hyperparams_output
+        
+        
 
     
     # params to define: jump_lengths, starting_model,
@@ -101,7 +113,7 @@ class ParamsOptimiser():
     # would be nice to keep cost there
     # jump lengths method should go here
     
-    def optimise_params(self, initial_model):
+    def do_optimisation(self, initial_model):
         
         
         # check hyperparameters and jump lengths set:
@@ -212,7 +224,6 @@ class ParamsOptimiser():
         
         return best, best_cost, costs
     
-        # to do: maybe the best model should also be specific to the run of optimise_params (could do more at once)
         
         
         

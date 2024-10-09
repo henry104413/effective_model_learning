@@ -206,7 +206,6 @@ Output(toggles = Toggles, filename = timestamp,
 #%% works!
 
 
-# test annealing
 
 # add parallelisation
 
@@ -218,8 +217,6 @@ Output(toggles = Toggles, filename = timestamp,
 # add lindblad adding or removing step - with some decision as to when
 
 
-# add central font etc
 
-# possibly profile
 
-# add runtime
+# separate file for defaults
