@@ -140,6 +140,8 @@ initial_guess.add_TLS(is_qubit = False,
 
 
 
+
+
 initial_guess.build_operators()
 
 
@@ -151,25 +153,24 @@ initial_guess.build_operators()
 # instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements,
                       initial_guess = initial_guess,
-                      optimise_params_max_iter = int(1e5),
-                      jump_lengths = {'couplings' : 0.01,
-                                      'energy' : 0.1,
-                                      'Ls' : 0.0001},
-                      jump_annealing_rate = 0,
-                      MH_acceptance = True,
-                      MH_temperature = 0.01
-                      
+                      params_optimiser_hyperparams = {'max_steps': int(1e5), 
+                                                      'MH_acceptance': False, 
+                                                      'MH_temperature': 0.1, 
+                                                      'initial_jump_lengths': {'couplings' : 0.001,
+                                                                               'energy' : 0.01,
+                                                                               'Ls' : 0.00001
+                                                                               }, 
+                                                      'jump_annealing_rate': 0
+                                                      }
                       )
 
-costs = quest.learn()
 
-best = quest.best
+best = quest.learn()
+
+costs = quest.costs_full
 
 best_data = best.calculate_dynamics(ts)
 
-
-t_mani = quest.profiling_optimise_params_manipulations
-t_cost = quest.profiling_optimise_params_cost_eval
 
 
 
@@ -209,14 +210,6 @@ Output(toggles = Toggles, filename = timestamp,
 
 # add parallelisation
 
-# run on gauge with different hyperparameters - see if convergence improved
-
-# (this is with same initial parameters)
-
-
 # add lindblad adding or removing step - with some decision as to when
-
-
-
 
 # separate file for defaults

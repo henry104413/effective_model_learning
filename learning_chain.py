@@ -30,13 +30,17 @@ class LearningChain():
     
     
     def __init__(self, target_data, target_times, *,
-              initial_guess = False,              
-              # optimise_params_max_iter = False, # add plateau detection hyperparameters
-              # jump_lengths = False,
-              # jump_annealing_rate = 0,
-              # MH_acceptance = False,
-              # MH_temperature = 1
-              ):
+                 initial_guess = False,              
+                 params_optimiser_hyperparams = {'max_steps': int(1e3), 
+                                                 'MH_acceptance': False, 
+                                                 'MH_temperature': 0.1, 
+                                                 'initial_jump_lengths': {'couplings' : 0.001,
+                                                                          'energy' : 0.01,
+                                                                          'Ls' : 0.00001
+                                                                          }, 
+                                                 'jump_annealing_rate': 0
+                                                 }
+                 ):
         
         
         
@@ -47,7 +51,23 @@ class LearningChain():
         
         self.current = None
         
-        self.proposed = None
+        
+        
+        # chain costs trackers:
+            
+        self.costs_full = [] # includes full cost progression from each parameters optimiser call
+        
+        self.costs_brief = [] # only includes best cost from each parameters optimiser call
+        
+        
+        
+        # optimiser object and initial hyperparameters for it:
+        # (PramsOptimiser instance with attributes for hyperparams
+        # ...and methods to carry out params optimisation, set and output hyperparams)
+        
+        self.params_optimisation = None 
+        
+        self.initial_params_optimiser_hyperparams = params_optimiser_hyperparams
         
         
         
@@ -71,47 +91,6 @@ class LearningChain():
         
         
         
-        # optimise_params setting:
-        
-        
-        # jump length and its annealing:   
-        
-        
-        
-        # if type(jump_lengths) == bool and not jump_lengths:
-            
-        #     self.jump_lengths = self.default_jump_lengths
-            
-        # else:
-            
-        #     self.jump_lengths = jump_lengths
-        
-        # self.initial_jump_lengths = deepcopy(self.jump_lengths)
-        
-        # self.jump_annealing_rate = jump_annealing_rate
-        
-        
-        # # Metropolis-Hastings:
-            
-        # self.MH_acceptance = MH_acceptance
-        
-        # self.MH_temperature = MH_temperature
-        
-        
-        
-        # # maximum iterations for parameters optimisation setting:
-            
-        # self.default_optimise_param_max_iter = int(1e3)
-        
-        # if type(optimise_params_max_iter) == bool and not optimise_params_max_iter:
-            
-        #     self.optimise_params_max_iter = self.default_optimise_param_max_iter
-            
-        # else:
-            
-        #     self.optimise_params_max_iter = optimise_params_max_iter
-            
-            
         
             
         
@@ -119,16 +98,15 @@ class LearningChain():
         
     # here will go all the tiers:    
         
-    def learn(self):    
+    def learn(self):
         
-        costs = []
-                
-        costs = costs + self.optimise_params()
+        self.current = deepcopy(self.initial)
         
-        return costs
-             
+        self.optimise_params(self.current)     
         
+        self.best = self.current
         
+        return self.best
     
     
     
@@ -184,23 +162,28 @@ class LearningChain():
    
             raise RuntimeError('error calculating cost: arguments must be numpy arrays!\n')
        
-        # print(model_data)
-        # print(self.target_data)
-        # print(abs(model_data-self.target_data))
-        # print(np.sum(np.square(abs(model_data-self.target_data)))/len(self.target_times))
         
         return np.sum(np.square(abs(model_data-self.target_data)))/len(self.target_times)
 
      
     
-
-    def optimise_params(self, model_to_optimise = False):
-        
-        params_optimisation = ParamsOptimiser(self)
-        
-        params_optimisation.do_optimisation()
-        
     
+
+    def optimise_params(self, model_to_optimise):
+        
+        if not self.params_optimisation: # ie. first run
+            
+            self.params_optimisation = ParamsOptimiser(self)
+            
+        self.params_optimisation.set_hyperparams(self.initial_params_optimiser_hyperparams)
+        
+        self.current, best_cost, costs = self.params_optimisation.do_optimisation(model_to_optimise)
+        
+        self.costs_brief.append(best_cost) 
+        
+        self.costs_full = self.costs_full + costs 
+        
+        
         
     
     # returns JSON compatible dictionary of hyperparameters (relevant heuristics):
@@ -208,17 +191,16 @@ class LearningChain():
     
     def chain_hyperparams_dict(self):
        
-        return {'initial jump lengths': self.initial_jump_lengths,
-                 'jump annealing rate': self.jump_annealing_rate,
-                'M-H acceptance': self.MH_acceptance,
-                 'M-H temperature': self.MH_temperature,
-                 'initial guess': self.initial.model_description_dict()            
-                 }
+        chain_hyperparams_dict = {
+                                  'initial guess': self.initial.model_description_dict()          
+                                  }
         
-        pass
+        if self.params_optimisation:
+            
+            chain_hyperparams_dict['params optimisation hyperparameters'] = self.params_optimisation.output_hyperparams()
+      
+        return chain_hyperparams_dict 
     
-# also need to redefine hyperparams output!!
-
 
 
         

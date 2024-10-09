@@ -27,7 +27,7 @@ class ParamsOptimiser():
     # original model passed in will not be modified, but a final best copy will be returned
 
 
-    def _init_(self, chain, hyperparams = False):
+    def __init__(self, chain, hyperparams = False):
         
         
         # configuration completion indicator -- checked before commencing optimisation:
@@ -106,12 +106,6 @@ class ParamsOptimiser():
         
 
     
-    # params to define: jump_lengths, starting_model,
-    # need methods: cost, rescale_jump_lengths
-    # remove two profiling variables - or keep
-    # so could actually passed the chain in and then access the methods
-    # would be nice to keep cost there
-    # jump lengths method should go here
     
     def do_optimisation(self, initial_model):
         
@@ -245,9 +239,3 @@ class ParamsOptimiser():
         
         
         
-test = ParamsOptimiser()
-
-test.set_hyperparams({'MH_acceptance' : True,
-                                   'initial_jump_lengths' : {'ok' : 'baby'}
-                                 })
-
