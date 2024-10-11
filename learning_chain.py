@@ -29,16 +29,18 @@ class LearningChain():
     
     
     
-    def __init__(self, target_data, target_times, *,
+    def __init__(self, target_times, target_data, *,
                  initial_guess = False,              
                  params_optimiser_hyperparams = {'max_steps': int(1e3), 
                                                  'MH_acceptance': False, 
-                                                 'MH_temperature': 0.1, 
+                                                 'MH_temperature': 10, 
                                                  'initial_jump_lengths': {'couplings' : 0.001,
                                                                           'energy' : 0.01,
                                                                           'Ls' : 0.00001
                                                                           }, 
-                                                 'jump_annealing_rate': 0
+                                                 'jump_annealing_rate': 0,
+                                                 'acceptance_window': 200,
+                                                 'acceptance_ratio': 0.4
                                                  }
                  ):
         
@@ -96,7 +98,7 @@ class LearningChain():
         
         
         
-    # here will go all the tiers:    
+    # carry out Tiers 1, 2, 3 -- ie. proposing new TLSs, operators, and optimising parameters:    
         
     def learn(self):
         
@@ -168,7 +170,9 @@ class LearningChain():
      
     
     
-
+    # performs paramter optimisation on argument model, setting hyperparameterd to chain attribute,
+    # saving resulting model to current working model and saving full cost progression and best cost achieved 
+    
     def optimise_params(self, model_to_optimise):
         
         if not self.params_optimisation: # ie. first run
@@ -197,7 +201,7 @@ class LearningChain():
         
         if self.params_optimisation:
             
-            chain_hyperparams_dict['params optimisation hyperparameters'] = self.params_optimisation.output_hyperparams()
+            chain_hyperparams_dict['params optimisation initial hyperparameters'] = self.params_optimisation.output_hyperparams_init()
       
         return chain_hyperparams_dict 
     
