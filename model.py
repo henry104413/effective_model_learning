@@ -407,9 +407,11 @@ class Model():
             
             # vectorised initial DM as numpy array:
     
-            n = len(self.initial_DM)
+            initial_DM_mat = np.array(self.initial_DM)            
+    
+            n = len(initial_DM_mat)
             
-            DM_vect = np.reshape(np.array(self.initial_DM), (int(n**2), 1))
+            DM_vect = np.reshape(initial_DM_mat, (int(n**2), 1))
             
             
             # Liouvillian:
@@ -422,13 +424,17 @@ class Model():
                 
                 LLN += (np.kron(L.conjugate(), L) - 1/2*(np.kron(I, L.conjugate().transpose()@L) + np.kron(L.transpose()@L, I)))
             
-                
+            # self.LLN = LLN # save to instance for testing
+            
+            
             # propagator by time interval:
             # note: assumes evaluation_times evenly spaced!
             
             dt = evaluation_times[1] - evaluation_times[0]
             
             P = sp.linalg.expm(dt*LLN)
+            
+            # self.P = P # save to instance for testing
             
             
             # propagate and obtain observables at argument times:
@@ -437,7 +443,7 @@ class Model():
                 
             for i in range(len(evaluation_times)):
             
-                DM_vect = P*DM_vect # evolve one time step
+                DM_vect = P@DM_vect # evolve one time step
                 
                 DM_mat = np.reshape(DM_vect, (n, n)) # reshape new DM into matrix
                 
