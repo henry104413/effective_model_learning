@@ -32,12 +32,8 @@ class TwoLevelSystem():
         
         
                  
-        # to add: call coupling method to also add coupling to the other system
-        # to add: check for duplicates
-        # so far: manually ensure they are coupled in the order they are added
-        
-        
-        # this way each TLS contains complete information about it
+        # future: call method updating coupling on partners but not done now        
+        # this way each TLS would contain complete information about itself
         # Hamiltonian builder function should then make sure it only applies this once
         # operator builders should probably be model methods as the dimensionality is model dependent
         
@@ -45,15 +41,14 @@ class TwoLevelSystem():
         self.Ls = Ls
         
         
-        
-        # every TLS must have an energy!
-                
+    
+            
     
     
-    # to add later: coupling information to the other TLS
-    # rename this to something more explicit
+    # in future, this would update coupling information on partner as well
     # then each TLS will have full information about the couplings
     # but operator creating methods will have to be amended to avoid double counting!
+    # for now probably unnecessary -- model contains full information, individual TLS objects don't really matter
     
     def update_couplings_on_partner(self, couplings):
         

@@ -514,6 +514,7 @@ class Model():
         # remove old constituents: (operators get replaced by #calling build_operators() later)
         
         self.TLSs = []
+        
         self.TLS_labels = {}
                        
                    

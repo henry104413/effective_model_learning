@@ -153,9 +153,14 @@ initial_guess.build_operators()
 # instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements,
                       initial_guess = initial_guess,
-                      params_optimiser_hyperparams = {'max_steps': int(1e5), 
-                                                      'MH_acceptance': False, 
-                                                      'MH_temperature': 0.1, # 1 means no change to criterion 
+                      params_optimiser_hyperparams = {'max_steps': int(1e4), 
+                                                      'MH_acceptance': True, 
+                                                      'MH_temperature': 1e-4, # 1 means no change to criterion
+                                                      # MH temp 1e-3 seems to give noral values for below jump lengths
+                                                      # 'initial_jump_lengths': {'couplings' : 0.001,
+                                                      #                          'energy' : 0.01,
+                                                      #                          'Ls' : 0.00001
+                                                      #                          }, 
                                                       'initial_jump_lengths': {'couplings' : 0.001,
                                                                                'energy' : 0.01,
                                                                                'Ls' : 0.00001
@@ -204,12 +209,22 @@ Output(toggles = Toggles, filename = timestamp,
        )
 
 
-#%% works!
+#%% 
+
+"""
+qutip occurences:
+    
+    in model class to evaluate dynamics
+    
+    in definitions to produce T and operators
+    
+    so just replace T and operators there
+    
+    and replace dynamics in model class with exponential solver
 
 
 
-# add parallelisation
+"""
 
-# add lindblad adding or removing step - with some decision as to when
 
-# separate file for defaults
+

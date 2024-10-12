@@ -222,26 +222,40 @@ class ParamsOptimiser():
                 
                 
                 
-            # if detriment, still accept with given likelyhood (like in Metropolis-Hastings)
+            # if detriment, still accept with given likelihood (like in Metropolis-Hastings)
             # AND update current to proposal (now worse than previous current)
             
             elif (self.MH_acceptance): 
+                
+                switch_print = False
                   
                 if self.MH_temperature == 0:
                     
-                    MH_likelyhood = 0
+                    MH_likelihood = 0
                     
                 else:
                     
-                    MH_likelyhood = np.exp(-(proposed_cost - current_cost)/self.MH_temperature)
+                    MH_likelihood = np.exp(-(proposed_cost - current_cost)/self.MH_temperature)
                 
-                if np.random.uniform() < MH_likelyhood:
+                roll = np.random.uniform()
+                
+                if switch_print:
+                
+                    print('__________\niteration: '  + str(i) +  
+                          '\nMH likelihood: '+  str(MH_likelihood) +
+                          '\nMH roll: ' + str(roll) +
+                          '\nold: ' + str(current_cost) +  ', new: ' + str(proposed_cost))
+                    
+                if roll < MH_likelihood:
+                    
+                    if switch_print: print('ACCEPT')
                     
                     current = proposed 
                     
                     current_cost = proposed_cost
                     
                     acceptance_tracker[j] = True
+                    
                     
                 
             
@@ -276,7 +290,7 @@ class ParamsOptimiser():
                 # rescale M-H temperature - do just this now?
                 # note: means if accepting too many, reduce temperature
                 
-                self.MH_temperature *= (self.acceptance_target/acceptance_ratio)
+                # self.MH_temperature *= (self.acceptance_target/acceptance_ratio)
                 
                 # print('scaling temperature by: ' + str(self.acceptance_target/acceptance_ratio))
                 
