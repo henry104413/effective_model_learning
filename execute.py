@@ -52,14 +52,14 @@ GT.add_TLS(is_qubit = False,
            )
 
 
-GT.add_TLS(is_qubit = False,
-           energy = 4.0,
-           couplings = {'qubit': [(0.7, 'sigmax', 'sigmax')]
-                        },
-           Ls = {
-                 'sigmaz' : 0.03
-                 }
-           )
+# GT.add_TLS(is_qubit = False,
+#            energy = 4.0,
+#            couplings = {'qubit': [(0.7, 'sigmax', 'sigmax')]
+#                         },
+#            Ls = {
+#                  'sigmaz' : 0.03
+#                  }
+#            )
      
 GT.build_operators()
 
@@ -69,7 +69,26 @@ GT.build_operators()
 
 ts = np.linspace(0, 5e1, int(1000))
 
-measurements = GT.calculate_dynamics(ts)
+#measurements = GT.calculate_dynamics(ts)
+
+pop_qutip = GT.calculate_dynamics(ts, dynamics_method = 'qutip')
+
+pop_liouvillian = GT.calculate_dynamics(ts, dynamics_method = 'liouvillian')
+
+
+#%% 
+# ad hoc plots:
+    
+    
+import matplotlib.pyplot as plt
+from definitions import Constants
+
+plt.figure()
+plt.plot(Constants.t_to_sec*ts, pop_qutip, '-g', label = 'qutip')
+plt.plot(Constants.t_to_sec*ts, pop_liouvillian, '--r', label = 'liouvillian')
+plt.xlabel('time (fs)')
+plt.ylabel('qubit excited population')
+plt.legend()
 
 
 

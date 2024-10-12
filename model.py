@@ -15,6 +15,8 @@ import qutip
 
 import numpy as np
 
+import scipy as sp
+
 
 
 class Model():
@@ -309,12 +311,28 @@ class Model():
         
         
     
+    
     # calculates dynamics and returns observable measurements at evaluation_times,
     # 1st qubit excited population used unless otherwise specified
     
     def calculate_dynamics(self, 
                           evaluation_times,
-                          observable_op = False):
+                          observable_op = False,
+                          # default: qutip -- unless liouvillian==True
+                          dynamics_method = False
+                          ):
+        
+        
+        
+        # check method argument:
+            
+        if dynamics_method == False: dynamics_method == 'qutip'
+        
+        if dynamics_method not in ['qutip', 'liouvillian']:
+            
+            print('dynamics calculation method not recognised, hence using qutip')
+            
+            dynamics_method == 'qutip'
         
         
         
@@ -354,20 +372,89 @@ class Model():
             
             
         # solve ME and return observable data array:
+            
+            
         
-        dynamics = qutip.mesolve(self.H,
-                                 self.initial_DM,
-                                 evaluation_times,
-                                 c_ops = self.Ls,
-                                 e_ops = [observable_op],
-                                 options = qutip.Options(nsteps = 1e9)
-                                 )
+        # solve ODE using qutip (default option):
         
-        return dynamics.expect[-1]
+        if dynamics_method == 'qutip':    
+            
+            qutip_dynamics = qutip.mesolve(self.H,
+                                     self.initial_DM,
+                                     evaluation_times,
+                                     c_ops = self.Ls,
+                                     e_ops = [observable_op],
+                                     options = qutip.Options(nsteps = 1e9)
+                                     )
+            
+            qutip_observable = qutip_dynamics.expect[-1]
+    
+            return qutip_observable
     
     
+        
+        # build Liouvillian and exponentiate:
+        
+        elif dynamics_method == 'liouvillian':    
+            
+                
+            # H and list of Ls as numpy arrays:
+        
+            Ls = [np.array(L) for L in self.Ls]
+        
+            H = np.array(self.H)
+            
+            
+            # vectorised initial DM as numpy array:
     
+            initial_DM_mat = np.array(self.initial_DM)            
     
+            n = len(initial_DM_mat)
+            
+            DM_vect = np.reshape(initial_DM_mat, (int(n**2), 1))
+            
+            
+            # Liouvillian:
+                
+            I = np.eye(n)
+                
+            LLN = -1j*(np.kron(I, H) - np.kron(H.transpose(), I))
+            
+            for L in Ls:
+                
+                LLN += (np.kron(L.conjugate(), L) - 1/2*(np.kron(I, L.conjugate().transpose()@L) + np.kron(L.transpose()@L, I)))
+            
+            # self.LLN = LLN # save to instance for testing
+            
+            
+            # propagator by time interval:
+            # note: assumes evaluation_times evenly spaced!
+            
+            dt = evaluation_times[1] - evaluation_times[0]
+            
+            P = sp.linalg.expm(dt*LLN)
+            
+            # self.P = P # save to instance for testing
+            
+            
+            # propagate and obtain observables at argument times:
+                
+            liouvillian_observable = []
+                
+            for i in range(len(evaluation_times)):
+            
+                DM_vect = P@DM_vect # evolve one time step
+                
+                DM_mat = np.reshape(DM_vect, (n, n)) # reshape new DM into matrix
+                
+                liouvillian_observable.append(np.trace(np.array(observable_op)@DM_mat)) # extract and save observable
+                
+            return liouvillian_observable    
+                
+            
+            
+        
+        
     # display full model parameters: 
     
     def disp(self):
