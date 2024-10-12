@@ -52,14 +52,14 @@ GT.add_TLS(is_qubit = False,
            )
 
 
-GT.add_TLS(is_qubit = False,
-           energy = 4.0,
-           couplings = {'qubit': [(0.7, 'sigmax', 'sigmax')]
-                        },
-           Ls = {
-                 'sigmaz' : 0.03
-                 }
-           )
+# GT.add_TLS(is_qubit = False,
+#            energy = 4.0,
+#            couplings = {'qubit': [(0.7, 'sigmax', 'sigmax')]
+#                         },
+#            Ls = {
+#                  'sigmaz' : 0.03
+#                  }
+#            )
      
 GT.build_operators()
 
@@ -153,7 +153,7 @@ initial_guess.build_operators()
 # instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements,
                       initial_guess = initial_guess,
-                      params_optimiser_hyperparams = {'max_steps': int(1e5), 
+                      params_optimiser_hyperparams = {'max_steps': int(1e2), 
                                                       'MH_acceptance': False, 
                                                       'MH_temperature': 0.1, # 1 means no change to criterion 
                                                       'initial_jump_lengths': {'couplings' : 0.001,
