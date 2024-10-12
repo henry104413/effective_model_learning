@@ -55,7 +55,7 @@ class Output():
             
             for i in range(min(len(dynamics_datasets), 4)):    
                 plt.plot(dynamics_ts*Constants.t_to_sec, dynamics_datasets[i], colours[i], label = get_label(i))
-                plt.xlabel('time (fs)')
+                plt.xlabel('time (s)')
                 plt.ylabel('qubit excited population')
                 plt.ylim([0,1.1])
                 plt.legend()

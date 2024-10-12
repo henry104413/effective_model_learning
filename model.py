@@ -17,6 +17,8 @@ import numpy as np
 
 import scipy as sp
 
+import time
+
 
 
 class Model():
@@ -376,9 +378,11 @@ class Model():
             
         
         # solve ODE using qutip (default option):
-        
-        if dynamics_method == 'qutip':    
+                
+        if dynamics_method == 'qutip':
             
+            clock = time.time()
+
             qutip_dynamics = qutip.mesolve(self.H,
                                      self.initial_DM,
                                      evaluation_times,
@@ -388,6 +392,8 @@ class Model():
                                      )
             
             qutip_observable = qutip_dynamics.expect[-1]
+
+            print('Using qutip:\n' + str(time.time() - clock)) 
     
             return qutip_observable
     
@@ -396,6 +402,8 @@ class Model():
         # build Liouvillian and exponentiate:
         
         elif dynamics_method == 'liouvillian':    
+            
+            clock = time.time()
             
                 
             # H and list of Ls as numpy arrays:
@@ -432,7 +440,11 @@ class Model():
             
             dt = evaluation_times[1] - evaluation_times[0]
             
+            clock2 = time.time()
+            
             P = sp.linalg.expm(dt*LLN)
+            
+            time_expm = time.time() - clock2
             
             # self.P = P # save to instance for testing
             
@@ -440,15 +452,29 @@ class Model():
             # propagate and obtain observables at argument times:
                 
             liouvillian_observable = []
+            
+            time_prop = 0
                 
             for i in range(len(evaluation_times)):
             
-                DM_vect = P@DM_vect # evolve one time step
+                if i > 0: DM_vect = P@DM_vect # evolve one time step
                 
                 DM_mat = np.reshape(DM_vect, (n, n)) # reshape new DM into matrix
                 
-                liouvillian_observable.append(np.trace(np.array(observable_op)@DM_mat)) # extract and save observable
+                clock2 = time.time()
+                                
+                new_value = np.trace(np.array(observable_op)@DM_mat)
+
+                time_prop += time.time() - clock2
                 
+                liouvillian_observable.append(new_value) # extract and save observable
+                
+                
+                
+            print('__________\nUsing liouvillian:\n' + str(time.time() - clock)) 
+            print('exponentiation:\n' + str(time_expm))
+            print('propagation total:\n' + str(time_prop))
+            
             return liouvillian_observable    
                 
             

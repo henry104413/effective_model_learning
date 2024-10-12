@@ -53,43 +53,13 @@ GT.add_TLS(is_qubit = False,
 
 
 GT.add_TLS(is_qubit = False,
-            energy = 4.0,
-            couplings = {'qubit': [(0.7, 'sigmax', 'sigmax')]
+           energy = 4.0,
+           couplings = {'qubit': [(0.7, 'sigmax', 'sigmax')]
                         },
-            Ls = {
-                  'sigmaz' : 0.03
-                  }
-            )
-
-
-GT.add_TLS(is_qubit = False,
-            energy = 5.5,
-            couplings = {'qubit': [(0.8, 'sigmax', 'sigmax')]
-                        },
-            Ls = {
-                  'sigmaz' : 0.03
-                  }
-            )
-
-
-GT.add_TLS(is_qubit = False,
-            energy = 4.5,
-            couplings = {'qubit': [(0.9, 'sigmax', 'sigmax')]
-                        },
-            Ls = {
-                  'sigmaz' : 0.03
-                  }
-            )
-
-
-GT.add_TLS(is_qubit = False,
-            energy = 4.5,
-            couplings = {'qubit': [(0.9, 'sigmax', 'sigmax')]
-                        },
-            Ls = {
-                  'sigmaz' : 0.03
-                  }
-            )
+           Ls = {
+                 'sigmaz' : 0.03
+                 }
+           )
      
 GT.build_operators()
 
@@ -97,31 +67,11 @@ GT.build_operators()
 # simulate measurements:
 # note: now using 1st qubit excited population at times ts
 
-ts = np.linspace(0, 1e2, int(100))
+ts = np.linspace(0, 5e1, int(1000))
 
-#measurements = GT.calculate_dynamics(ts)
-
-pop_qutip = GT.calculate_dynamics(ts, dynamics_method = 'qutip')
-
-pop_liouvillian = GT.calculate_dynamics(ts, dynamics_method = 'liouvillian')
+measurements = GT.calculate_dynamics(ts)
 
 
-#%% 
-# ad hoc plots:
-    
-    
-import matplotlib.pyplot as plt
-from definitions import Constants
-
-plt.figure()
-plt.plot(Constants.t_to_sec*ts, pop_qutip, '-y', label = 'qutip')
-plt.plot(Constants.t_to_sec*ts, pop_liouvillian, ':k', label = 'liouvillian')
-plt.xlabel('time (fs)')
-plt.ylabel('qubit excited population')
-plt.legend()
-plt.savefig('qutip vs liouvillian comparison 3.svg')
-
-raise SystemExit(0)
 
 
 #%% 
@@ -203,14 +153,9 @@ initial_guess.build_operators()
 # instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements,
                       initial_guess = initial_guess,
-                      params_optimiser_hyperparams = {'max_steps': int(1e4), 
-                                                      'MH_acceptance': True, 
-                                                      'MH_temperature': 1e-4, # 1 means no change to criterion
-                                                      # MH temp 1e-3 seems to give noral values for below jump lengths
-                                                      # 'initial_jump_lengths': {'couplings' : 0.001,
-                                                      #                          'energy' : 0.01,
-                                                      #                          'Ls' : 0.00001
-                                                      #                          }, 
+                      params_optimiser_hyperparams = {'max_steps': int(1e5), 
+                                                      'MH_acceptance': False, 
+                                                      'MH_temperature': 0.1, # 1 means no change to criterion 
                                                       'initial_jump_lengths': {'couplings' : 0.001,
                                                                                'energy' : 0.01,
                                                                                'Ls' : 0.00001
@@ -259,22 +204,12 @@ Output(toggles = Toggles, filename = timestamp,
        )
 
 
-#%% 
-
-"""
-qutip occurences:
-    
-    in model class to evaluate dynamics
-    
-    in definitions to produce T and operators
-    
-    so just replace T and operators there
-    
-    and replace dynamics in model class with exponential solver
+#%% works!
 
 
 
-"""
+# add parallelisation
 
+# add lindblad adding or removing step - with some decision as to when
 
-
+# separate file for defaults
