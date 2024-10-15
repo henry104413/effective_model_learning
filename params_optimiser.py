@@ -52,6 +52,7 @@ class ParamsOptimiser():
     
     
     
+    
     # sets parameter optimiser configuration according to argument dictionary;
     # if an attribute has no corresponding entry, sets it to default value specified here:
     
@@ -137,9 +138,9 @@ class ParamsOptimiser():
     
         # profiling - time tracking variables:
             
-        self.profiling_optimise_params_manipulations = 0.0
+        self.profiling_optimise_params_manipulations = 0.
     
-        self.profiling_optimise_params_cost_eval = 0.0 
+        self.profiling_optimise_params_cost_eval = 0.
         
     
     

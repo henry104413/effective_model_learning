@@ -432,7 +432,7 @@ class Model():
                 
                 LLN += (np.kron(L.conjugate(), L) - 1/2*(np.kron(I, L.conjugate().transpose()@L) + np.kron(L.transpose()@L, I)))
             
-            # self.LLN = LLN # save to instance for testing
+            self.LLN = LLN # save to instance for testing
             
             
             # propagator by time interval:
@@ -440,13 +440,18 @@ class Model():
             
             dt = evaluation_times[1] - evaluation_times[0]
             
+            sparse_dt_LLN = sp.sparse.csc_matrix(dt*LLN) # sparse form of entire exponent
+            
             clock2 = time.time()
             
-            P = sp.linalg.expm(dt*LLN)
+            sparse_P = sp.sparse.linalg.expm(sparse_dt_LLN) # sparse form of propagator
             
             time_expm = time.time() - clock2
             
-            # self.P = P # save to instance for testing
+            P = sparse_P.toarray()
+            
+            
+            self.P = P # save to instance for testing
             
             
             # propagate and obtain observables at argument times:

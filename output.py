@@ -113,4 +113,59 @@ class Output():
             
             
             
-         
+def compare_qutip_Liouvillian(model, ts):
+    
+    
+    import numpy as np        
+    import matplotlib.pyplot as plt
+    import matplotlib.colors as colour
+    from matplotlib import colormaps
+    from definitions import Constants
+    
+    
+    pop_qutip = model.calculate_dynamics(ts, dynamics_method = 'qutip')
+    
+    pop_liouvillian = model.calculate_dynamics(ts, dynamics_method = 'liouvillian')
+    
+    
+    #%% 
+    # ad hoc plots:
+        
+    
+    
+    # qutip vs liouvillian dynamics
+    plt.figure()
+    plt.plot(Constants.t_to_sec*ts, pop_qutip, '-y', label = 'qutip')
+    plt.plot(Constants.t_to_sec*ts, pop_liouvillian, ':k', label = 'liouvillian')
+    plt.xlabel('time (fs)')
+    plt.ylabel('qubit excited population')
+    plt.legend()
+    plt.savefig('qutip vs liouvillian comparison.png')
+    
+    
+    # liouvillian colour plot
+    
+    L = model.LLN
+    
+    
+    plt.figure()
+    plt.matshow(abs(L-np.diag(np.diag(L))), cmap='inferno')
+    plt.title('$|\mathcal{L}|$ off diagonal')
+    plt.colorbar()
+    plt.savefig('off diag.png', dpi = 1000)
+    plt.show()
+    
+    
+    plt.figure()
+    cmap = colormaps['inferno'].copy()
+    cmap.set_bad('k', alpha=1)
+    plt.matshow(abs(L), cmap=cmap, norm=colour.LogNorm(0.005, 100), interpolation = 'none')
+    plt.title('$|\mathcal{L}|$')
+    plt.colorbar()
+    plt.savefig('liouvillian.png', dpi = 1000)
+    plt.show()
+    
+
+
+
+       
