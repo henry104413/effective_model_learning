@@ -82,14 +82,14 @@ GT.add_TLS(is_qubit = False,
             )
 
 
-# GT.add_TLS(is_qubit = False,
-#             energy = 4.5,
-#             couplings = {'qubit': [(0.9, 'sigmax', 'sigmax')]
-#                         },
-#             Ls = {
-#                   'sigmaz' : 0.03
-#                   }
-#             )
+GT.add_TLS(is_qubit = False,
+            energy = 4.5,
+            couplings = {'qubit': [(0.9, 'sigmax', 'sigmax')]
+                        },
+            Ls = {
+                  'sigmaz' : 0.03
+                  }
+            )
      
 GT.build_operators()
 
@@ -97,10 +97,15 @@ GT.build_operators()
 # simulate measurements:
 # note: now using 1st qubit excited population at times ts
 
-ts = np.linspace(0, 1e2, int(500))
+ts = np.linspace(0, 1e1, int(500))
 
-measurements = GT.calculate_dynamics(ts)
+measurements = GT.calculate_dynamics(ts, dynamics_method = 'qutip')
 
+
+#%%
+compare_qutip_Liouvillian(GT, ts)
+
+raise SystemExit()
 
 #%%
 

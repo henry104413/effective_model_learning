@@ -148,6 +148,18 @@ def compare_qutip_Liouvillian(model, ts):
     L = model.LLN
     
     
+    # # just to test diagonalisability -- it's not diagonalisable
+    # vals, vecs = np.linalg.eig(L)
+    # X = vecs@(np.diag(vals)@(vecs.conjugate().transpose()))
+    # plt.figure()
+    # plt.matshow(abs(X - np.diag(np.diag(X))), cmap='inferno')
+    # plt.title('$|\mathcal{X}|$')
+    # plt.colorbar()
+    # plt.savefig('X.png', dpi = 1000)
+    # plt.show()
+    
+    
+    
     plt.figure()
     plt.matshow(abs(L-np.diag(np.diag(L))), cmap='inferno')
     plt.title('$|\mathcal{L}|$ off diagonal')

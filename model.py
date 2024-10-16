@@ -440,16 +440,17 @@ class Model():
             
             dt = evaluation_times[1] - evaluation_times[0]
             
-            sparse_dt_LLN = sp.sparse.csc_matrix(dt*LLN) # sparse form of entire exponent
-            
             clock2 = time.time()
             
-            sparse_P = sp.sparse.linalg.expm(sparse_dt_LLN) # sparse form of propagator
+            # note: diagonalising and exponentiating: cost of diagonalisation comparable to exponentiation
+            # also there must be a precision problem -- Liouvillian should be diagonalisable but transforming
+            # diagonal matrix of eigenvalues back gives a slightly different matrix and dynamics is divergent
+
+            P = (sp.linalg.expm(dt*LLN))
+            
+            # sparse_P = sp.sparse.linalg.expm(sparse_dt_LLN) # sparse form of propagator
             
             time_expm = time.time() - clock2
-            
-            P = sparse_P.toarray()
-            
             
             self.P = P # save to instance for testing
             
