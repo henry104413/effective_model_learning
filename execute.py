@@ -11,7 +11,7 @@ from learning_model import LearningModel
 
 from learning_chain import LearningChain
 
-from output import Output, compare_qutip_Liouvillian
+from output import Output, compare_qutip_Liouvillian, create_model_graph
 
 import multiprocessing
 
@@ -101,13 +101,17 @@ ts = np.linspace(0, 1e1, int(500))
 
 measurements = GT.calculate_dynamics(ts, dynamics_method = 'qutip')
 
+create_model_graph(GT, 'GTgraph')
 
 #%%
-compare_qutip_Liouvillian(GT, ts)
+#compare_qutip_Liouvillian(GT, ts)
+
+
+
+
 
 raise SystemExit()
 
-#%%
 
 
 #%% 

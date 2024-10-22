@@ -374,8 +374,10 @@ class Model():
             
             
         # solve ME and return observable data array:
+          
+        switch_print_profiling = False  
             
-            
+        
         
         # solve ODE using qutip (default option):
                 
@@ -393,7 +395,7 @@ class Model():
             
             qutip_observable = qutip_dynamics.expect[-1]
 
-            print('Using qutip:\n' + str(time.time() - clock)) 
+            if switch_print_profiling: ('Using qutip:\n' + str(time.time() - clock)) 
     
             return qutip_observable
     
@@ -475,11 +477,10 @@ class Model():
                 
                 liouvillian_observable.append(new_value) # extract and save observable
                 
-                
-                
-            print('__________\nUsing liouvillian:\n' + str(time.time() - clock)) 
-            print('exponentiation:\n' + str(time_expm))
-            print('propagation total:\n' + str(time_prop))
+            if switch_print_profiling:    
+                print('__________\nUsing liouvillian:\n' + str(time.time() - clock)) 
+                print('exponentiation:\n' + str(time_expm))
+                print('propagation total:\n' + str(time_prop))
             
             return liouvillian_observable    
                 
@@ -494,6 +495,7 @@ class Model():
         print(self.model_description_str())
                     
             
+    
     
     # return model description as a string (to either print or save to file):
     
@@ -555,6 +557,7 @@ class Model():
         outstring += '\n__________________'
             
         return outstring
+    
     
     
     
@@ -719,4 +722,9 @@ class Model():
         # build operators: 
         
         self.build_operators()
+        
+        
+        
+        
+    
             

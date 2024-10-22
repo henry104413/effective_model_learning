@@ -54,8 +54,8 @@ class Output():
             plt.figure()
             
             for i in range(min(len(dynamics_datasets), 4)):    
-                plt.plot(dynamics_ts*Constants.t_to_sec, dynamics_datasets[i], colours[i], label = get_label(i))
-                plt.xlabel('time (s)')
+                plt.plot(dynamics_ts*Constants.t_to_sec*1e15, dynamics_datasets[i], colours[i], label = get_label(i))
+                plt.xlabel('time (fs)')
                 plt.ylabel('qubit excited population')
                 plt.ylim([0,1.1])
                 plt.legend()
@@ -135,8 +135,8 @@ def compare_qutip_Liouvillian(model, ts):
     
     # qutip vs liouvillian dynamics
     plt.figure()
-    plt.plot(Constants.t_to_sec*ts, pop_qutip, '-y', label = 'qutip')
-    plt.plot(Constants.t_to_sec*ts, pop_liouvillian, ':k', label = 'liouvillian')
+    plt.plot(Constants.t_to_sec*ts*1e15, pop_qutip, '-y', label = 'qutip')
+    plt.plot(Constants.t_to_sec*ts*1e15, pop_liouvillian, ':k', label = 'liouvillian')
     plt.xlabel('time (fs)')
     plt.ylabel('qubit excited population')
     plt.legend()
@@ -148,7 +148,7 @@ def compare_qutip_Liouvillian(model, ts):
     L = model.LLN
     
     
-    # # just to test diagonalisability -- it's not diagonalisable
+    # # just to test diagonalisability
     # vals, vecs = np.linalg.eig(L)
     # X = vecs@(np.diag(vals)@(vecs.conjugate().transpose()))
     # plt.figure()
@@ -180,4 +180,148 @@ def compare_qutip_Liouvillian(model, ts):
 
 
 
+def create_model_graph(m, filename):
+    
+    import networkx as nx
+    from networkx.drawing.nx_pydot import graphviz_layout
+    
+    
+    G = nx.Graph()
+    
+    qubit_index, defect_index = 0, 0
+    
+    ops_labels = {
+                 'sigmax': '$\sigma_x$',
+                 'sigmaz': '$\sigma_z$',
+                 'sigmay': '$\sigma_y$',
+                 'sigmam': '$\sigma_-$',
+                 'sigmap': '$\sigma_+$',
+                }
+    
+    normal_vals = {
+                   'energy': 5,
+                   'coupling': 0.5,
+                   'L_offdiag': 0.01,
+                   'L_ondiag': 0.01
+                  }
+    
+    
+    
+    # plot property containers:
+    
+    node_colours = []
+    node_labels = {}
+    edge_colours = []
+    edge_widths = []
+    edge_labels = {}
+    node_sizes = []
+    
+    
+    
+    # add node for each TLS:
+    
+    for TLS in m.TLSs:
+        
+        label = id(TLS)
+        
+        if TLS.is_qubit: 
+            
+            # label = 'qubit' + str(qubit_index)
+            
+            qubit_index += 1
+            
+            node_colours.append('dodgerblue')
+                    
+            G.add_node(label, subset = 'qubits')
+            
+        else:
+            
+            # label = 'defect' + str(defect_index)
+            
+            defect_index += 1
+            
+            node_colours.append('violet')
+            
+            G.add_node(label, subset = 'defects')
+            
+        node_labels[label] = TLS.energy
+        
+        node_sizes.append(1000)
+            
+        
+    # add edges for each TLS's couplings and Ls:    
+        
+    for TLS in m.TLSs:
+        
+        
+        # add couplings - assumed symmetrical here with single label (probably to expand in future):
+        
+        for partner, couplings in TLS.couplings.items():
+            
+            for coupling in couplings: # coupling is the tuple
+            
+                G.add_edge(id(TLS), id(partner),
+                           width = coupling[0]/normal_vals['coupling']*3,
+                           label = ops_labels[coupling[1]],
+                           colour = 'purple'
+                           )
+                
+                edge_labels[(id(TLS), id(partner))] = str(ops_labels[coupling[1]])
+                
+                
+        # add Ls:
+        
+        if True:    
+            
+            for L, rate in TLS.Ls.items():
+                
+                label = str(id(TLS)) + L
+                
+                G.add_node(label, subset = 'Ls')
+                
+                node_labels[label] = ''#ops_labels[L]
+                
+                node_colours.append('forestgreen')
+                
+                G.add_edge(id(TLS), label,
+                           width = rate/normal_vals['L_offdiag'],
+                           colour = 'forestgreen'
+                           )
+                
+                edge_labels[(id(TLS), label)] = ops_labels[L]
+                
+                node_sizes.append(0)
+                
+    
+    
+    edges = G.edges()           
+    edge_widths = [G[u][v]['width'] for u, v in edges]
+    edge_colours = [G[u][v]['colour'] for u, v in edges]
        
+        
+    # different layouts:
+    
+    # centre_node = 'qubit'  # Or any other node to be in the center
+    # defects_nodes = set(G) - {'qubit'}
+    # pos = nx.circular_layout(G.subgraph(defects_nodes))
+    # pos = nx.circular_layout(G)
+    # pos = nx.spring_layout(G, seed = 0)
+    # pos = nx.multipartite_layout(G, subset_key = 'subset')
+    
+    #pos = graphviz_layout(G, prog="twopi")
+    #pos = graphviz_layout(G, prog="dot")
+    pos = graphviz_layout(G, prog="circo")
+    #pos = graphviz_layout(G, prog="sfdp")
+    
+    
+    nx.draw(G, pos,
+            width=edge_widths, edge_color = edge_colours,
+            node_color = node_colours, node_size = node_sizes,
+            labels = node_labels, font_size = 12
+            )
+    nx.draw_networkx_edge_labels(G, pos, edge_labels = edge_labels, font_size = 12)
+    
+    import matplotlib.pyplot as plt
+    
+    plt.savefig(filename + '.svg')#, dpi=300)#, bbox_inches='tight')
+        
