@@ -20,6 +20,12 @@ import numpy as np
 import time
 
 
+from definitions import Constants
+
+import matplotlib.pyplot as plt
+
+
+
 
 
 
@@ -43,8 +49,8 @@ GT.add_TLS(TLS_label = 'qubit',
            )
 
 GT.add_TLS(is_qubit = False,
-           energy = 4.5,
-           couplings = {'qubit': [(0.4, 'sigmax', 'sigmax')]
+           energy = 5.5,
+           couplings = {'qubit': [(0.6, 'sigmax', 'sigmax')]
                         },
            Ls = {
                  'sigmaz' : 0.02
@@ -53,28 +59,8 @@ GT.add_TLS(is_qubit = False,
 
 
 GT.add_TLS(is_qubit = False,
-            energy = 4.0,
-            couplings = {'qubit': [(0.7, 'sigmax', 'sigmax')]
-                        },
-            Ls = {
-                  'sigmaz' : 0.03
-                  }
-            )
-
-
-GT.add_TLS(is_qubit = False,
-            energy = 5.5,
-            couplings = {'qubit': [(0.8, 'sigmax', 'sigmax')]
-                        },
-            Ls = {
-                  'sigmaz' : 0.03
-                  }
-            )
-
-
-GT.add_TLS(is_qubit = False,
             energy = 4.5,
-            couplings = {'qubit': [(0.9, 'sigmax', 'sigmax')]
+            couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
                         },
             Ls = {
                   'sigmaz' : 0.03
@@ -82,14 +68,34 @@ GT.add_TLS(is_qubit = False,
             )
 
 
-GT.add_TLS(is_qubit = False,
-            energy = 4.5,
-            couplings = {'qubit': [(0.9, 'sigmax', 'sigmax')]
-                        },
-            Ls = {
-                  'sigmaz' : 0.03
-                  }
-            )
+# GT.add_TLS(is_qubit = False,
+#             energy = 5.5,
+#             couplings = {'qubit': [(0.2, 'sigmax', 'sigmax')]
+#                         },
+#             Ls = {
+#                   'sigmaz' : 0.03
+#                   }
+#             )
+
+
+# GT.add_TLS(is_qubit = False,
+#             energy = 4.0,
+#             couplings = {'qubit': [(0.4, 'sigmax', 'sigmax')]
+#                         },
+#             Ls = {
+#                   'sigmaz' : 0.03
+#                   }
+#             )
+
+
+# GT.add_TLS(is_qubit = False,
+#             energy = 4.5,
+#             couplings = {'qubit': [(0.1, 'sigmax', 'sigmax')]
+#                         },
+#             Ls = {
+#                   'sigmaz' : 0.03
+#                   }
+#             )
      
 GT.build_operators()
 
@@ -97,21 +103,11 @@ GT.build_operators()
 # simulate measurements:
 # note: now using 1st qubit excited population at times ts
 
-ts = np.linspace(0, 1e1, int(500))
+ts = np.linspace(0, 4e1, int(1000))
 
 measurements = GT.calculate_dynamics(ts, dynamics_method = 'qutip')
 
 create_model_graph(GT, 'GTgraph')
-
-#%%
-#compare_qutip_Liouvillian(GT, ts)
-
-
-
-
-
-raise SystemExit()
-
 
 
 #%% 
@@ -170,13 +166,23 @@ initial_guess.add_TLS(is_qubit = False,
                      )
 
 initial_guess.add_TLS(is_qubit = False,
-                     energy = 5.0,
-                     couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
+                      energy = 5.0,
+                      couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
                                   },
-                     Ls = {
-                           'sigmaz' : 0.01
-                           }
-                     )
+                      Ls = {
+                            'sigmaz' : 0.01
+                            }
+                      )
+
+
+# initial_guess.add_TLS(is_qubit = False,
+#                      energy = 5.0,
+#                      couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
+#                                   },
+#                      Ls = {
+#                            'sigmaz' : 0.01
+#                            }
+#                      )
 
 
 
@@ -193,7 +199,7 @@ initial_guess.build_operators()
 # instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements,
                       initial_guess = initial_guess,
-                      params_optimiser_hyperparams = {'max_steps': int(1e4), 
+                      params_optimiser_hyperparams = {'max_steps': int(1450), 
                                                       'MH_acceptance': True, 
                                                       'MH_temperature': 1e-4, # 1 means no change to criterion
                                                       # MH temp 1e-3 seems to give noral values for below jump lengths
@@ -215,6 +221,13 @@ best = quest.learn()
 costs = quest.costs_full
 
 best_data = best.calculate_dynamics(ts)
+
+#%%
+
+create_model_graph(GT, 'GT_graph')
+
+
+create_model_graph(best, 'best_graph')
 
 
 

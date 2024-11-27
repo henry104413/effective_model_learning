@@ -332,9 +332,9 @@ class Model():
         
         if dynamics_method not in ['qutip', 'liouvillian']:
             
-            print('dynamics calculation method not recognised, hence using qutip')
+            # print('dynamics calculation method not recognised, hence using qutip')
             
-            dynamics_method == 'qutip'
+            dynamics_method = 'qutip'
         
         
         
@@ -396,7 +396,7 @@ class Model():
             qutip_observable = qutip_dynamics.expect[-1]
 
             if switch_print_profiling: ('Using qutip:\n' + str(time.time() - clock)) 
-    
+            
             return qutip_observable
     
     

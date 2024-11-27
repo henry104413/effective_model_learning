@@ -106,6 +106,8 @@ class LearningChain():
         
         self.optimise_params(self.current)     
         
+        
+        
         self.best = self.current
         
         return self.best
@@ -156,7 +158,6 @@ class LearningChain():
         
         
         model_data = model.calculate_dynamics(self.target_times)
-        
         
         # check these are numpy arrays to use array operators below:
    

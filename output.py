@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 
 from definitions import Constants
 
+import numpy as np
+
 # import numpy as np
 
 
@@ -59,7 +61,7 @@ class Output():
                 plt.ylabel('qubit excited population')
                 plt.ylim([0,1.1])
                 plt.legend()
-                plt.savefig(filename + '_comparison.svg')
+                plt.savefig(filename + '_comparison.png', dpi = 1000)
     
     
     
@@ -72,7 +74,8 @@ class Output():
             plt.yscale('log')
             plt.xlabel('iteration')
             plt.ylabel('cost')
-            plt.savefig(filename + '_cost.svg')
+            plt.xlim([0, 10000])
+            plt.savefig(filename + '_cost.png', dpi = 1000)
     
     
         
@@ -244,7 +247,7 @@ def create_model_graph(m, filename):
             
             G.add_node(label, subset = 'defects')
             
-        node_labels[label] = TLS.energy
+        node_labels[label] = np.round(TLS.energy, 2)
         
         node_sizes.append(1000)
             
@@ -314,6 +317,10 @@ def create_model_graph(m, filename):
     #pos = graphviz_layout(G, prog="sfdp")
     
     
+    import matplotlib.pyplot as plt
+    
+    plt.figure()
+    
     nx.draw(G, pos,
             width=edge_widths, edge_color = edge_colours,
             node_color = node_colours, node_size = node_sizes,
@@ -321,7 +328,6 @@ def create_model_graph(m, filename):
             )
     nx.draw_networkx_edge_labels(G, pos, edge_labels = edge_labels, font_size = 12)
     
-    import matplotlib.pyplot as plt
     
     plt.savefig(filename + '.svg')#, dpi=300)#, bbox_inches='tight')
         
