@@ -44,7 +44,7 @@ GT.add_TLS(TLS_label = 'qubit',
                
                         },
            Ls = {
-                 'sigmaz' : 0.005
+                 #'sigmaz' : 0.005
                  }
            )
 
@@ -53,7 +53,8 @@ GT.add_TLS(is_qubit = False,
            couplings = {'qubit': [(0.6, 'sigmax', 'sigmax')]
                         },
            Ls = {
-                 'sigmaz' : 0.02
+                 #'sigmaz' : 0.02,
+                 'sigmay' : 0.02,
                  }
            )
 
@@ -63,7 +64,8 @@ GT.add_TLS(is_qubit = False,
             couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
                         },
             Ls = {
-                  'sigmaz' : 0.03
+                  #'sigmaz' : 0.03
+                  'sigmax' : 0.03
                   }
             )
 
@@ -107,7 +109,7 @@ ts = np.linspace(0, 4e1, int(1000))
 
 measurements = GT.calculate_dynamics(ts, dynamics_method = 'qutip')
 
-create_model_graph(GT, 'GTgraph')
+# create_model_graph(GT, 'GTgraph')
 
 
 #%% 
@@ -151,7 +153,7 @@ initial_guess.add_TLS(TLS_label = 'qubit',
                                   
                                   },
                      Ls = {
-                           'sigmaz' : 0.01
+                           #'sigmaz' : 0.01
                            }
                      )
 
@@ -161,7 +163,9 @@ initial_guess.add_TLS(is_qubit = False,
                      couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
                                   },
                      Ls = {
-                           'sigmaz' : 0.01
+                           #'sigmax' : 0.01,
+                           #'sigmay' : 0.01
+                           
                            }
                      )
 
@@ -170,7 +174,8 @@ initial_guess.add_TLS(is_qubit = False,
                       couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
                                   },
                       Ls = {
-                            'sigmaz' : 0.01
+                            #'sigmax' : 0.01,
+                            #'sigmay' : 0.01
                             }
                       )
 
@@ -199,8 +204,8 @@ initial_guess.build_operators()
 # instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_data = measurements,
                       initial_guess = initial_guess,
-                      params_optimiser_hyperparams = {'max_steps': int(1450), 
-                                                      'MH_acceptance': True, 
+                      params_optimiser_hyperparams = {'max_steps': int(3000), 
+                                                      'MH_acceptance': not True, 
                                                       'MH_temperature': 1e-4, # 1 means no change to criterion
                                                       # MH temp 1e-3 seems to give noral values for below jump lengths
                                                       # 'initial_jump_lengths': {'couplings' : 0.001,

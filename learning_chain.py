@@ -10,6 +10,8 @@ from learning_model import LearningModel
 
 from params_optimiser import ParamsOptimiser
 
+from model_modifier import ModelModifier
+
 import numpy as np
 
 from copy import deepcopy
@@ -41,7 +43,12 @@ class LearningChain():
                                                  'jump_annealing_rate': 0,
                                                  'acceptance_window': 200,
                                                  'acceptance_ratio': 0.4
-                                                 }
+                                                 },
+                 model_modifier_process_library = {
+                                                    'sigmax': 0.01
+                                                   ,'sigmay': 0.01
+                                                   #,'sigmaz': 0.01
+                                                   }
                  ):
         
         
@@ -70,6 +77,15 @@ class LearningChain():
         self.params_optimisation = None 
         
         self.initial_params_optimiser_hyperparams = params_optimiser_hyperparams
+        
+        
+        
+        # model modifier object:
+        # (ModelModifier instance)
+        
+        self.model_modification = None
+        
+        self.model_modifier_process_library = model_modifier_process_library 
         
         
         
@@ -102,13 +118,19 @@ class LearningChain():
         
     def learn(self):
         
+        self.explored = [] # repository of explored model configurations (now given by processes)
+        
         self.current = deepcopy(self.initial)
         
         self.optimise_params(self.current)     
         
+        self.explored.append(self.current)
         
+        self.modify_model(self.current)
         
         self.best = self.current
+        
+        # !!!! need to pick best!!!
         
         return self.best
     
@@ -190,6 +212,7 @@ class LearningChain():
         
         
         
+        
     
     # returns JSON compatible dictionary of hyperparameters (relevant heuristics):
     # namely: initial jump lengths, annealing rate
@@ -203,8 +226,24 @@ class LearningChain():
         if self.params_optimisation:
             
             chain_hyperparams_dict['params optimisation initial hyperparameters'] = self.params_optimisation.output_hyperparams_init()
-      
+        
         return chain_hyperparams_dict 
+    
+    
+    
+    
+    # performs model modification:
+        
+    def modify_model(self, model_to_modify, ):
+        
+        if not self.model_modification: # ie. first run
+        
+            self.model_modification = ModelModifier(self)
+        
+        self.model_modification.add_toss_L(model_to_modify, self.model_modifier_process_library)
+    
+    
+    
     
 
 

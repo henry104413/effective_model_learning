@@ -74,7 +74,7 @@ class Output():
             plt.yscale('log')
             plt.xlabel('iteration')
             plt.ylabel('cost')
-            plt.xlim([0, 10000])
+            #plt.xlim([0, 10000])
             plt.savefig(filename + '_cost.png', dpi = 1000)
     
     
@@ -320,6 +320,7 @@ def create_model_graph(m, filename):
     import matplotlib.pyplot as plt
     
     plt.figure()
+    plt.title(filename)
     
     nx.draw(G, pos,
             width=edge_widths, edge_color = edge_colours,

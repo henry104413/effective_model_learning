@@ -313,47 +313,47 @@ class ParamsOptimiser():
             
             # ad hoc plots:
             
-            if k == 200: k = 0    
+            # if k == 200: k = 0    
             
-            if k == 0:
+            # if k == 0:
                 
-                filename = 'ad_hoc_' + str(i)
+            #     filename = 'ad_hoc_' + str(i)
                     
-                cost = costs
+            #     cost = costs
                     
-                import matplotlib.pyplot as plt    
+            #     import matplotlib.pyplot as plt    
                     
-                plt.figure()
-                plt.plot(cost, 'm-', linewidth = 0.1, markersize = 0.1)
-                plt.yscale('log')
-                plt.xlabel('iteration')
-                plt.ylabel('cost')
-                plt.xlim([0, 1400])
-                plt.ylim([1e-3, 1])
-                plt.savefig(filename + '_cost.png', dpi = 1000)
+            #     plt.figure()
+            #     plt.plot(cost, 'm-', linewidth = 0.1, markersize = 0.1)
+            #     plt.yscale('log')
+            #     plt.xlabel('iteration')
+            #     plt.ylabel('cost')
+            #     plt.xlim([0, 1400])
+            #     plt.ylim([1e-3, 1])
+            #     plt.savefig(filename + '_cost.png', dpi = 1000)
                 
-                dynamics_ts = self.chain.target_times
-                dynamics_datasets = [self.chain.target_data, best.calculate_dynamics(self.chain.target_times)]
-                dynamics_labels = ['ground truth', 'learned model']
+            #     dynamics_ts = self.chain.target_times
+            #     dynamics_datasets = [self.chain.target_data, best.calculate_dynamics(self.chain.target_times)]
+            #     dynamics_labels = ['ground truth', 'learned model']
                 
-                colours = ['r-', 'b--', 'k:', 'g-.']
+            #     colours = ['r-', 'b--', 'k:', 'g-.']
                 
-                # ensure label selector doesn't go out of bounds
-                def get_label(i):
-                    if not dynamics_labels or len(dynamics_labels) < len(dynamics_datasets): return None
-                    else: return dynamics_labels[i]
+            #     # ensure label selector doesn't go out of bounds
+            #     def get_label(i):
+            #         if not dynamics_labels or len(dynamics_labels) < len(dynamics_datasets): return None
+            #         else: return dynamics_labels[i]
                 
-                plt.figure()
-                plt.plot(dynamics_ts*Constants.t_to_sec*1e15, dynamics_datasets[0], colours[0], label = get_label(0))
-                plt.plot(dynamics_ts*Constants.t_to_sec*1e15, dynamics_datasets[1], colours[1], label = get_label(1))
+            #     plt.figure()
+            #     plt.plot(dynamics_ts*Constants.t_to_sec*1e15, dynamics_datasets[0], colours[0], label = get_label(0))
+            #     plt.plot(dynamics_ts*Constants.t_to_sec*1e15, dynamics_datasets[1], colours[1], label = get_label(1))
                 
-                plt.xlabel('time (fs)')
-                plt.ylabel('qubit excited population')
-                plt.ylim([0,1.1])
-                plt.legend()
-                plt.savefig(filename + '_comparison.png', dpi = 1000)
+            #     plt.xlabel('time (fs)')
+            #     plt.ylabel('qubit excited population')
+            #     plt.ylim([0,1.1])
+            #     plt.legend()
+            #     plt.savefig(filename + '_comparison.png', dpi = 1000)
                 
-            k += 1
+            # k += 1
         
         
         return best, best_cost, costs
