@@ -118,21 +118,43 @@ class LearningChain():
         
     def learn(self):
         
-        self.explored = [] # repository of explored model configurations (now given by processes)
+        
+        
+        # initialise:
+        
+        self.explored_models = [] # repository of explored model configurations (now given by processes)
+        
+        self.explored_costs = []
         
         self.current = deepcopy(self.initial)
         
-        self.optimise_params(self.current)     
+        max_modifications = 10
         
-        self.explored.append(self.current)
         
-        self.modify_model(self.current)
         
-        self.best = self.current
+        # iteratively propose modifications and optimise parameters up to max_modifications times
         
-        # !!!! need to pick best!!!
+        for i in range(max_modifications):
+            
+
+            # optimise current model with fixed structure
+            
+            self.explored_costs.append(self.optimise_params(self.current))
+            
+            self.explored_models.append(self.current)
+                        
+            
+            # propose new model structure:     
+            
+            if i >= max_modifications - 1: break
+
+            self.modify_model(self.current)
         
-        return self.best
+            
+        
+        best_index = self.explored_costs.index(min(self.explored_costs))
+    
+        return self.explored_models[best_index]
     
     
     
@@ -189,12 +211,13 @@ class LearningChain():
        
         
         return np.sum(np.square(abs(model_data-self.target_data)))/len(self.target_times)
-
+    
      
     
     
     # performs paramter optimisation on argument model, setting hyperparameterd to chain attribute,
     # saving resulting model to current working model and saving full cost progression and best cost achieved 
+    # returns best cost achieved
     
     def optimise_params(self, model_to_optimise):
         
@@ -209,6 +232,8 @@ class LearningChain():
         self.costs_brief.append(best_cost) 
         
         self.costs_full = self.costs_full + costs 
+        
+        return best_cost
         
         
         
@@ -234,7 +259,7 @@ class LearningChain():
     
     # performs model modification:
         
-    def modify_model(self, model_to_modify, ):
+    def modify_model(self, model_to_modify):
         
         if not self.model_modification: # ie. first run
         
@@ -244,7 +269,4 @@ class LearningChain():
     
     
     
-    
-
-
-        
+    # 

@@ -59,26 +59,50 @@ class ModelModifier():
         
         subsystem = np.random.choice(subsystems)
         
+        adding_of_L_probability = 0.7 # probability this step adds new process as opposed to removing
         
-        adding_of_L_probability = 1 # probability this step adds new process as opposed to removing
+        if np.random.uniform() < adding_of_L_probability: # ie, add new process
         
-        if np.random.uniform() < adding_of_L_probability: # ie, chose to add new process
-        
-            
             # randomly choose one process library operator not yet acting on chosen subsystem
         
             existing = [x for x in subsystem.Ls]
         
             options = [x for x in self.process_library if x not in existing]
-                    
-            op = np.random.choice(options)
+                
+            if options:
             
-            subsystem.Ls[op] = self.process_library[op]
+                op = np.random.choice(options)
+                
+                subsystem.Ls[op] = self.process_library[op]
+                
+                # note: this directly modifies variable another classe's object
+                # ...perhaps could be changed to instead work via method of that class?
+                
+                self.model.build_operators()
+                
+                print('adding operator ' + op + ' to TLS no. ' + str(self.model.TLSs.index(subsystem)))
+                
+            else:
+                
+                print('no options for adding operator to TLS no. ' + str(self.model.TLSs.index(subsystem)))
             
-            # note: this directly modifies variable another classe's object
-            # ...perhaps could be changed to instead work via method of that class?
+        else: # ie, remove existing process
+        
+            options = [x for x in subsystem.Ls]
             
-            self.model.build_operators()
+            if options:
+                
+                op = np.random.choice(options)
+            
+                subsystem.Ls.pop(op)
+                
+                print('removing operator ' + op + ' from TLS no. ' + str(self.model.TLSs.index(subsystem)))
+                
+            else:
+                
+                print('no options for removing operator from TLS no. ' + str(self.model.TLSs.index(subsystem)))
+            
+            
             
         # ADD check if process already present -- then choose another -- check also if options exhausted
         
