@@ -73,7 +73,7 @@ class ModelModifier():
                     
             op = np.random.choice(options)
             
-            subsystem[op] = self.process_library[op]
+            subsystem.Ls[op] = self.process_library[op]
             
             # note: this directly modifies variable another classe's object
             # ...perhaps could be changed to instead work via method of that class?
