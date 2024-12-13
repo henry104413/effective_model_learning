@@ -269,20 +269,5 @@ Output(toggles = Toggles, filename = timestamp,
 
 #%% 
 
-"""
-qutip occurences:
-    
-    in model class to evaluate dynamics
-    
-    in definitions to produce T and operators
-    
-    so just replace T and operators there
-    
-    and replace dynamics in model class with exponential solver
-
-
-
-"""
-
 
 
