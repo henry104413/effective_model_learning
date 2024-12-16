@@ -94,7 +94,7 @@ class ModelModifier():
                 
                 op = np.random.choice(options)
             
-                subsystem.Ls.pop(op)+
+                subsystem.Ls.pop(op)
                 
                 print('removing operator ' + op + ' from TLS no. ' + str(self.model.TLSs.index(subsystem)))
                 

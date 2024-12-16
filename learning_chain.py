@@ -31,7 +31,7 @@ class LearningChain():
     
     
     
-    def __init__(self, target_times, target_data, *,
+    def __init__(self, target_times, target_datasets, target_observables, *,
                  initial_guess = False,              
                  params_optimiser_hyperparams = {'max_steps': int(1e3), 
                                                  'MH_acceptance': False, 
@@ -101,9 +101,11 @@ class LearningChain():
             
             
             
-        # target dataset:    
+        # target data:    
             
-        self.target_data = target_data
+        self.target_datasets = target_datasets
+        
+        self.target_observables = target_observables
         
         self.target_times = target_times
         
@@ -199,20 +201,40 @@ class LearningChain():
     # using target_times and target_data set at instance level,
     # currently using mean squared error between dynamics:
     # note: here is where any weighting or similar should be implemented
+    # assumed: either target data is listof numpy arrays and target observables is list of operator labels
+    # ...or target data is just numpy array and target observables is single label (in which case instance variables listified)
     
     def cost(self, model):
         
         
-        model_data = model.calculate_dynamics(self.target_times)
+        if isinstance(self.target_datasets, np.ndarray) and isinstance(self.target_observables, str):
+            
+            self.target_datasets =  [self.target_datasets]
+            
+            self.target_observables = [self.target_observables]
+            
         
-        # check these are numpy arrays to use array operators below:
+        model_datasets = model.calculate_dynamics(evaluation_times = self.target_times, observable_ops = self.target_observables)
+        
+        
+        # # skip now and if done, redo for all elements of lists... check these are numpy arrays to use array operators below:
    
-        if type(model_data) != type(np.array([])) or type(self.target_data) != type(np.array([])):
+        # if type(model_data) != type(np.array([])) or type(self.target_data) != type(np.array([])):
    
-            raise RuntimeError('error calculating cost: arguments must be numpy arrays!\n')
+        #     raise RuntimeError('error calculating cost: arguments must be numpy arrays!\n')
+        
+        
+        # add up mean-squared-error over different observables, assuming equal weighting:
+        # note: now datasets should all be lists of numpy arrays
+        
+        total_MSE = 0
+        
+        for i in range(len(model_datasets)):
+            
+            total_MSE += np.sum(np.square(abs(model_datasets[i]-self.target_datasets[i])))/len(self.target_times)
        
         
-        return np.sum(np.square(abs(model_data-self.target_data)))/len(self.target_times)
+        return total_MSE
     
      
     

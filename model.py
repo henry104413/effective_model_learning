@@ -316,10 +316,12 @@ class Model():
     
     # calculates dynamics and returns observable measurements at evaluation_times,
     # 1st qubit excited population used unless otherwise specified
+    # observable op: if not specified or False, assume by default population in site basis of first qubit in system
+    # ...if string and matching existing operator, take that observable on the first qubit with identities elsewhere
     
     def calculate_dynamics(self, 
                           evaluation_times,
-                          observable_op = False,
+                          observable_ops = False,
                           # default: qutip -- unless liouvillian==True
                           dynamics_method = False
                           ):
@@ -349,30 +351,47 @@ class Model():
             raise RuntimeError('initial not defined -- cannot calculate dynamics')
             
             
+        
+        # for observables on single qubit: (either if not specified, a single string, or a list of strings)    
+        # make list of total system observable operators:
+        # if single TLS operator defined: apply on first qubit in TLSs and identity on others
+        
+        # not defined hence assume excited population:
+        if type(observable_ops) == bool and not observable_ops: observable_ops = 'exc'
+        
+        if isinstance(observable_ops, str): observable_ops = [observable_ops]
+        
+        
+        # tiggered if not valid input valid (should be list with zero non-string elements):
+        if not (isinstance(observable_ops, list) 
+                and sum([True for x in observable_ops if type(x) != str]) == 0):
             
-        # default observable operator unless another specified:
-        # now using excited population of first qubit in TLSs
-        
-        if type(observable_op) == bool and not observable_op:
-        
-            temp = 1
+            raise RuntimeError('do not understand oservable operators input for dynamics calculation')
             
-            already_got_one = False
+        else: # now have a list of strings for different observable operators and so far assuming they match an operator
         
-            for TLS in self.TLSs:
+            observable_ops_full = []
+            
+            for op in observable_ops:
+            
+                temp = 1
                 
-                if TLS.is_qubit and not already_got_one:
-                    
-                    temp = T(temp, ops['exc'])
-                    
-                else:
-                    
-                    temp = T(temp, ops['id2'])
-        
-            observable_op = temp
+                already_got_one = False
             
+                for TLS in self.TLSs:
+                    
+                    if TLS.is_qubit and not already_got_one:
+                        
+                        temp = T(temp, ops[op])
+                        
+                    else:
+                        
+                        temp = T(temp, ops['id2'])
             
-            
+                observable_ops_full.append(temp)
+                
+                
+                
         # solve ME and return observable data array:
           
         switch_print_profiling = False  
@@ -380,6 +399,7 @@ class Model():
         
         
         # solve ODE using qutip (default option):
+        # return list of arrays of observables values across evaluation times, in order of observable operators
                 
         if dynamics_method == 'qutip':
             
@@ -389,15 +409,15 @@ class Model():
                                      self.initial_DM,
                                      evaluation_times,
                                      c_ops = self.Ls,
-                                     e_ops = [observable_op],
+                                     e_ops = observable_ops_full,
                                      options = qutip.Options(nsteps = 1e9)
                                      )
             
-            qutip_observable = qutip_dynamics.expect[-1]
+            qutip_observables = qutip_dynamics.expect # CONTINUE HERE - CHANGE TO GET ALL THE ARRAYS FOR ALL THE OBSERVABLES!!
 
             if switch_print_profiling: ('Using qutip:\n' + str(time.time() - clock)) 
             
-            return qutip_observable
+            return qutip_observables
     
     
         

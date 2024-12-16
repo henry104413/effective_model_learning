@@ -111,7 +111,7 @@ measurements = GT.calculate_dynamics(ts, dynamics_method = 'qutip')
 
 # create_model_graph(GT, 'GTgraph')
 
-
+raise SystemExit()
 #%% 
 
 
