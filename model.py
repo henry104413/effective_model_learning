@@ -303,7 +303,7 @@ class Model():
             
             if TLS.is_qubit:
                 
-                temp = T(temp, ops['exc'])
+                temp = T(temp, ops['exc'] + ops['sigmay'])
                 
             else:
                 
@@ -359,6 +359,7 @@ class Model():
         # not defined hence assume excited population:
         if type(observable_ops) == bool and not observable_ops: observable_ops = 'exc'
         
+        # if single operator label (string):
         if isinstance(observable_ops, str): observable_ops = [observable_ops]
         
         

@@ -70,7 +70,8 @@ ops = {#'sigma z' : q.sigmaz(),
        #'id' : q.identity(2),
        'id2' : q.identity(2),
        'gnd' : q.sigmam()*q.sigmap(),
-       'exc' : q.sigmap()*q.sigmam()
+       'exc' : q.sigmap()*q.sigmam(),
+       'plus': (q.ket([1]) + q.bra([0])).unit() # careful - qutip uses possibly opposite convention for excited and ground state
        }
 
 

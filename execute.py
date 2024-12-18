@@ -107,12 +107,14 @@ GT.build_operators()
 
 ts = np.linspace(0, 4e1, int(1000))
 
-measurements = GT.calculate_dynamics(ts, dynamics_method = 'qutip')
+measurement_observables = ['sigmax']
+
+measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
 
 # create_model_graph(GT, 'GTgraph')
 
-raise SystemExit()
-#%% 
+
+#%% parallelised runs:
 
 
 chains_inputs = []
@@ -202,7 +204,7 @@ initial_guess.build_operators()
 
 
 # instance of learning (quest for best model):
-quest = LearningChain(target_times = ts, target_data = measurements,
+quest = LearningChain(target_times = ts, target_datasets = measurement_datasets, target_observables = measurement_observables,
                       initial_guess = initial_guess,
                       params_optimiser_hyperparams = {'max_steps': 1000, 
                                                       'MH_acceptance': not True, 
@@ -225,7 +227,7 @@ best = quest.learn()
 
 costs = quest.costs_full
 
-best_data = best.calculate_dynamics(ts)
+best_data = best.calculate_dynamics(ts, observable_ops = ['sigmax'])
 
 #%%
 
@@ -259,7 +261,7 @@ timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
 # create outputs:
 
 Output(toggles = Toggles, filename = timestamp,
-       dynamics_ts = ts, dynamics_datasets = [measurements, best_data], dynamics_labels = ['ground truth', 'learned model'],
+       dynamics_ts = ts, dynamics_datasets = [measurement_datasets[-1], best_data[-1]], dynamics_labels = ['ground truth', 'learned model'],
        cost = costs,
        models_to_save = [GT, best],
        model_names = ['GT', 'best'],
