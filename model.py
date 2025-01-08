@@ -303,7 +303,7 @@ class Model():
             
             if TLS.is_qubit:
                 
-                temp = T(temp, ops['exc'] + ops['sigmay'])
+                temp = T(temp, (ops['exc'] + ops['sigmay']).unit())
                 
             else:
                 
@@ -385,6 +385,8 @@ class Model():
                         
                         temp = T(temp, ops[op])
                         
+                        already_got_one = True
+                        
                     else:
                         
                         temp = T(temp, ops['id2'])
@@ -411,14 +413,15 @@ class Model():
                                      evaluation_times,
                                      c_ops = self.Ls,
                                      e_ops = observable_ops_full,
-                                     options = qutip.Options(nsteps = 1e9)
+                                     options = qutip.Options(nsteps = 1e9) # store_states = True
+                                     # note: creates instance of Options which has as variables all the solver options - can be set in constructor
                                      )
             
             qutip_observables = qutip_dynamics.expect # CONTINUE HERE - CHANGE TO GET ALL THE ARRAYS FOR ALL THE OBSERVABLES!!
 
             if switch_print_profiling: ('Using qutip:\n' + str(time.time() - clock)) 
             
-            return qutip_observables
+            return qutip_observables # qutip_dynamics.states
     
     
         

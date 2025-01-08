@@ -130,13 +130,13 @@ class LearningChain():
         
         self.current = deepcopy(self.initial)
         
-        max_modifications = 10
+        max_modifications = 1
         
         
         
         # iteratively propose modifications and optimise parameters up to max_modifications times
         
-        for i in range(0): #range(max_modifications):
+        for i in range(max_modifications): #range(max_modifications):
             
 
             # optimise current model with fixed structure

@@ -31,6 +31,7 @@ import matplotlib.pyplot as plt
 
 
 #%% generate target data:
+    
 
 
 # set up ground truth model:  
@@ -48,26 +49,26 @@ GT.add_TLS(TLS_label = 'qubit',
                  }
            )
 
-GT.add_TLS(is_qubit = False,
-           energy = 5.5,
-           couplings = {'qubit': [(0.6, 'sigmax', 'sigmax')]
-                        },
-           Ls = {
-                 #'sigmaz' : 0.02,
-                 'sigmay' : 0.02,
-                 }
-           )
+# GT.add_TLS(is_qubit = False,
+#            energy = 5.5,
+#            couplings = {'qubit': [(0.6, 'sigmax', 'sigmax')]
+#                         },
+#            Ls = {
+#                  #'sigmaz' : 0.02,
+#                  'sigmay' : 0.02,
+#                  }
+#            )
 
 
-GT.add_TLS(is_qubit = False,
-            energy = 4.5,
-            couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
-                        },
-            Ls = {
-                  #'sigmaz' : 0.03
-                  'sigmax' : 0.03
-                  }
-            )
+# GT.add_TLS(is_qubit = False,
+#             energy = 4.5,
+#             couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
+#                         },
+#             Ls = {
+#                   #'sigmaz' : 0.03
+#                   'sigmax' : 0.03
+#                   }
+#             )
 
 
 # GT.add_TLS(is_qubit = False,
@@ -105,7 +106,7 @@ GT.build_operators()
 # simulate measurements:
 # note: now using 1st qubit excited population at times ts
 
-ts = np.linspace(0, 4e1, int(1000))
+ts = np.linspace(0, 3e1, int(1000))
 
 measurement_observables = ['sigmax']
 
@@ -227,7 +228,7 @@ best = quest.learn()
 
 costs = quest.costs_full
 
-best_data = best.calculate_dynamics(ts, observable_ops = ['sigmax'])
+best_data = best.calculate_dynamics(ts, observable_ops = measurement_observables)
 
 #%%
 

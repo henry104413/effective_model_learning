@@ -58,8 +58,9 @@ class Output():
             for i in range(min(len(dynamics_datasets), 4)):    
                 plt.plot(dynamics_ts*Constants.t_to_sec*1e15, dynamics_datasets[i], colours[i], label = get_label(i))
                 plt.xlabel('time (fs)')
-                plt.ylabel('qubit excited population')
-                plt.ylim([0,1.1])
+                #plt.ylabel('qubit excited population')
+                #plt.ylim([0,1.1])
+                #HERE
                 plt.legend()
                 plt.savefig(filename + '_comparison.png', dpi = 1000)
     
