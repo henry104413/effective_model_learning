@@ -136,7 +136,7 @@ class LearningChain():
         
         # iteratively propose modifications and optimise parameters up to max_modifications times
         
-        for i in range(max_modifications):
+        for i in range(0): #range(max_modifications):
             
 
             # optimise current model with fixed structure
@@ -151,12 +151,19 @@ class LearningChain():
             if i >= max_modifications - 1: break
 
             self.modify_model(self.current)
+            
+            
+            
+            
+            
         
             
         
         best_index = self.explored_costs.index(min(self.explored_costs))
     
         return self.explored_models[best_index]
+    
+    
     
     
     

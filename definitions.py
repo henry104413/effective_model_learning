@@ -71,10 +71,13 @@ ops = {#'sigma z' : q.sigmaz(),
        'id2' : q.identity(2),
        'gnd' : q.sigmam()*q.sigmap(),
        'exc' : q.sigmap()*q.sigmam(),
-       'plus': (q.ket([1]) + q.bra([0])).unit() # careful - qutip uses possibly opposite convention for excited and ground state
+       'plus': q.ket2dm(q.ket([1]) + q.ket([0])).unit() # careful - qutip uses possibly opposite convention for excited and ground state
        }
 
 
+
+
+ops_library = {}
 
 
 # operator parameter labels for plotting:
@@ -87,6 +90,22 @@ ops_labels = {'defects energies' : 'energy (eV)',
               'sigma plus' : r'$\sigma_+$' + ' rate (eV)',
               'sigma minus' : r'$\sigma_-$' + ' rate (eV)'
               }
+
+
+
+rates_bounds = {'sigmaz' : (0.001, 0.1),
+                'sigmax' : (0.001, 0.1),
+                'sigmay' : (0.001, 0.1),
+                'sigmam' : (0.001, 0.1),
+                'sigmap' : (0.001, 0.1),
+                }
+
+
+rates_arrays = {}
+
+for key in rates_arrays:
+    
+    rates_arrays[key] = np.logspace(*rates_bounds[key], 10)
 
 
 

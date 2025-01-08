@@ -59,7 +59,7 @@ class ModelModifier():
         
         subsystem = np.random.choice(subsystems)
         
-        adding_of_L_probability = 0.7 # probability this step adds new process as opposed to removing
+        adding_of_L_probability = 0.5 # probability this step adds new process as opposed to removing
         
         if np.random.uniform() < adding_of_L_probability: # ie, add new process
         
