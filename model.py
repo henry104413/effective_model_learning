@@ -304,6 +304,7 @@ class Model():
             if TLS.is_qubit:
                 
                 temp = T(temp, (ops['exc'] + ops['sigmay']).unit())
+                # note: if changing this make sure this is normalised!
                 
             else:
                 
