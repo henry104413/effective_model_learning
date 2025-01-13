@@ -32,18 +32,20 @@ class LearningChain():
     
     
     def __init__(self, target_times, target_datasets, target_observables, *,
-                 initial_guess = False,              
-                 params_optimiser_hyperparams = {'max_steps': int(1e3), 
-                                                 'MH_acceptance': False, 
-                                                 'MH_temperature': 10, 
-                                                 'initial_jump_lengths': {'couplings' : 0.001,
-                                                                          'energy' : 0.01,
-                                                                          'Ls' : 0.00001
-                                                                          }, 
-                                                 'jump_annealing_rate': 0,
-                                                 'acceptance_window': 200,
-                                                 'acceptance_ratio': 0.4
-                                                 },
+                 initial_guess = False,
+                 max_chain_steps = 100,
+                 params_optimiser_hyperparams = {
+                     'max_steps': int(1), 
+                     'MH_acceptance': False, 
+                     'MH_temperature': 10, 
+                     'initial_jump_lengths': {'couplings' : 0.001,
+                                              'energy' : 0.01,
+                                              'Ls' : 0.00001
+                                              }, 
+                     'jump_annealing_rate': 0,
+                     'acceptance_window': 200,
+                     'acceptance_ratio': 0.4
+                     },
                  model_modifier_process_library = {
                                                     'sigmax': 0.01
                                                    ,'sigmay': 0.01
@@ -67,6 +69,12 @@ class LearningChain():
         self.costs_full = [] # includes full cost progression from each parameters optimiser call
         
         self.costs_brief = [] # only includes best cost from each parameters optimiser call
+        
+        
+        
+        # chain parameters:
+            
+        self.max_chain_steps = max_chain_steps
         
         
         
@@ -151,6 +159,41 @@ class LearningChain():
             if i >= max_modifications - 1: break
 
             self.modify_model(self.current)
+            
+            
+            
+        # decide which to do
+        # do step
+        # accept or reject
+        
+        options = ['optimise all parameters', 'add or remove process']
+        probabilities = [0.9, 0.1] # have to sum up to 1 for choice() to not complain
+        
+        # check option probabilities array length matches options and normalise if not normalised:
+            
+        if len(probabilities) != len(options):
+            
+            raise RuntimeError('array of probabilities of chain step options is the wrong length')
+            
+        if (temp := sum(probabilities)) != 1:
+            
+            probabilities = [x/temp for x in probabilities]
+
+        
+        for i in range(max_modifications):
+            
+            option = np.random.choice(options, p = probabilities)
+            
+            
+            # branching:
+            
+            if option == 'optimise all parameters':
+                
+                pass        
+            
+            elif option == 'add or remove process':
+                
+                pass
             
             
             
@@ -244,6 +287,8 @@ class LearningChain():
        
         
         return total_MSE
+    
+    
     
      
     
