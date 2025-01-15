@@ -69,7 +69,7 @@ class ParamsOptimiser():
                                 'Ls' : 0.00001
                                 }   
         
-        default_vals = {'max_steps': int(1e3), 
+        default_vals = {'max_optimisation_steps': int(1e3), 
                         'MH_acceptance': False, 
                         'MH_temperature': 0.1, 
                         'initial_jump_lengths': default_jump_lengths, 
@@ -128,6 +128,29 @@ class ParamsOptimiser():
     
     def do_optimisation(self, initial_model):
         
+        """
+            
+            Carry out parameter optimisation altering all existing parameters simultaneously,
+            with number of steps given by the optimiser object's attribute max_optimisation_steps.
+            
+            Acceptance and rejection condition specified here also. Initial model left untouched,
+            best model found returned after completion.
+            
+            Arguments:
+                
+                initial model ... instance of Learning Model
+        
+            Returns:
+                
+                best model
+                
+                cost of best model
+                
+                list of costs of all models explored
+                
+                
+        """
+        
         
         
         # check hyperparameters and jump lengths set:
@@ -168,7 +191,7 @@ class ParamsOptimiser():
         
         
         
-        for i in range(self.max_steps): # add plateau condition
+        for i in range(self.max_optimisation_steps): # add plateau condition
             
             
             # profiling timer:

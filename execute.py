@@ -207,7 +207,7 @@ initial_guess.build_operators()
 # instance of learning (quest for best model):
 quest = LearningChain(target_times = ts, target_datasets = measurement_datasets, target_observables = measurement_observables,
                       initial_guess = initial_guess,
-                      params_optimiser_hyperparams = {'max_steps': 1000, 
+                      params_optimiser_hyperparams = {'max_optimisation_steps': 1, 
                                                       'MH_acceptance': not True, 
                                                       'MH_temperature': 1e-4, # 1 means no change to criterion
                                                       # MH temp 1e-3 seems to give noral values for below jump lengths

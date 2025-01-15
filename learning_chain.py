@@ -35,7 +35,7 @@ class LearningChain():
                  initial_guess = False,
                  max_chain_steps = 100,
                  params_optimiser_hyperparams = {
-                     'max_steps': int(1), 
+                     'max_optimisation_steps': int(1), 
                      'MH_acceptance': False, 
                      'MH_temperature': 10, 
                      'initial_jump_lengths': {'couplings' : 0.001,
@@ -138,13 +138,12 @@ class LearningChain():
         
         self.current = deepcopy(self.initial)
         
-        max_modifications = 1
         
         
         
         # iteratively propose modifications and optimise parameters up to max_modifications times
         
-        for i in range(max_modifications): #range(max_modifications):
+        for i in range(self.max_chain_steps): #range(max_modifications):
             
 
             # optimise current model with fixed structure
@@ -154,11 +153,11 @@ class LearningChain():
             self.explored_models.append(self.current)
                         
             
-            # propose new model structure:     
             
-            if i >= max_modifications - 1: break
-
+            
             self.modify_model(self.current)
+            
+            
             
             
             
@@ -167,7 +166,7 @@ class LearningChain():
         # accept or reject
         
         options = ['optimise all parameters', 'add or remove process']
-        probabilities = [0.9, 0.1] # have to sum up to 1 for choice() to not complain
+        probabilities = [1.0, 0] # have to sum up to 1 for choice() to not complain
         
         # check option probabilities array length matches options and normalise if not normalised:
             
@@ -180,7 +179,7 @@ class LearningChain():
             probabilities = [x/temp for x in probabilities]
 
         
-        for i in range(max_modifications):
+        for i in range(self.max_chain_steps):
             
             option = np.random.choice(options, p = probabilities)
             
