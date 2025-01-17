@@ -8,11 +8,17 @@ Effective model learning
 import numpy as np
 
 from model import Model
-
 from learning_model import LearningModel
 
 
-class ModelModifier():
+# executes any modification to model processes (operators)
+# stores available process library
+
+# methods should take model as argument and work on it
+# same process handling object expected to be used on various models 
+
+
+class ProcessHandler():
     
     
     

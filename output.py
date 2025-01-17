@@ -7,16 +7,13 @@ Effective model learning
 """
 
 import pickle
-
 import json
-
 import matplotlib.pyplot as plt
+import numpy as np
 
 from definitions import Constants
 
-import numpy as np
 
-# import numpy as np
 
 
 

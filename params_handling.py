@@ -5,22 +5,28 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
-import numpy as np
-
-from copy import deepcopy
 
 import time
+import copy
+import numpy as np
 
 from definitions import Constants
 
 
+# executes any modification to model parameters
+# stores information on parameter jump lengths, ranges etc (i. e. new proposal distributions)
+# also contains its own parameter optimiser
+# (simultaneous parameter variation with acceptance/rejection up to specified number of steps)
 
-class ParamsOptimiser():
+# methods should take model as argument and work on it
+# same parameter handling object expected to be used on various models 
+
+class ParamsHandler():
     
 
 
     # note: constructor takes in chain as argument as keeps it as instance variable
-    # instance of ParamsOptimiser always spawned by chain anyway
+    # instance of ParamsHandler always spawned by chain anyway
     # chain holds target data and also cost method
     # so cost in here always called like: self.chail.cost(model)
     
@@ -37,7 +43,7 @@ class ParamsOptimiser():
         self.config_done = False
         
         
-        # set parameter optimiser configuration; if not provided, initialise to default values:
+        # set parameter handler configuration; if not provided, initialise to default values:
         
         if hyperparams:
             
@@ -55,7 +61,7 @@ class ParamsOptimiser():
     
     
     
-    # sets parameter optimiser configuration according to argument dictionary;
+    # sets parameter handler configuration according to argument dictionary;
     # if an attribute has no corresponding entry, sets it to default value specified here:
     
     def set_hyperparams(self, hyperparams):
@@ -130,8 +136,10 @@ class ParamsOptimiser():
         
         """
             
-            Carry out parameter optimisation altering all existing parameters simultaneously,
-            with number of steps given by the optimiser object's attribute max_optimisation_steps.
+            Carries out full parameter optimisation.
+            
+            Altes all existing parameters simultaneously,
+            with number of steps given by the handler object's attribute max_optimisation_steps.
             
             Acceptance and rejection condition specified here also. Initial model left untouched,
             best model found returned after completion.
@@ -157,7 +165,7 @@ class ParamsOptimiser():
         
         if not self.config_done:
             
-            raise RuntimeError('Parameter optimiser hyperparameters not specified!')
+            raise RuntimeError('Parameter handler hyperparameters not specified!')
     
             
     
@@ -171,7 +179,7 @@ class ParamsOptimiser():
     
         # initialise:
     
-        current = deepcopy(initial_model)   
+        current = copy.deepcopy(initial_model)   
     
         current_cost = self.chain.cost(current)
         
@@ -181,7 +189,7 @@ class ParamsOptimiser():
         
         best_cost = current_cost
         
-        best = deepcopy(current)
+        best = copy.deepcopy(current)
         
         acceptance_tracker = np.empty(self.acceptance_window, dtype = bool)
         
@@ -206,7 +214,7 @@ class ParamsOptimiser():
             
             # make copy of model, propose new parameters and evaluate cost:
             
-            proposed = deepcopy(current) 
+            proposed = copy.deepcopy(current) 
         
             proposed.change_params(passed_jump_lengths = self.jump_lengths)
             
@@ -246,7 +254,7 @@ class ParamsOptimiser():
                     
                     best_cost = proposed_cost
                     
-                    best = deepcopy(proposed)
+                    best = copy.deepcopy(proposed)
                 
                 
                 
@@ -307,20 +315,6 @@ class ParamsOptimiser():
                 acceptance_ratio = acceptance_tracker.sum()/self.acceptance_window
                 
                 
-                # note: how the below is done should be discussed and modified!!
-                
-                # rescale each jump length by ration/target:
-                # note: means if accepting too many, take bigger steps - I think that can be bad (stuck in wrong neighbourhood)
-                
-                # self.rescale_jump_lengths(acceptance_ratio/self.acceptance_target)
-                
-                
-                # rescale M-H temperature - do just this now?
-                # note: means if accepting too many, reduce temperature
-                
-                # self.MH_temperature *= (self.acceptance_target/acceptance_ratio)
-                
-                # print('scaling temperature by: ' + str(self.acceptance_target/acceptance_ratio))
                 
                 
             
@@ -334,51 +328,7 @@ class ParamsOptimiser():
             
             
             
-            # ad hoc plots:
             
-            # if k == 200: k = 0    
-            
-            # if k == 0:
-                
-            #     filename = 'ad_hoc_' + str(i)
-                    
-            #     cost = costs
-                    
-            #     import matplotlib.pyplot as plt    
-                    
-            #     plt.figure()
-            #     plt.plot(cost, 'm-', linewidth = 0.1, markersize = 0.1)
-            #     plt.yscale('log')
-            #     plt.xlabel('iteration')
-            #     plt.ylabel('cost')
-            #     plt.xlim([0, 1400])
-            #     plt.ylim([1e-3, 1])
-            #     plt.savefig(filename + '_cost.png', dpi = 1000)
-                
-            #     dynamics_ts = self.chain.target_times
-            #     dynamics_datasets = [self.chain.target_data, best.calculate_dynamics(self.chain.target_times)]
-            #     dynamics_labels = ['ground truth', 'learned model']
-                
-            #     colours = ['r-', 'b--', 'k:', 'g-.']
-                
-            #     # ensure label selector doesn't go out of bounds
-            #     def get_label(i):
-            #         if not dynamics_labels or len(dynamics_labels) < len(dynamics_datasets): return None
-            #         else: return dynamics_labels[i]
-                
-            #     plt.figure()
-            #     plt.plot(dynamics_ts*Constants.t_to_sec*1e15, dynamics_datasets[0], colours[0], label = get_label(0))
-            #     plt.plot(dynamics_ts*Constants.t_to_sec*1e15, dynamics_datasets[1], colours[1], label = get_label(1))
-                
-            #     plt.xlabel('time (fs)')
-            #     plt.ylabel('qubit excited population')
-            #     plt.ylim([0,1.1])
-            #     plt.legend()
-            #     plt.savefig(filename + '_comparison.png', dpi = 1000)
-                
-            # k += 1
-        
-        
         return best, best_cost, costs
     
         
@@ -392,7 +342,7 @@ class ParamsOptimiser():
         
         if not self.config_done:
             
-            raise RuntimeError('Parameter optimiser hyperparameters not specified!')
+            raise RuntimeError('Parameter handler hyperparameters not specified!')
     
         
         for key in self.jump_lengths:

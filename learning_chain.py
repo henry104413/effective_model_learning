@@ -5,18 +5,15 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
-
-from learning_model import LearningModel
-
-from params_optimiser import ParamsOptimiser
-
-from model_modifier import ModelModifier
-
+import time
+import copy
 import numpy as np
 
-from copy import deepcopy
+from learning_model import LearningModel
+from params_handling import ParamsHandler
+from process_handling import ProcessHandler
 
-import time
+
 
 
 
@@ -46,10 +43,10 @@ class LearningChain():
                      'acceptance_window': 200,
                      'acceptance_ratio': 0.4
                      },
-                 model_modifier_process_library = {
-                                                    'sigmax': 0.01
-                                                   ,'sigmay': 0.01
-                                                   #,'sigmaz': 0.01
+                 process_library = { # will draw from uniform distribution from specified range)
+                                                    'sigmax': (0.05, 0.2)
+                                                   ,'sigmay': (0.05, 0.2)
+                                                   ,'sigmaz': (0.01, 0.2)
                                                    }
                  ):
         
@@ -88,12 +85,12 @@ class LearningChain():
         
         
         
-        # model modifier object:
+        # process handler object:
         # (ModelModifier instance)
         
-        self.model_modification = None
+        self.process_handler = None
         
-        self.model_modifier_process_library = model_modifier_process_library 
+        self.process_library = process_library 
         
         
         
@@ -136,7 +133,7 @@ class LearningChain():
         
         self.explored_costs = []
         
-        self.current = deepcopy(self.initial)
+        self.current = copy.deepcopy(self.initial)
         
         
         
@@ -300,7 +297,7 @@ class LearningChain():
         
         if not self.params_optimisation: # ie. first run
             
-            self.params_optimisation = ParamsOptimiser(self)
+            self.params_optimisation = ParamsHandler(self)
             
         self.params_optimisation.set_hyperparams(self.initial_params_optimiser_hyperparams)
         
@@ -338,11 +335,11 @@ class LearningChain():
         
     def modify_model(self, model_to_modify):
         
-        if not self.model_modification: # ie. first run
+        if not self.process_handler: # ie. first run
         
-            self.model_modification = ModelModifier(self)
+            self.process_handler = ProcessHandler(self)
         
-        self.model_modification.add_toss_L(model_to_modify, self.model_modifier_process_library)
+        self.process_handler.add_toss_L(model_to_modify, self.model_modifier_process_library)
     
     
     
