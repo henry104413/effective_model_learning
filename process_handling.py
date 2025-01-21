@@ -25,7 +25,7 @@ class ProcessHandler():
     def __init__(self, chain, model = False, process_library = False):
 
 
-        self.process_library = process_library   # dictionary: {'op label': initial_rate}
+        self.process_library = process_library   # dictionary: {'op label': (lower_bound, upper_bound)}
         
         self.model = model
         
@@ -33,10 +33,12 @@ class ProcessHandler():
 
         
 
+    # decides and carries out either addition or removal of a random L on a random defect
+    # - currently unused 
     
     def add_toss_L(self, model = False, process_library = False):
         
-        
+            
         
         # set model and process library if passed now, then check both set to appropriate types:
         
@@ -116,7 +118,70 @@ class ProcessHandler():
             
         
             
+    # adds random new single-site Linblad process from process library to a random subsystem (qubit or defect for now) 
+    # with rate drawn from uniform distribution between bounds given by tuple for each process library entry  
+    # works on and returns argument model
+    # argument process library used if passed, otherwise use that of handler if already set, error if neither available  
             
-
+    def add_random_L(self, model, process_library = False):
         
+        
+        if process_library == False:
+            
+            # can either be passed as each call 
+            
+            if isinstance(self.process_library, dict):
+                
+                process_library = self.process_library
+            
+            else:
+                
+                raise RuntimeError('Cannot add Lindblad process due to process library not specified')
+                
+        
+        
+        # select subsystem:
+        
+        subsystems = [x for x in model.TLSs]# if not x.is_qubit]
+        
+        subsystem = np.random.choice(subsystems)
+        
+        
+        # identify Ls in library not yet present on selected subsystem:
+            
+        existing = [x for x in subsystem.Ls]
+    
+        options = [x for x in process_library if x not in existing] 
+        
+  
+        # select and add new L if available:
+            
+        if options:
+        
+            op = np.random.choice(options)
+            
+            # draw rate from uniform distribution between bounds: (note: need to unwrap tuple)
+            new_rate = np.random.uniform(*process_library[op])
+            
+            subsystem.Ls[op] = new_rate 
+            
+            # note: this directly modifies variable another classe's object
+            # ...perhaps could be changed to instead work via method of that class?
+            
+            model.build_operators()
+            
+            print('adding operator ' + op + ' to TLS no. ' + str(model.TLSs.index(subsystem))
+                  + ' with rate ' + str(new_rate))
+            
+        else:
+            
+            print('no options for adding operator to TLS no. ' + str(model.TLSs.index(subsystem)))
+        
+        
+        return model
+        
+    
+    
+    def remove_random_L(self, model = False, process_library = False):
+        pass
         

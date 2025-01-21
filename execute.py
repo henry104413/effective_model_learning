@@ -205,35 +205,40 @@ initial_guess.build_operators()
 
 
 # instance of learning (quest for best model):
-quest = LearningChain(target_times = ts, target_datasets = measurement_datasets, target_observables = measurement_observables,
+quest = LearningChain(target_times = ts,
+                      target_datasets = measurement_datasets,
+                      target_observables = measurement_observables,
                       initial_guess = initial_guess,
-                      params_optimiser_hyperparams = {'max_optimisation_steps': 1, 
-                                                      'MH_acceptance': not True, 
-                                                      'MH_temperature': 1e-4, # 1 means no change to criterion
-                                                      # MH temp 1e-3 seems to give noral values for below jump lengths
-                                                      # 'initial_jump_lengths': {'couplings' : 0.001,
-                                                      #                          'energy' : 0.01,
-                                                      #                          'Ls' : 0.00001
-                                                      #                          }, 
-                                                      'initial_jump_lengths': {'couplings' : 0.001,
-                                                                               'energy' : 0.01,
-                                                                               'Ls' : 0.00001
-                                                                               }, 
-                                                      'jump_annealing_rate': 0
-                                                      }
+                      max_chain_steps = 5,
+                      params_handler_hyperparams = {
+                          'max_optimisation_steps': 2, 
+                          'MH_acceptance': not True, 
+                          'MH_temperature': 1e-4, # 1 means no change to criterion
+                          # MH temp 1e-3 seems to give noral values for below jump lengths
+                          # 'initial_jump_lengths': {'couplings' : 0.001,
+                          #                          'energy' : 0.01,
+                          #                          'Ls' : 0.00001
+                          #                          }, 
+                          'initial_jump_lengths': {'couplings' : 0.001,
+                                                   'energy' : 0.01,
+                                                     'Ls' : 0.00001
+                                                     }, 
+                          'jump_annealing_rate': 0
+                          }
                       )
 
 #%%
 
-import params_handling
+# import params_handling
 
-ph = params_handling.ParamsHandler(quest)
+# ph = params_handling.ParamsHandler(quest)
 
-ph.tweak_all_parameters(initial_guess)
+# ph.tweak_all_parameters(initial_guess)
 
+
+best = quest.learn()
 
 raise SystemExit(0)
-best = quest.learn()
 
 costs = quest.costs_full
 
