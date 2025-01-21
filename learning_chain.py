@@ -32,9 +32,6 @@ class LearningChain():
                  initial_guess = False,
                  max_chain_steps = 100,
                  params_handler_hyperparams = {
-                     'max_optimisation_steps': int(1), 
-                     'MH_acceptance': False, 
-                     'MH_temperature': 10, 
                      'initial_jump_lengths': {'couplings' : 0.001,
                                               'energy' : 0.01,
                                               'Ls' : 0.00001
@@ -43,6 +40,9 @@ class LearningChain():
                      'acceptance_window': 200,
                      'acceptance_ratio': 0.4
                      },
+                 chain_step_options = ['tweak all parameters', 'add L', 'remove L'],
+                 chain_step_probabilities = [0, 0, 1],
+                 
                  Ls_library = { # will draw from uniform distribution from specified range)
                                                     'sigmax': (0.05, 0.2)
                                                    ,'sigmay': (0.05, 0.2)
@@ -122,23 +122,20 @@ class LearningChain():
         
         
     # carry out Tiers 1, 2, 3 -- ie. proposing new TLSs, operators, and optimising parameters:    
-        
+    # deprecated
     def tiered_learn(self):
         
         
         
         # initialise:
-        
         self.explored_models = [] # repository of explored model configurations (now given by processes)
-        
         self.explored_costs = []
-        
         self.current = copy.deepcopy(self.initial)
         
         
         
         
-        # iteratively propose modifications and optimise parameters up to max_modifications times
+        # iteratively propose modifications and optimise parameters up to max_modifications times:
         
         for i in range(self.max_chain_steps): #range(max_modifications):
             
@@ -169,15 +166,13 @@ class LearningChain():
         self.explored_costs = []
         self.current = copy.deepcopy(self.initial)
         
-        guy = self.current
-        
         
         # decide which to do
         # do step
         # accept or reject
         
         step_options = ['tweak all parameters', 'add L', 'remove L']
-        step_probabilities = [0, 1, 0] # have to sum up to 1 for choice() to not complain
+        step_probabilities = [0, 0, 1] # have to sum up to 1 for choice() to not complain
         
         
         # check option probabilities array length matches options and normalise if not normalised:
@@ -190,22 +185,25 @@ class LearningChain():
         # carry out chain:
         for i in range(self.max_chain_steps):
             
-            # choose next step:
+            
+            # new proposal container:
+            proposal = copy.deepcopy(self.current)
+            
+            
+            # choose next step and perform on proposal:
             
             next_step = np.random.choice(step_options, p = step_probabilities)
             
             if next_step == 'tweak all parameters':
-                print('tweaking...')
-                self.tweak_params(guy)
-                guy.disp()
-            
-            elif next_step == 'add L':
-                print('adding L...')
-                self.add_L(guy, self.Ls_library)
-                guy.disp()
+                self.tweak_params(proposal)
                 
-                pass
-        
+            elif next_step == 'add L':
+                self.add_random_L(proposal, self.Ls_library)
+                
+            elif next_step == 'remove L':
+                print('removing')
+                self.remove_random_L(proposal)
+                proposal.disp()
         
         pass
     
@@ -351,33 +349,33 @@ class LearningChain():
     
     
     
-    # performs addition of single Linblad process:
+    # performs addition of random Linblad process to random subsystem:
     # works on (ie modifies) argument model, also returns it
         
     def add_L(self, model_to_modify, Ls_library = False):
         
         # ensure process handler exists (created at first run):
         if not self.process_handler:
-            self.process_handler = ProcessHandler(self)
+            self.process_handler = ProcessHandler(self, Ls_library = self.Ls_library)
         
         # unless specified in call, use process library set for chain:
         if not Ls_library:
             Ls_library = self.Ls_library
             
-        self.process_handler.add_random_L(model_to_modify, Ls_library)
+        self.process_handler.add_random_L(model_to_modify)
     
     
     
-    # performs removal of single Lindblad process:
+    # performs removal of random Lindblad process from random subsystem:
     # works on (ie modifies) argument model, also returns it
         
-    def remove_L(self, model_to_modify):
+    def remove_random_L(self, model_to_modify):
         
         if not self.process_handler: # ie. first run
         
-            self.process_handler = ProcessHandler(self)
+            self.process_handler = ProcessHandler(self, Ls_library = self.Ls_library)
         
-        self.process_handler.remove_L(model_to_modify)
+        self.process_handler.remove_random_L(model_to_modify)
     
     
  
