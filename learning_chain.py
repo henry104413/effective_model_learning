@@ -31,7 +31,7 @@ class LearningChain():
     def __init__(self, target_times, target_datasets, target_observables, *,
                  initial_guess = False,
                  max_chain_steps = 100,
-                 params_optimiser_hyperparams = {
+                 params_handler_hyperparams = {
                      'max_optimisation_steps': int(1), 
                      'MH_acceptance': False, 
                      'MH_temperature': 10, 
@@ -79,9 +79,9 @@ class LearningChain():
         # (PramsOptimiser instance with attributes for hyperparams
         # ...and methods to carry out params optimisation, set and output hyperparams)
         
-        self.params_optimisation = None 
+        self.params_handler = None 
         
-        self.initial_params_optimiser_hyperparams = params_optimiser_hyperparams
+        self.initial_params_handler_hyperparams = params_handler_hyperparams
         
         
         
@@ -123,7 +123,7 @@ class LearningChain():
         
     # carry out Tiers 1, 2, 3 -- ie. proposing new TLSs, operators, and optimising parameters:    
         
-    def learn(self):
+    def tiered_learn(self):
         
         
         
@@ -154,51 +154,6 @@ class LearningChain():
             
             self.modify_model(self.current)
             
-            
-            
-            
-            
-        # decide which to do
-        # do step
-        # accept or reject
-        
-        options = ['optimise all parameters', 'add or remove process']
-        probabilities = [1.0, 0] # have to sum up to 1 for choice() to not complain
-        
-        # check option probabilities array length matches options and normalise if not normalised:
-            
-        if len(probabilities) != len(options):
-            
-            raise RuntimeError('array of probabilities of chain step options is the wrong length')
-            
-        if (temp := sum(probabilities)) != 1:
-            
-            probabilities = [x/temp for x in probabilities]
-
-        
-        for i in range(self.max_chain_steps):
-            
-            option = np.random.choice(options, p = probabilities)
-            
-            
-            # branching:
-            
-            if option == 'optimise all parameters':
-                
-                pass        
-            
-            elif option == 'add or remove process':
-                
-                pass
-            
-            
-            
-            
-            
-            
-            
-        
-            
         
         best_index = self.explored_costs.index(min(self.explored_costs))
     
@@ -206,7 +161,57 @@ class LearningChain():
     
     
     
-    
+    def learn(self):
+        
+        
+        # initialise:
+            
+        # initialise:
+        
+        self.explored_models = [] # repository of explored model configurations (now given by processes)
+        
+        self.explored_costs = []
+        
+        self.current = copy.deepcopy(self.initial)
+        
+        
+        
+        
+        # decide which to do
+        # do step
+        # accept or reject
+        
+        step_options = ['optimise all parameters', 'add or remove process']
+        step_probabilities = [0, 1.0] # have to sum up to 1 for choice() to not complain
+        
+        # check option probabilities array length matches options and normalise if not normalised:
+            
+        if len(step_probabilities) != len(step_options):
+            
+            raise RuntimeError('array of probabilities of chain step options is the wrong length')
+            
+        if (temp := sum(step_probabilities)) != 1:
+            
+            step_probabilities = [x/temp for x in step_probabilities]
+
+        
+        for i in range(self.max_chain_steps):
+            
+            next_step = np.random.choice(step_options, p = step_probabilities)
+            
+            
+            # branching:
+            
+            if next_step == 'optimise all parameters':
+                
+                self.        
+            
+            elif next_step == 'add or remove process':
+                
+                pass
+        
+        
+        pass
     
     
     
@@ -295,13 +300,13 @@ class LearningChain():
     
     def optimise_params(self, model_to_optimise):
         
-        if not self.params_optimisation: # ie. first run
+        if not self.params_handler: # ie. first run
             
-            self.params_optimisation = ParamsHandler(self)
+            self.params_handler = ParamsHandler(self)
             
-        self.params_optimisation.set_hyperparams(self.initial_params_optimiser_hyperparams)
+        self.params_handler.set_hyperparams(self.initial_params_handler_hyperparams)
         
-        self.current, best_cost, costs = self.params_optimisation.do_optimisation(model_to_optimise)
+        self.current, best_cost, costs = self.params_handler.do_optimisation(model_to_optimise)
         
         self.costs_brief.append(best_cost) 
         
@@ -322,9 +327,9 @@ class LearningChain():
                                   'initial guess': self.initial.model_description_dict()          
                                   }
         
-        if self.params_optimisation:
+        if self.params_handler:
             
-            chain_hyperparams_dict['params optimisation initial hyperparameters'] = self.params_optimisation.output_hyperparams_init()
+            chain_hyperparams_dict['params optimisation initial hyperparameters'] = self.params_handler.output_hyperparams_init()
         
         return chain_hyperparams_dict 
     
@@ -333,7 +338,7 @@ class LearningChain():
     
     # performs model modification:
         
-    def modify_model(self, model_to_modify):
+    def modify_process(self, model_to_modify):
         
         if not self.process_handler: # ie. first run
         

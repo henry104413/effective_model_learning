@@ -18,6 +18,8 @@ from scipy import interpolate
 
 
 
+
+
 #%% global definitions:
 
 
@@ -138,3 +140,6 @@ def MSE(A, B):
     # calculate mean squared error:    
     
     return np.sum(np.square(np.abs(A-B)))/len(A)
+
+
+#%%

@@ -11,7 +11,18 @@ import copy
 import numpy as np
 
 from definitions import Constants
+import learning_model
+import model
 
+testguy = model.Model()
+#testguy = learning_model.LearningModel()
+
+print(isinstance(testguy, learning_model.LearningModel))
+#print(isinstance(testguy, model.Model))
+
+
+
+#%%
 
 # executes any modification to model parameters
 # stores information on parameter jump lengths, ranges etc (i. e. new proposal distributions)
@@ -20,6 +31,10 @@ from definitions import Constants
 
 # methods should take model as argument and work on it
 # same parameter handling object expected to be used on various models 
+
+# so methods:
+# single step without accept/reject (handled centrally in chain)
+# and full optimisation (up to max number of steps) including accept/reject
 
 class ParamsHandler():
     
@@ -75,7 +90,7 @@ class ParamsHandler():
                                 'Ls' : 0.00001
                                 }   
         
-        default_vals = {'max_optimisation_steps': int(1e3), 
+        default_optimisation_config = {'max_optimisation_steps': int(1e3), 
                         'MH_acceptance': False, 
                         'MH_temperature': 0.1, 
                         'initial_jump_lengths': default_jump_lengths, 
@@ -89,7 +104,7 @@ class ParamsHandler():
             
         self.hyperparams_init_output = {}
         
-        for key in default_vals:
+        for key in default_optimisation_config:
             
             if key in hyperparams: # ie. attribute provided
                 
@@ -97,7 +112,7 @@ class ParamsHandler():
                 
             else: # else assign default
     
-                setattr(self, key, default_vals[key])
+                setattr(self, key, default_optimisation_config[key])
                 
             self.hyperparams_init_output[key] = getattr(self, key)
                                 
@@ -126,6 +141,25 @@ class ParamsHandler():
     def output_hyperparams_curr(self):
         
         return {x: getattr(self, x) for x in self.hyperparams_init_output}
+    
+    
+    
+    # interface for Learning Model method to change all existing model parameters:
+        
+    def tweak_all_parameters(self, model):
+    
+        if not isinstance(model, learning_model.LearningModel):
+            
+            raise RuntimeError('Model passed as argument needs to be instance of LearningModel\n'
+                               + 'to automatically tweak all parameters!')
+            
+        if not self.config_done:
+            
+            raise RuntimeError('Parameter handler hyperparameters need to be specified!')
+    
+        else:
+            
+            model.change_params(self.jump_lengths)
         
         
     
@@ -138,7 +172,7 @@ class ParamsHandler():
             
             Carries out full parameter optimisation.
             
-            Altes all existing parameters simultaneously,
+            Alters all existing parameters simultaneously,
             with number of steps given by the handler object's attribute max_optimisation_steps.
             
             Acceptance and rejection condition specified here also. Initial model left untouched,
@@ -199,7 +233,7 @@ class ParamsHandler():
         
         
         
-        for i in range(self.max_optimisation_steps): # add plateau condition
+        for i in range(self.max_optimisation_steps): # now fixed steps - could add plateau condition
             
             
             # profiling timer:

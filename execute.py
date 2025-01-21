@@ -223,7 +223,16 @@ quest = LearningChain(target_times = ts, target_datasets = measurement_datasets,
                                                       }
                       )
 
+#%%
 
+import params_handling
+
+ph = params_handling.ParamsHandler(quest)
+
+ph.tweak_all_parameters(initial_guess)
+
+
+raise SystemExit(0)
 best = quest.learn()
 
 costs = quest.costs_full
