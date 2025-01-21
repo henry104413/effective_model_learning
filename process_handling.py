@@ -5,6 +5,7 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
+import copy
 import numpy as np
 
 from model import Model
@@ -25,6 +26,7 @@ class ProcessHandler():
     def __init__(self, chain = False, model = False, Ls_library = False):
 
         self.Ls_library = Ls_library   # dictionary: {'op label': (lower_bound, upper_bound)}
+        self.initial_Ls_library = copy.deepcopy(Ls_library)
         self.model = model # only for future methods tied to specific model
         self.chain = chain # only for future methods tied to chain (eg using its cost function)
 
@@ -181,10 +183,16 @@ class ProcessHandler():
             pass
         
         
-    # sets process library post-constructor : 
+    # sets process library post-constructor: 
     def define_Ls_library(self, Ls_library):
     
         self.Ls_library = Ls_library
+        
+        
+    # resets Ls library to initial one:    
+    def reset_Ls_library(self):
+        
+        self.Ls_library = copy.deepcopy(self.initial_Ls_library)
         
     
     
