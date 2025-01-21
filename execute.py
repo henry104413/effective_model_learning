@@ -209,22 +209,24 @@ quest = LearningChain(target_times = ts,
                       target_datasets = measurement_datasets,
                       target_observables = measurement_observables,
                       initial_guess = initial_guess,
-                      max_chain_steps = 5,
-                      params_handler_hyperparams = {
-                          'max_optimisation_steps': 2, 
-                          'MH_acceptance': not True, 
-                          'MH_temperature': 1e-4, # 1 means no change to criterion
-                          # MH temp 1e-3 seems to give noral values for below jump lengths
-                          # 'initial_jump_lengths': {'couplings' : 0.001,
-                          #                          'energy' : 0.01,
-                          #                          'Ls' : 0.00001
-                          #                          }, 
+                      max_chain_steps = 30,
+                      
+                      params_handler_hyperparams = { 
                           'initial_jump_lengths': {'couplings' : 0.001,
                                                    'energy' : 0.01,
-                                                     'Ls' : 0.00001
-                                                     }, 
-                          'jump_annealing_rate': 0
-                          }
+                                                   'Ls' : 0.00001
+                                                   },
+                          },
+                      
+                      chain_step_options = ['tweak all parameters', 'add L', 'remove L'],
+                      chain_step_probabilities = [10, 1, 1],
+                      
+                      Ls_library = { # will draw from uniform distribution from specified range)
+                                                         'sigmax': (0.05, 0.2)
+                                                        ,'sigmay': (0.05, 0.2)
+                                                        ,'sigmaz': (0.01, 0.2)
+                                                        }
+                      
                       )
 
 #%%

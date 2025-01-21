@@ -35,13 +35,11 @@ class LearningChain():
                      'initial_jump_lengths': {'couplings' : 0.001,
                                               'energy' : 0.01,
                                               'Ls' : 0.00001
-                                              }, 
-                     'jump_annealing_rate': 0,
-                     'acceptance_window': 200,
-                     'acceptance_ratio': 0.4
+                                              },
                      },
+                 
                  chain_step_options = ['tweak all parameters', 'add L', 'remove L'],
-                 chain_step_probabilities = [0, 0, 1],
+                 chain_step_probabilities = [0.9, 0.3, 0.3],
                  
                  Ls_library = { # will draw from uniform distribution from specified range)
                                                     'sigmax': (0.05, 0.2)
@@ -54,70 +52,43 @@ class LearningChain():
         
         
         # holders for different model instances in play:
-        
         self.best = None
-        
         self.current = None
         
-        
-        
         # chain costs trackers:
-            
         self.costs_full = [] # includes full cost progression from each parameters optimiser call
-        
         self.costs_brief = [] # only includes best cost from each parameters optimiser call
         
-        
-        
         # chain parameters:
-            
         self.max_chain_steps = max_chain_steps
+        self.chain_step_options = chain_step_options
+        self.chain_step_probabilities = chain_step_probabilities
         
-        
+        # default step options (all implemented possibilities) and default probabilities (here equal):
+        self.default_step_options = ['tweak all parameters', 'add L', 'remove L']
+        self.default_step_probabilities = [1/len(self.default_step_options) for x in self.default_step_options]
         
         # optimiser object and initial hyperparameters for it:
         # (PramsOptimiser instance with attributes for hyperparams
         # ...and methods to carry out params optimisation, set and output hyperparams)
-        
         self.params_handler = None 
-        
         self.initial_params_handler_hyperparams = params_handler_hyperparams
-        
-        
         
         # process handler object:
         # (ModelModifier instance)
-        
         self.process_handler = None
-        
         self.Ls_library = Ls_library 
         
-        
-        
         # initial guess model:
-        
         if type(initial_guess) == bool and not initial_guess:
-            
             self.initial = self.make_initial_guess()
-        
         else:
-            
             self.initial = initial_guess
             
-            
-            
         # target data:    
-            
         self.target_datasets = target_datasets
-        
         self.target_observables = target_observables
-        
         self.target_times = target_times
-        
-        
-        
-        
-            
         
         
         
@@ -125,18 +96,12 @@ class LearningChain():
     # deprecated
     def tiered_learn(self):
         
-        
-        
         # initialise:
         self.explored_models = [] # repository of explored model configurations (now given by processes)
         self.explored_costs = []
         self.current = copy.deepcopy(self.initial)
         
-        
-        
-        
         # iteratively propose modifications and optimise parameters up to max_modifications times:
-        
         for i in range(self.max_chain_steps): #range(max_modifications):
             
 
@@ -158,7 +123,7 @@ class LearningChain():
     
     
     
-    def learn(self):
+    def learn(self, chain_step_options = False, chain_step_probabilities = False):
         
         
         # initialise:
@@ -167,22 +132,33 @@ class LearningChain():
         self.current = copy.deepcopy(self.initial)
         
         
-        # decide which to do
-        # do step
-        # accept or reject
+        # step options settings checks:
         
-        step_options = ['tweak all parameters', 'add L', 'remove L']
-        step_probabilities = [0, 0, 1] # have to sum up to 1 for choice() to not complain
+        # if options not passed, use ones set for chain:
+        if (not chain_step_options or not chain_step_probabilities): 
+            chain_step_options = self.chain_step_options
+            chain_step_probabilities = self.chain_step_probabilities
         
-        
+        # if options neither passed nor set for chain, do all available steps with default probability:
+        if (not chain_step_options or not chain_step_probabilities):
+            chain_step_options = self.default_step_options
+            chain_step_probabilities = self.default_step_probabilities
+            
+        # check all step options recognised (assuming default ones all implemented):
+        if not set(chain_step_options).issubset(set(self.default_step_options)):
+            raise RuntimeError('Some chain step options not recognised')
+            
         # check option probabilities array length matches options and normalise if not normalised:
-        if len(step_probabilities) != len(step_options):
+        if len(chain_step_probabilities) != len(chain_step_options):
             raise RuntimeError('array of probabilities of chain step options is the wrong length')
-        if (temp := sum(step_probabilities)) != 1:
-            step_probabilities = [x/temp for x in step_probabilities]
-
+        if (temp := sum(chain_step_probabilities)) != 1:
+            chain_step_probabilities = [x/temp for x in chain_step_probabilities]
+    
         
-        # carry out chain:
+            
+        
+        
+        # carry out all chain steps:
         for i in range(self.max_chain_steps):
             
             
@@ -192,20 +168,21 @@ class LearningChain():
             
             # choose next step and perform on proposal:
             
-            next_step = np.random.choice(step_options, p = step_probabilities)
+            next_step = np.random.choice(chain_step_options, p = chain_step_probabilities)
             
             if next_step == 'tweak all parameters':
                 self.tweak_params(proposal)
+                print('tweaking')
                 
             elif next_step == 'add L':
                 self.add_random_L(proposal, self.Ls_library)
+                print('adding L')
                 
             elif next_step == 'remove L':
-                print('removing')
                 self.remove_random_L(proposal)
-                proposal.disp()
+                print('removing L')
         
-        pass
+            self.current = proposal
     
         return self.current
     
@@ -253,16 +230,11 @@ class LearningChain():
     
     def cost(self, model):
         
-        
         if isinstance(self.target_datasets, np.ndarray) and isinstance(self.target_observables, str):
-            
             self.target_datasets =  [self.target_datasets]
-            
             self.target_observables = [self.target_observables]
-            
         
         model_datasets = model.calculate_dynamics(evaluation_times = self.target_times, observable_ops = self.target_observables)
-        
         
         # # skip now and if done, redo for all elements of lists... check these are numpy arrays to use array operators below:
    
@@ -270,17 +242,12 @@ class LearningChain():
    
         #     raise RuntimeError('error calculating cost: arguments must be numpy arrays!\n')
         
-        
         # add up mean-squared-error over different observables, assuming equal weighting:
         # note: now datasets should all be lists of numpy arrays
-        
         total_MSE = 0
-        
         for i in range(len(model_datasets)):
-            
             total_MSE += np.sum(np.square(abs(model_datasets[i]-self.target_datasets[i])))/len(self.target_times)
        
-        
         return total_MSE
     
     
@@ -295,15 +262,11 @@ class LearningChain():
     def optimise_params(self, model_to_optimise):
         
         if not self.params_handler: # ie. first run
-            
             self.params_handler = ParamsHandler(self)
-            
+        
         self.params_handler.set_hyperparams(self.initial_params_handler_hyperparams)
-        
         self.current, best_cost, costs = self.params_handler.do_optimisation(model_to_optimise)
-        
         self.costs_brief.append(best_cost) 
-        
         self.costs_full = self.costs_full + costs 
         
         return best_cost
@@ -316,14 +279,10 @@ class LearningChain():
     
     def tweak_params(self, model_to_tweak):
         
-        
         # initialise parameters handler if not yet done and set to default hyperparameters
         # note: most hyperparameters only relevant to full optimisation
-        
         if not self.params_handler: # ie. first run
-            
             self.params_handler = ParamsHandler(self)
-            
             self.params_handler.set_hyperparams(self.initial_params_handler_hyperparams)
         
         return self.params_handler.tweak_all_parameters(model_to_tweak)
@@ -339,20 +298,16 @@ class LearningChain():
         chain_hyperparams_dict = {
                                   'initial guess': self.initial.model_description_dict()          
                                   }
-        
         if self.params_handler:
-            
             chain_hyperparams_dict['params optimisation initial hyperparameters'] = self.params_handler.output_hyperparams_init()
-        
         return chain_hyperparams_dict 
-    
     
     
     
     # performs addition of random Linblad process to random subsystem:
     # works on (ie modifies) argument model, also returns it
         
-    def add_L(self, model_to_modify, Ls_library = False):
+    def add_random_L(self, model_to_modify, Ls_library = False):
         
         # ensure process handler exists (created at first run):
         if not self.process_handler:
@@ -371,8 +326,8 @@ class LearningChain():
         
     def remove_random_L(self, model_to_modify):
         
+        # ensure process handler exists (created at first run):
         if not self.process_handler: # ie. first run
-        
             self.process_handler = ProcessHandler(self, Ls_library = self.Ls_library)
         
         self.process_handler.remove_random_L(model_to_modify)
