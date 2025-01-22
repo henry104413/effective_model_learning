@@ -37,6 +37,9 @@ class LearningChain():
                                        'add qubit coupling', 'remove qubit coupling'],
                  chain_step_probabilities = [10, 0.1, 0.1, 0.05, 0.05],
                  
+                 acceptance_window = 100,
+                 acceptance_target = 0.4,
+                 
                  params_handler_hyperparams = {
                      'initial_jump_lengths': {'couplings' : 0.001,
                                               'energy' : 0.01,
@@ -74,6 +77,10 @@ class LearningChain():
         self.chain_MH_temperature = chain_MH_temperature
         self.chain_step_options = chain_step_options
         self.chain_step_probabilities = chain_step_probabilities
+        
+        self.acceptance_window = acceptance_window
+        self.acceptance_target = acceptance_target
+        
         
         # default step options (all implemented possibilities) and default probabilities (here equal):
         self.default_step_options = ['tweak all parameters', 'add L', 'remove L',
@@ -116,6 +123,7 @@ class LearningChain():
         self.best = copy.deepcopy(self.initial)
         self.current_cost = self.cost(self.current)
         self.best_cost = self.current_cost
+        self.acceptance_tracker = []
         
         
         # step options settings checks:
@@ -139,12 +147,27 @@ class LearningChain():
             raise RuntimeError('array of probabilities of chain step options is the wrong length')
         if (temp := sum(chain_step_probabilities)) != 1:
             chain_step_probabilities = [x/temp for x in chain_step_probabilities]
+            
+            
+        # acceptance tracking:
+        k = 0    
+        
     
         
         # carry out all chain steps:
         for i in range(self.max_chain_steps):
             
-            
+            # acceptance tally:
+            if k >= self.acceptance_window:
+                k = 0
+                window_accepted_total = \
+                    sum(self.acceptance_tracker[len(self.acceptance_tracker)-self.acceptance_window:len(self.acceptance_tracker)])
+                acceptance_ratio = window_accepted_total/self.acceptance_window
+                print(acceptance_ratio)
+                if acceptance_ratio < self.acceptance_target:
+                    pass
+            k += 1        #modify temperature or something
+                
             # new proposal container:
             proposal = copy.deepcopy(self.current)
             
@@ -199,9 +222,12 @@ class LearningChain():
                     self.best_cost = proposal_cost
                     self.best = copy.deepcopy(proposal)
                     
+                self.acceptance_tracker.append(True)
+            
+            # rejection:
             else:
-                
                 #print('reject')
+                self.acceptance_tracker.append(False)
                 pass
             
         return self.best

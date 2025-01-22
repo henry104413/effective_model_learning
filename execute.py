@@ -211,13 +211,15 @@ quest = LearningChain(target_times = ts,
                       
                       initial_guess = initial_guess,
                       
-                      max_chain_steps = 5000,
-                      chain_MH_temperature = 0.01,
+                      max_chain_steps = 1000,
+                      chain_MH_temperature = 0.001,
                       chain_step_options = ['tweak all parameters', 'add L', 'remove L',
                                             'add qubit coupling', 'remove qubit coupling'],
                       #chain_step_probabilities = [10, 1, 0.1, 0.05, 0.05],
-                      chain_step_probabilities = [10, 1, 1, 1, 1],
+                      chain_step_probabilities = [50, 1, 1, 1, 1],
                       
+                      acceptance_window = 100,
+                      acceptance_target = 0.4,
                       
                       params_handler_hyperparams = { 
                           'initial_jump_lengths': {'couplings' : 0.001,
@@ -227,8 +229,8 @@ quest = LearningChain(target_times = ts,
                           },
                       
                       Ls_library = { # will draw from uniform distribution from specified range)
-                                                         'sigmax': (0.005, 0.1)
-                                                        ,'sigmay': (0.005, 0.1)
+                                                         'sigmax': (0.001, 0.1)
+                                                        ,'sigmay': (0.001, 0.1)
                                                         ,'sigmaz': (0.001, 0.1)
                                                         }
                       
@@ -259,7 +261,7 @@ create_model_graph(GT, 'GT_graph')
 create_model_graph(best, 'best_graph')
 
 
-create_model_graph(initial, 'initial')
+create_model_graph(initial_guess, 'initial_guess')
 
 
 
