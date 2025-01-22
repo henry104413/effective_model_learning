@@ -60,15 +60,15 @@ GT.add_TLS(is_qubit = False,
             )
 
 
-GT.add_TLS(is_qubit = False,
-            energy = 4.5,
-            couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
-                        },
-            Ls = {
-                  'sigmaz' : 0.03,
-                  'sigmax' : 0.03
-                  }
-            )
+# GT.add_TLS(is_qubit = False,
+#             energy = 4.5,
+#             couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
+#                         },
+#             Ls = {
+#                   'sigmaz' : 0.03,
+#                   'sigmax' : 0.03
+#                   }
+#             )
 
 
 # GT.add_TLS(is_qubit = False,
@@ -106,7 +106,7 @@ GT.build_operators()
 # simulate measurements:
 # note: now using 1st qubit excited population at times ts
 
-ts = np.linspace(0, 3e1, int(1000))
+ts = np.linspace(0, 1e1, int(1000))
 
 measurement_observables = ['sigmax']
 
@@ -172,15 +172,15 @@ initial_guess.add_TLS(is_qubit = False,
                            }
                      )
 
-initial_guess.add_TLS(is_qubit = False,
-                      energy = 5.0,
-                      couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
-                                  },
-                      Ls = {
-                            #'sigmax' : 0.01,
-                            #'sigmay' : 0.01
-                            }
-                      )
+# initial_guess.add_TLS(is_qubit = False,
+#                       energy = 5.0,
+#                       couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
+#                                   },
+#                       Ls = {
+#                             #'sigmax' : 0.01,
+#                             #'sigmay' : 0.01
+#                             }
+#                       )
 
 
 # initial_guess.add_TLS(is_qubit = False,
@@ -211,7 +211,7 @@ quest = LearningChain(target_times = ts,
                       
                       initial_guess = initial_guess,
                       
-                      max_chain_steps = 30,
+                      max_chain_steps = 1000,
                       chain_step_options = ['tweak all parameters', 'add L', 'remove L'],
                       chain_step_probabilities = [10, 1, 1],
                       
@@ -223,9 +223,9 @@ quest = LearningChain(target_times = ts,
                           },
                       
                       Ls_library = { # will draw from uniform distribution from specified range)
-                                                         'sigmax': (0.05, 0.1)
-                                                        ,'sigmay': (0.05, 0.1)
-                                                        ,'sigmaz': (0.01, 0.1)
+                                                         'sigmax': (0.005, 0.1)
+                                                        ,'sigmay': (0.005, 0.1)
+                                                        ,'sigmaz': (0.001, 0.1)
                                                         }
                       
                       )
@@ -243,7 +243,7 @@ best = quest.learn()
 
 #raise SystemExit(0)
 
-costs = quest.costs_full
+costs = quest.explored_costs
 
 best_data = best.calculate_dynamics(ts, observable_ops = measurement_observables)
 

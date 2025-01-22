@@ -30,17 +30,19 @@ class LearningChain():
     
     def __init__(self, target_times, target_datasets, target_observables, *,
                  initial_guess = False,
+                 
                  max_chain_steps = 100,
+                 chain_MH_temperature = 0.1,
+                 chain_step_options = ['tweak all parameters', 'add L', 'remove L',
+                                       'add qubit coupling', 'remove qubit coupling'],
+                 chain_step_probabilities = [10, 0.1, 0.1, 0.05, 0.05],
+                 
                  params_handler_hyperparams = {
                      'initial_jump_lengths': {'couplings' : 0.001,
                                               'energy' : 0.01,
                                               'Ls' : 0.00001
                                               },
                      },
-                 
-                 chain_step_options = ['tweak all parameters', 'add L', 'remove L',
-                                       'add qubit coupling', 'remove qubit coupling'],
-                 chain_step_probabilities = [10, 0.1, 0.1, 0.05, 0.05],
                  
                  Ls_library = { # will draw from uniform distribution from specified range)
                                                     'sigmax': (0.05, 0.2)
@@ -69,6 +71,7 @@ class LearningChain():
         
         # chain parameters:
         self.max_chain_steps = max_chain_steps
+        self.chain_MH_temperature = chain_MH_temperature
         self.chain_step_options = chain_step_options
         self.chain_step_probabilities = chain_step_probabilities
         
@@ -107,9 +110,12 @@ class LearningChain():
         
         
         # initialise:
-        self.explored_models = [] # repository of explored model configurations (now given by processes) - currently not tracked
+        self.explored_models = [] # repository of explored models - currently not saved
         self.explored_costs = []
         self.current = copy.deepcopy(self.initial)
+        self.best = copy.deepcopy(self.initial)
+        self.current_cost = self.cost(self.current)
+        self.best_cost = self.current_cost
         
         
         # step options settings checks:
@@ -135,9 +141,6 @@ class LearningChain():
             chain_step_probabilities = [x/temp for x in chain_step_probabilities]
     
         
-            
-        
-        
         # carry out all chain steps:
         for i in range(self.max_chain_steps):
             
@@ -145,26 +148,66 @@ class LearningChain():
             # new proposal container:
             proposal = copy.deepcopy(self.current)
             
-            
-            # choose next step and perform on proposal:
-            
+            # choose next step and modify proposal accordingly:
             next_step = np.random.choice(chain_step_options, p = chain_step_probabilities)
-            
             if next_step == 'tweak all parameters':
                 self.tweak_params(proposal)
                 #print('tweaking')
-                
             elif next_step == 'add L':
-                self.add_random_L(proposal, self.Ls_library)
+                self.add_random_L(proposal)
                 #print('adding L')
-                
             elif next_step == 'remove L':
                 self.remove_random_L(proposal)
                 #print('removing L')
-        
-            self.current = proposal
-    
-        return self.current
+            elif next_step == 'add qubit coupling':
+                self.add_random_qubit_coupling(proposal)
+            elif next_step == 'remove qubit coupling':
+                self.remove_random_qubit_coupling(proposal)
+            
+            # evaluate new proposal:
+            proposal_cost = self.cost(proposal)
+            self.explored_costs.append(proposal_cost)
+            
+            
+            # if improvement:
+            if proposal_cost <= self.current_cost:
+                accept = True
+            
+            # if detriment:
+            else: 
+                
+                # MH criterion:
+                MH_likelihood = np.exp(-(proposal_cost - self.current_cost)/self.chain_MH_temperature)
+                roll = np.random.uniform()
+                if roll < MH_likelihood:
+                        accept = True
+                        
+                # rejection otherwise:
+                else:
+                    accept = False                
+
+
+            # acceptance:
+            if accept:
+                
+                print('\n\zACCEPT\n\n')
+                proposal.disp()
+                
+                # update current:
+                self.current = proposal
+                self.current_cost = proposal_cost
+                
+                # update best if warranted:
+                if proposal_cost < self.best_cost:
+                    self.best_cost = proposal_cost
+                    self.best = copy.deepcopy(proposal)
+                    
+            else:
+                
+                #print('reject')
+                pass
+            
+        return self.best
     
     
     
