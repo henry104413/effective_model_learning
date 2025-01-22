@@ -38,8 +38,9 @@ class LearningChain():
                                               },
                      },
                  
-                 chain_step_options = ['tweak all parameters', 'add L', 'remove L'],
-                 chain_step_probabilities = [0.9, 0.3, 0.3],
+                 chain_step_options = ['tweak all parameters', 'add L', 'remove L',
+                                       'add qubit coupling', 'remove qubit coupling'],
+                 chain_step_probabilities = [10, 0.1, 0.1, 0.05, 0.05],
                  
                  Ls_library = { # will draw from uniform distribution from specified range)
                                                     'sigmax': (0.05, 0.2)
@@ -72,7 +73,8 @@ class LearningChain():
         self.chain_step_probabilities = chain_step_probabilities
         
         # default step options (all implemented possibilities) and default probabilities (here equal):
-        self.default_step_options = ['tweak all parameters', 'add L', 'remove L']
+        self.default_step_options = ['tweak all parameters', 'add L', 'remove L',
+                                     'add qubit coupling', 'remove qubit coupling']
         self.default_step_probabilities = [1/len(self.default_step_options) for x in self.default_step_options]
         
         # optimiser object and initial hyperparameters for it:
@@ -99,43 +101,13 @@ class LearningChain():
         self.target_times = target_times
         
         
-        
-    # carry out Tiers 1, 2, 3 -- ie. proposing new TLSs, operators, and optimising parameters:    
-    # deprecated
-    def tiered_learn(self):
-        
-        # initialise:
-        self.explored_models = [] # repository of explored model configurations (now given by processes)
-        self.explored_costs = []
-        self.current = copy.deepcopy(self.initial)
-        
-        # iteratively propose modifications and optimise parameters up to max_modifications times:
-        for i in range(self.max_chain_steps): #range(max_modifications):
-            
-
-            # optimise current model with fixed structure
-            
-            self.explored_costs.append(self.optimise_params(self.current))
-            
-            self.explored_models.append(self.current)
-                        
-            
-            
-            
-            self.modify_model(self.current)
-            
-        
-        best_index = self.explored_costs.index(min(self.explored_costs))
-    
-        return self.explored_models[best_index]
-    
     
     
     def learn(self, chain_step_options = False, chain_step_probabilities = False):
         
         
         # initialise:
-        self.explored_models = [] # repository of explored model configurations (now given by processes)
+        self.explored_models = [] # repository of explored model configurations (now given by processes) - currently not tracked
         self.explored_costs = []
         self.current = copy.deepcopy(self.initial)
         
