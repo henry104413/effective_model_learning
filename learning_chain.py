@@ -180,15 +180,15 @@ class LearningChain():
             
             if next_step == 'tweak all parameters':
                 self.tweak_params(proposal)
-                print('tweaking')
+                #print('tweaking')
                 
             elif next_step == 'add L':
                 self.add_random_L(proposal, self.Ls_library)
-                print('adding L')
+                #print('adding L')
                 
             elif next_step == 'remove L':
                 self.remove_random_L(proposal)
-                print('removing L')
+                #print('removing L')
         
             self.current = proposal
     

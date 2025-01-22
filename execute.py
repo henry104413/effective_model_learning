@@ -45,30 +45,30 @@ GT.add_TLS(TLS_label = 'qubit',
                
                         },
            Ls = {
-                 #'sigmaz' : 0.005
+                 'sigmaz' : 0.005
                  }
            )
 
-# GT.add_TLS(is_qubit = False,
-#            energy = 5.5,
-#            couplings = {'qubit': [(0.6, 'sigmax', 'sigmax')]
-#                         },
-#            Ls = {
-#                  #'sigmaz' : 0.02,
-#                  'sigmay' : 0.02,
-#                  }
-#            )
+GT.add_TLS(is_qubit = False,
+            energy = 5.5,
+            couplings = {'qubit': [(0.6, 'sigmax', 'sigmax')]
+                        },
+            Ls = {
+                  'sigmaz' : 0.02,
+                  'sigmay' : 0.02
+                  }
+            )
 
 
-# GT.add_TLS(is_qubit = False,
-#             energy = 4.5,
-#             couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
-#                         },
-#             Ls = {
-#                   #'sigmaz' : 0.03
-#                   'sigmax' : 0.03
-#                   }
-#             )
+GT.add_TLS(is_qubit = False,
+            energy = 4.5,
+            couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
+                        },
+            Ls = {
+                  'sigmaz' : 0.03,
+                  'sigmax' : 0.03
+                  }
+            )
 
 
 # GT.add_TLS(is_qubit = False,
@@ -223,9 +223,9 @@ quest = LearningChain(target_times = ts,
                           },
                       
                       Ls_library = { # will draw from uniform distribution from specified range)
-                                                         'sigmax': (0.05, 0.2)
-                                                        ,'sigmay': (0.05, 0.2)
-                                                        ,'sigmaz': (0.01, 0.2)
+                                                         'sigmax': (0.05, 0.1)
+                                                        ,'sigmay': (0.05, 0.1)
+                                                        ,'sigmaz': (0.01, 0.1)
                                                         }
                       
                       )
@@ -241,7 +241,7 @@ quest = LearningChain(target_times = ts,
 
 best = quest.learn()
 
-raise SystemExit(0)
+#raise SystemExit(0)
 
 costs = quest.costs_full
 

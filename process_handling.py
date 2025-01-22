@@ -163,6 +163,7 @@ class ProcessHandler():
         if options:
             operator = np.random.choice(options)
             subsystem.Ls.pop(operator)
+            model.build_operators()
             #print('removing operator ' + operator + ' from TLS no. ' + str(model.TLSs.index(subsystem)))
             
         else:
@@ -208,3 +209,34 @@ class ProcessHandler():
             
             # save in library:
             self.Ls_library[operator] = new_bounds
+            
+            
+            
+    # removes random coupling process between qubit and defect:        
+    def remove_random_qubit_coupling(self, model):
+        
+        # make list of all model's individual couplings provided they are qubit-defect:
+        couplings = [] # now tuples of (holding_TLS, partner, index in list)
+        for TLS in model.TLSs:
+            for partner in TLS.couplings:
+                if (TLS.is_qubit and not partner.is_qubit) or (not TLS.is_qubit and partner.is_qubit):
+                    for index, coupling in enumerate(TLS.couplings[partner]):
+                        couplings.append((TLS, partner, index))
+        
+        
+        if (temp := len(couplings) > 0):
+            
+            # choose coupling to remove if any:
+            # note: np.random.choice does not like choosing from list of tuples,
+            # ...hence need to choose by list element index 
+            selection_index = np.random.choice(temp)
+            selection = couplings[selection_index]
+            
+            # remove coupling:
+            selection[0].couplings[selection[1]].pop(selection[2])
+            # note: empty list remains if last coupling for given partner - should be ok?
+            model.build_operators()  
+        
+        return model
+            
+            
