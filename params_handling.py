@@ -17,7 +17,7 @@ import model
 testguy = model.Model()
 #testguy = learning_model.LearningModel()
 
-print(isinstance(testguy, learning_model.LearningModel))
+#print(isinstance(testguy, learning_model.LearningModel))
 #print(isinstance(testguy, model.Model))
 
 

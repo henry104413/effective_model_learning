@@ -32,7 +32,7 @@ class LearningChain():
                  initial_guess = False,
                  
                  max_chain_steps = 100,
-                 chain_MH_temperature = 0.1,
+                 chain_MH_temperature = 0.01,
                  chain_step_options = ['tweak all parameters', 'add L', 'remove L',
                                        'add qubit coupling', 'remove qubit coupling'],
                  chain_step_probabilities = [10, 0.1, 0.1, 0.05, 0.05],
@@ -189,9 +189,6 @@ class LearningChain():
 
             # acceptance:
             if accept:
-                
-                print('\n\zACCEPT\n\n')
-                proposal.disp()
                 
                 # update current:
                 self.current = proposal

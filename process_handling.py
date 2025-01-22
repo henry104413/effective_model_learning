@@ -113,7 +113,7 @@ class ProcessHandler():
                 
                 if operator in [y[1] for y in defect.couplings[qubit]]: 
                 # note: checking this against operator on defect but both should be same so far until mixed operators implemented
-                    print('coupling via '  + operator + ' already exists')
+                    #print('coupling via '  + operator + ' already exists')
                     continue
                     
             # likewise check on qubit:
@@ -121,7 +121,7 @@ class ProcessHandler():
                 some_coupling = True
                 if operator in [y[1] for y in qubit.couplings[defect]]:
                 # note: checking this against operator on qubit but both should be same so far until mixed operators implemented
-                    print('coupling via ' + operator + ' already exists')
+                    #print('coupling via ' + operator + ' already exists')
                     continue
             
             
@@ -135,7 +135,7 @@ class ProcessHandler():
                 qubit.couplings[defect] = []
             
             # add new coupling:
-            print(qubit.couplings)
+            #print(qubit.couplings)
             qubit.couplings[defect].append((strength, operator, operator))
             model.build_operators()
             
