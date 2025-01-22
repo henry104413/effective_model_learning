@@ -45,7 +45,14 @@ class LearningChain():
                                                     'sigmax': (0.05, 0.2)
                                                    ,'sigmay': (0.05, 0.2)
                                                    ,'sigmaz': (0.01, 0.2)
+                                                   },
+                 
+                 qubit_couplings_library = { # will draw from uniform distribution from specified range)
+                                                    'sigmax': (-0.05, 0.05)
+                                                   ,'sigmay': (-0.05, 0.05)
+                                                   ,'sigmaz': (-0.05, 0.05)
                                                    }
+
                  ):
         
         
@@ -78,6 +85,7 @@ class LearningChain():
         # (ModelModifier instance)
         self.process_handler = None
         self.Ls_library = Ls_library 
+        self.qubit_couplings_library = qubit_couplings_library
         
         # initial guess model:
         if type(initial_guess) == bool and not initial_guess:
@@ -311,8 +319,8 @@ class LearningChain():
         
         # ensure process handler exists (created at first run):
         if not self.process_handler:
-            self.process_handler = ProcessHandler(self, Ls_library = self.Ls_library)
-        
+            self.initialise_process_handler()
+            
         # unless specified in call, use process library set for chain:
         if not Ls_library:
             Ls_library = self.Ls_library
@@ -328,9 +336,44 @@ class LearningChain():
         
         # ensure process handler exists (created at first run):
         if not self.process_handler: # ie. first run
-            self.process_handler = ProcessHandler(self, Ls_library = self.Ls_library)
-        
+            self.initialise_process_handler()
+            
         self.process_handler.remove_random_L(model_to_modify)
     
     
- 
+    
+    # performs addition of symmetric single-operator coupling:
+    # works on (ie modifies) argument model, also returns it
+        
+    def add_random_qubit_coupling(self, model_to_modify, qubit_couplings_library = False):
+        
+        # ensure process handler exists (created at first run):
+        if not self.process_handler:
+            self.initialise_process_handler()
+            
+        # unless specified in call, use process library set for chain:
+        if not qubit_couplings_library:
+            qubit_couplings_library = self.qubit_couplings_library
+            
+        self.process_handler.add_random_qubit_coupling(model_to_modify)
+        
+        
+    
+    # constructs process handler and sets all process libraries:
+        
+    def initialise_process_handler(self):
+        
+        self.process_handler = ProcessHandler(self,
+                                              qubit_couplings_library = self.qubit_couplings_library,
+                                              Ls_library = self.Ls_library)
+        
+        
+    
+    def remove_random_qubit_coupling(self, model_to_modify):
+        
+        # ensure process handler exists (created at first run):
+        if not self.process_handler:
+            self.initialise_process_handler()
+            
+        self.process_handler.remove_random_qubit_coupling(model_to_modify)
+                                      

@@ -208,8 +208,12 @@ initial_guess.build_operators()
 quest = LearningChain(target_times = ts,
                       target_datasets = measurement_datasets,
                       target_observables = measurement_observables,
+                      
                       initial_guess = initial_guess,
+                      
                       max_chain_steps = 30,
+                      chain_step_options = ['tweak all parameters', 'add L', 'remove L'],
+                      chain_step_probabilities = [10, 1, 1],
                       
                       params_handler_hyperparams = { 
                           'initial_jump_lengths': {'couplings' : 0.001,
@@ -217,9 +221,6 @@ quest = LearningChain(target_times = ts,
                                                    'Ls' : 0.00001
                                                    },
                           },
-                      
-                      chain_step_options = ['tweak all parameters', 'add L', 'remove L'],
-                      chain_step_probabilities = [10, 1, 1],
                       
                       Ls_library = { # will draw from uniform distribution from specified range)
                                                          'sigmax': (0.05, 0.2)
