@@ -48,17 +48,24 @@ class LearningChain():
                      },
                  
                  Ls_library = { # will draw from uniform distribution from specified range)
-                                                    'sigmax': (0.05, 0.2)
-                                                   ,'sigmay': (0.05, 0.2)
-                                                   ,'sigmaz': (0.01, 0.2)
-                                                   },
-                 
+                     'sigmax': (0.05, 0.2)
+                    ,'sigmay': (0.05, 0.2)
+                    ,'sigmaz': (0.01, 0.2)
+                    },
+      
                  qubit_couplings_library = { # will draw from uniform distribution from specified range)
-                                                    'sigmax': (-0.05, 0.05)
-                                                   ,'sigmay': (-0.05, 0.05)
-                                                   ,'sigmaz': (-0.05, 0.05)
-                                                   }
+                     'sigmax': (-0.05, 0.05)
+                    ,'sigmay': (-0.05, 0.05)
+                    ,'sigmaz': (-0.05, 0.05)
+                    },
+                 
+                 defect_couplings_library = { # will draw from uniform distribution from specified range)
+                     'sigmax': (-0.05, 0.05)
+                    ,'sigmay': (-0.05, 0.05)
+                    ,'sigmaz': (-0.05, 0.05)
+                    }
 
+                 
                  ):
         
         
@@ -98,6 +105,7 @@ class LearningChain():
         self.process_handler = None
         self.Ls_library = Ls_library 
         self.qubit_couplings_library = qubit_couplings_library
+        self.defect_couplings_library = defect_couplings_library
         
         # initial guess model:
         if type(initial_guess) == bool and not initial_guess:
@@ -380,7 +388,7 @@ class LearningChain():
     
     
     
-    # performs addition of symmetric single-operator coupling:
+    # performs addition of random symmetric single-operator coupling between defect and qubit:
     # works on (ie modifies) argument model, also returns it
         
     def add_random_qubit_coupling(self, model_to_modify, qubit_couplings_library = False):
@@ -397,12 +405,31 @@ class LearningChain():
         
         
     
+    # performs addition of random symmetric single-operator coupling between defect and qubit:
+    # works on (ie modifies) argument model, also returns it
+        
+    def add_random_defect2defect_coupling(self, model_to_modify, defect_couplings_library = False):
+        
+        # ensure process handler exists (created at first run):
+        if not self.process_handler:
+            self.initialise_process_handler()
+            
+        # unless specified in call, use process library set for chain:
+        if not defect_couplings_library:
+            defect_couplings_library = self.defect_couplings_library
+            
+    #    self.process_handler.add_random_qubit_coupling(model_to_modify)
+        self.process_handler.add_random_defect2defect_coupling(model_to_modify)
+    
+    
+    
     # constructs process handler and sets all process libraries:
         
     def initialise_process_handler(self):
         
         self.process_handler = ProcessHandler(self,
                                               qubit_couplings_library = self.qubit_couplings_library,
+                                              defect_couplings_library = self.defect_couplings_library,
                                               Ls_library = self.Ls_library)
         
         

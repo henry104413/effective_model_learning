@@ -172,6 +172,19 @@ initial_guess.add_TLS(is_qubit = False,
                            }
                      )
 
+
+initial_guess.add_TLS(is_qubit = False,
+                     energy = 5.0,
+                     couplings = {#'qubit': [(0.5, 'sigmax', 'sigmax')]
+                                  },
+                     Ls = {
+                           #'sigmax' : 0.01,
+                           #'sigmay' : 0.01
+                           
+                           }
+                     )
+
+
 # initial_guess.add_TLS(is_qubit = False,
 #                       energy = 5.0,
 #                       couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
@@ -211,7 +224,7 @@ quest = LearningChain(target_times = ts,
                       
                       initial_guess = initial_guess,
                       
-                      max_chain_steps = 1000,
+                      max_chain_steps = 1,
                       chain_MH_temperature = 0.001,
                       chain_step_options = ['tweak all parameters', 'add L', 'remove L',
                                             'add qubit coupling', 'remove qubit coupling'],
