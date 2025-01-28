@@ -32,7 +32,10 @@ class LearningChain():
                  initial_guess = False,
                  
                  max_chain_steps = 100,
+                 
                  chain_MH_temperature = 0.01,
+                 chain_MH_temperature_multiplier = 2,
+                 
                  chain_step_options = ['tweak all parameters', 'add L', 'remove L',
                                        'add qubit coupling', 'remove qubit coupling',
                                        'add defect-defect coupling', 'remove defect-defect coupling'],
@@ -40,6 +43,7 @@ class LearningChain():
                  
                  acceptance_window = 100,
                  acceptance_target = 0.4,
+                 acceptance_band = 0.2,
                  
                  params_handler_hyperparams = {
                      'initial_jump_lengths': {'couplings' : 0.001,
@@ -49,9 +53,9 @@ class LearningChain():
                      },
                  
                  Ls_library = { # will draw from uniform distribution from specified range)
-                     'sigmax': (0.05, 0.2)
-                    ,'sigmay': (0.05, 0.2)
-                    ,'sigmaz': (0.01, 0.2)
+                     'sigmax': (0.001, 0.2)
+                    ,'sigmay': (0.001, 0.2)
+                    ,'sigmaz': (0.001, 0.2)
                     },
       
                  qubit_couplings_library = { # will draw from uniform distribution from specified range)
@@ -83,11 +87,13 @@ class LearningChain():
         # chain parameters:
         self.max_chain_steps = max_chain_steps
         self.chain_MH_temperature = chain_MH_temperature
+        self.chain_MH_temperature_multiplier = chain_MH_temperature_multiplier
         self.chain_step_options = chain_step_options
         self.chain_step_probabilities = chain_step_probabilities
         
         self.acceptance_window = acceptance_window
         self.acceptance_target = acceptance_target
+        self.acceptance_band = acceptance_band
         
         
         # default step options (all implemented possibilities) and default probabilities (here equal):
@@ -174,10 +180,18 @@ class LearningChain():
                 window_accepted_total = \
                     sum(self.acceptance_tracker[len(self.acceptance_tracker)-self.acceptance_window:len(self.acceptance_tracker)])
                 acceptance_ratio = window_accepted_total/self.acceptance_window
-                print(acceptance_ratio)
-                if acceptance_ratio < self.acceptance_target:
-                    pass # adaptation goes here
                 self.acceptance_ratios_log.append(acceptance_ratio)
+                
+                # adaptation:
+                # note: assuming acceptance band is positive = maximum difference either way of ratio and target before adaptation
+                if acceptance_ratio - self.acceptance_target > self.acceptance_band: # ie. accepting too much -> cool down
+                    self.chain_MH_temperature *= (1/self.chain_MH_temperature_multiplier)
+                    #print('cooling down')
+                elif acceptance_ratio - self.acceptance_target < -self.acceptance_band: # ie. accepting too little -> heat up
+                    self.chain_MH_temperature *= self.chain_MH_temperature_multiplier
+                    #print('heating up')
+                # !!! add some adaptation method here!!!
+                
             k += 1                        
             # new proposal container:
             proposal = copy.deepcopy(self.current)
@@ -465,4 +479,8 @@ class LearningChain():
             self.initialise_process_handler()
             
         self.process_handler.remove_random_defect2defect_coupling(model_to_modify)
+        
+        
+        
+    # ADD METHOD TO UPDATE LIBRARIES OF CURRENT PROCESS HANDLER!!!
                                       

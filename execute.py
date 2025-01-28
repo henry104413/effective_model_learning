@@ -45,7 +45,7 @@ GT.add_TLS(TLS_label = 'qubit',
                
                         },
            Ls = {
-                 'sigmaz' : 0.005
+                 'sigmaz' : 0.01
                  }
            )
 
@@ -54,7 +54,7 @@ GT.add_TLS(is_qubit = False,
             couplings = {'qubit': [(0.6, 'sigmax', 'sigmax')]
                         },
             Ls = {
-                  'sigmaz' : 0.02,
+                  'sigmaz' : 0.05,
                   'sigmay' : 0.02
                   }
             )
@@ -66,7 +66,7 @@ GT.add_TLS(is_qubit = False,
                         },
             Ls = {
                   'sigmaz' : 0.03,
-                  'sigmax' : 0.03
+                  'sigmax' : 0.06
                   }
             )
 
@@ -108,7 +108,7 @@ GT.build_operators()
 
 ts = np.linspace(0, 1e1, int(1000))
 
-measurement_observables = ['sigmax']
+measurement_observables = ['sigmaz']
 
 measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
 
@@ -224,36 +224,48 @@ quest = LearningChain(target_times = ts,
                       
                       initial_guess = initial_guess,
                       
-                      max_chain_steps = 1000,
+                      max_chain_steps = 100000,
                       chain_MH_temperature = 0.00001,
+                      chain_MH_temperature_multiplier = 2,
                       chain_step_options = ['tweak all parameters',
                                             'add L', 'remove L',
                                             'add qubit coupling', 'remove qubit coupling',
                                             'add defect-defect coupling', 'remove defect-defect coupling'],
-                      # chain_step_probabilities = [10,
-                      #                             0.1, 0.1, 
-                      #                             0.05, 0.05, 
-                      #                             0.02, 0.02],
-                      chain_step_probabilities = [20,
-                                                  2, 2, 
-                                                  0.5, 0.5, 
-                                                  0.25, 0.25],
                       
-                      acceptance_window = 100,
+                      chain_step_probabilities = [10,
+                                                  1, 1, 
+                                                  1, 1, 
+                                                  1, 1],
+                      
+                      acceptance_window = 50,
                       acceptance_target = 0.4,
+                      acceptance_band = 0.2,
                       
                       params_handler_hyperparams = { 
-                          'initial_jump_lengths': {'couplings' : 0.001,
-                                                   'energy' : 0.01,
-                                                   'Ls' : 0.00001
+                          'initial_jump_lengths': {'couplings' : 0.01,
+                                                   'energy' : 0.1,
+                                                   'Ls' : 0.001
                                                    },
                           },
                       
                       Ls_library = { # will draw from uniform distribution from specified range)
-                                                         'sigmax': (0.001, 0.1)
-                                                        ,'sigmay': (0.001, 0.1)
-                                                        ,'sigmaz': (0.001, 0.1)
-                                                        }
+                                                         'sigmax': (0.01, 0.1)
+                                                        ,'sigmay': (0.01, 0.1)
+                                                        ,'sigmaz': (0.01, 0.1)
+                                                        },
+           
+                      qubit_couplings_library = { # will draw from uniform distribution from specified range)
+                          'sigmax': (-1, 1)
+                         ,'sigmay': (-1, 1)
+                         ,'sigmaz': (-1, 1)
+                         },
+                      
+                      defect_couplings_library = { # will draw from uniform distribution from specified range)
+                          'sigmax': (-1, 1)
+                         ,'sigmay': (-1, 1)
+                         ,'sigmaz': (-1, 1)
+                         }
+
                       
                       )
 
@@ -285,7 +297,7 @@ create_model_graph(best, 'best_graph')
 
 create_model_graph(initial_guess, 'initial_guess')
 
-
+print(quest.chain_MH_temperature)
 
 #%% save single learning run outputs:
 

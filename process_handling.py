@@ -57,7 +57,7 @@ class ProcessHandler():
         
         # identify Ls in library not yet present on selected subsystem:
         existing = [x for x in subsystem.Ls]
-        options = [x for x in Ls_library if x not in existing] 
+        options = [x for x in Ls_library if x not in existing] # note: could just put subsystem.Ls instead of existing...
         
         # select new operator if available, draw rate from uniform distribution between bounds, and add:
         if options:
@@ -65,8 +65,7 @@ class ProcessHandler():
             new_rate = np.random.uniform(*Ls_library[operator])
             subsystem.Ls[operator] = new_rate 
             model.build_operators()
-            #print('adding operator ' + operator + ' to TLS no. ' + str(model.TLSs.index(subsystem))
-            #     + ' with rate ' + str(new_rate))
+            # print('adding operator ' + operator + ' to TLS no. ' + str(model.TLSs.index(subsystem)) + ' with rate ' + str(new_rate))
             # note: this directly modifies variable another classe's object
             # ...perhaps could be changed to instead work via method of that class?
             
