@@ -76,9 +76,9 @@ class LearningChain():
         self.best = None
         self.current = None
         
-        # chain costs trackers:
-        self.costs_full = [] # includes full cost progression from each parameters optimiser call
-        self.costs_brief = [] # only includes best cost from each parameters optimiser call
+        # trackers: defined in methods that use them - for now
+        self.acceptance_log = []
+        
         
         # chain parameters:
         self.max_chain_steps = max_chain_steps
@@ -133,7 +133,8 @@ class LearningChain():
         self.best = copy.deepcopy(self.initial)
         self.current_cost = self.cost(self.current)
         self.best_cost = self.current_cost
-        self.acceptance_tracker = []
+        self.acceptance_tracker = [] # all accept/reject events (bool)
+        self.acceptance_ratios_log = [] # acceptance ratios for subsequent windows
         
         
         # step options settings checks:
@@ -175,9 +176,9 @@ class LearningChain():
                 acceptance_ratio = window_accepted_total/self.acceptance_window
                 print(acceptance_ratio)
                 if acceptance_ratio < self.acceptance_target:
-                    pass
-            k += 1        #modify temperature or something
-                
+                    pass # adaptation goes here
+                self.acceptance_ratios_log.append(acceptance_ratio)
+            k += 1                        
             # new proposal container:
             proposal = copy.deepcopy(self.current)
             
@@ -216,6 +217,7 @@ class LearningChain():
             else: 
                 
                 # MH criterion:
+                # note: for non-zero temperature and this form, this also covers the improvement
                 MH_likelihood = np.exp(-(proposal_cost - self.current_cost)/self.chain_MH_temperature)
                 roll = np.random.uniform()
                 if roll < MH_likelihood:
@@ -322,6 +324,11 @@ class LearningChain():
     # returns best cost achieved
     
     def optimise_params(self, model_to_optimise):
+        
+        # note: trackers initialised here as only used by this method, checker avoids resetting on repeat calls
+        if not hasattr(self, 'costs_full') and not hasattr(self, 'costs_brief'):
+            self.costs_full = [] # parameters optimiser full progression
+            self.costs_brief = [] # parameters optimiser only best from call
         
         if not self.params_handler: # ie. first run
             self.params_handler = ParamsHandler(self)

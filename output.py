@@ -27,6 +27,7 @@ class Output():
     def __init__(self, *, toggles, filename,
                  dynamics_ts = False, dynamics_datasets = [], dynamics_labels = [],
                  cost = [],
+                 acceptance_ratios = [],
                  models_to_save = [],
                  model_names = [],
                  chain_hyperparams = False,
@@ -68,7 +69,7 @@ class Output():
         if toggles.cost:     
         
             plt.figure()
-            plt.plot(cost, 'm-', linewidth = 0.1, markersize = 0.1)
+            plt.plot(cost, 'm-', linewidth = 0.3, markersize = 0.1)
             plt.yscale('log')
             plt.xlabel('iteration')
             plt.ylabel('cost')
@@ -110,7 +111,20 @@ class Output():
         
             with open(filename + get_chain_name() + '_hyperparameters.json', 'w') as filestream:
                 json.dump(chain_hyperparams,  filestream)
+                
+                
+                
+        if toggles.acceptance_ratios:
             
+            plt.figure()
+            plt.plot(acceptance_ratios, '-', linewidth = 1, markersize = 0.1, color = 'firebrick')
+            plt.yscale('linear')
+            plt.xlabel('window number')
+            plt.ylabel('acceptance ratio')
+            #plt.xlim([0, 10000])
+            plt.ylim([-0.05,1.05])
+            plt.savefig(filename + '_acceptance_ratios.png', dpi = 1000)
+    
             
             
             

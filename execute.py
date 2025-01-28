@@ -50,7 +50,7 @@ GT.add_TLS(TLS_label = 'qubit',
            )
 
 GT.add_TLS(is_qubit = False,
-            energy = 5.5,
+            energy = 5.8,
             couplings = {'qubit': [(0.6, 'sigmax', 'sigmax')]
                         },
             Ls = {
@@ -226,17 +226,18 @@ quest = LearningChain(target_times = ts,
                       
                       max_chain_steps = 1000,
                       chain_MH_temperature = 0.00001,
-                      chain_step_options = ['tweak all parameters', 'add L', 'remove L',
+                      chain_step_options = ['tweak all parameters',
+                                            'add L', 'remove L',
                                             'add qubit coupling', 'remove qubit coupling',
                                             'add defect-defect coupling', 'remove defect-defect coupling'],
                       # chain_step_probabilities = [10,
                       #                             0.1, 0.1, 
                       #                             0.05, 0.05, 
                       #                             0.02, 0.02],
-                      chain_step_probabilities = [10,
-                                                  2, 1, 
-                                                  2, 1, 
-                                                  2, 1],
+                      chain_step_probabilities = [20,
+                                                  2, 2, 
+                                                  0.5, 0.5, 
+                                                  0.25, 0.25],
                       
                       acceptance_window = 100,
                       acceptance_target = 0.4,
@@ -270,6 +271,7 @@ best = quest.learn()
 #raise SystemExit(0)
 
 costs = quest.explored_costs
+acceptance_ratios = quest.acceptance_ratios_log
 
 best_data = best.calculate_dynamics(ts, observable_ops = measurement_observables)
 
@@ -293,6 +295,7 @@ create_model_graph(initial_guess, 'initial_guess')
 class Toggles():    
     comparison = True # plot comparison of dynamics
     cost = True # plot cost function progression
+    acceptance_ratios = True # acceptance ratios over subsequenct windows
     pickle = True # save selected models as pickles
     text = True # save selected models as text
     hyperparams = True # save chain hyperparameters as json
@@ -309,6 +312,7 @@ timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
 Output(toggles = Toggles, filename = timestamp,
        dynamics_ts = ts, dynamics_datasets = [measurement_datasets[-1], best_data[-1]], dynamics_labels = ['ground truth', 'learned model'],
        cost = costs,
+       acceptance_ratios = acceptance_ratios,
        models_to_save = [GT, best],
        model_names = ['GT', 'best'],
        chain_hyperparams = quest.chain_hyperparams_dict()
