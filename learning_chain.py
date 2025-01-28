@@ -92,7 +92,8 @@ class LearningChain():
         
         # default step options (all implemented possibilities) and default probabilities (here equal):
         self.default_step_options = ['tweak all parameters', 'add L', 'remove L',
-                                     'add qubit coupling', 'remove qubit coupling']
+                                     'add qubit coupling', 'remove qubit coupling',
+                                     'add defect-defect coupling', 'remove defect-defect coupling']
         self.default_step_probabilities = [1/len(self.default_step_options) for x in self.default_step_options]
         
         # optimiser object and initial hyperparameters for it:
