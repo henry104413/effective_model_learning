@@ -93,14 +93,17 @@ class ProcessHandler():
             else:
                 raise RuntimeError('Cannot add qubit-random defect coupling as library not specified')
         
-        # find first qubit:
+        # first qubit:
         qubit = [x for x in model.TLSs if x.is_qubit][0]
             
+        # all defects:
+        defects = [x for x in model.TLSs if not x.is_qubit]
+        
+        
         # reapeat up to iterations limit in case randomly chosen coupling already exists
         for i in range(10):
         
             # select random defect:
-            defects = [x for x in model.TLSs if not x.is_qubit]
             defect = np.random.choice(defects)
             
             # select random coupling operator and rate bounds from the library:
@@ -167,7 +170,6 @@ class ProcessHandler():
         defects = [x for x in model.TLSs if not x.is_qubit]
         
         
-        defect1 = [x for x in model.TLSs if x.is_qubit][0]
             
         # reapeat up to iterations limit in case randomly chosen coupling already exists
         for i in range(10):
@@ -188,7 +190,7 @@ class ProcessHandler():
             
             # check if this coupling already exists on defect1 - if so try again random choice up to iterations limit:
             if defect2 in [x for x in defect1.couplings]:
-                
+                some_coupling = True
                 if operator in [y[1] for y in defect1.couplings[defect2]]: 
                 # note: checking this against operator on defect but both should be same so far until mixed operators implemented
                     #print('coupling via '  + operator + ' already exists')
@@ -196,7 +198,7 @@ class ProcessHandler():
                     
             # likewise check on defect2:
             if defect1 in [x for x in defect2.couplings]:
-                some_coupling = True
+                
                 if operator in [y[1] for y in defect2.couplings[defect1]]:
                 # note: checking this against operator on qubit but both should be same so far until mixed operators implemented
                     #print('coupling via ' + operator + ' already exists')
@@ -221,7 +223,7 @@ class ProcessHandler():
         
             break # safety break
         
-        
+         # key error when running again (defect2 as key bugs)
         
     
         
@@ -302,11 +304,39 @@ class ProcessHandler():
                 if (TLS.is_qubit and not partner.is_qubit) or (not TLS.is_qubit and partner.is_qubit):
                     for index, coupling in enumerate(TLS.couplings[partner]):
                         couplings.append((TLS, partner, index))
+                        
+        if (temp := len(couplings) > 0):
+            
+            # choose coupling to remove if any:
+            # note: np.random.choice does not like choosing from list of tuples,
+            # ...hence need to choose by list element index 
+            selection_index = np.random.choice(temp)
+            selection = couplings[selection_index]
+            
+            # remove coupling:
+            selection[0].couplings[selection[1]].pop(selection[2])
+            # note: empty list remains if last coupling for given partner
+            # hence remove partner from TLS's couplings dictionary:
+            if not selection[0].couplings[selection[1]]:
+                selection[0].couplings.pop(selection[1])
+                
+            model.build_operators()  
+        
+        return model
+            
         
         
+    
+    # removes random coupling process between two different defects:        
+    def remove_random_defect2defect_coupling(self, model):
         
-        
-        
+        # make list of all model's individual couplings provided they are defect-defect:
+        couplings = [] # now tuples of (holding_TLS, partner, index in list)
+        for TLS in model.TLSs:
+            for partner in TLS.couplings:
+                if (not TLS.is_qubit and not partner.is_qubit):
+                    for index, coupling in enumerate(TLS.couplings[partner]):
+                        couplings.append((TLS, partner, index))
         
         if (temp := len(couplings) > 0):
             
@@ -318,7 +348,11 @@ class ProcessHandler():
             
             # remove coupling:
             selection[0].couplings[selection[1]].pop(selection[2])
-            # note: empty list remains if last coupling for given partner - should be ok?
+            # note: empty list remains if last coupling for given partner
+            # hence remove partner from TLS's couplings dictionary:
+            if not selection[0].couplings[selection[1]]:
+                selection[0].couplings.pop(selection[1])
+                
             model.build_operators()  
         
         return model

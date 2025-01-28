@@ -388,7 +388,7 @@ class LearningChain():
     
     
     
-    # performs addition of random symmetric single-operator coupling between defect and qubit:
+    # performs addition of random symmetric single-operator coupling between random defect and qubit:
     # works on (ie modifies) argument model, also returns it
         
     def add_random_qubit_coupling(self, model_to_modify, qubit_couplings_library = False):
@@ -405,7 +405,7 @@ class LearningChain():
         
         
     
-    # performs addition of random symmetric single-operator coupling between defect and qubit:
+    # performs addition of random symmetric single-operator coupling between twp random defects:
     # works on (ie modifies) argument model, also returns it
         
     def add_random_defect2defect_coupling(self, model_to_modify, defect_couplings_library = False):
@@ -441,4 +441,13 @@ class LearningChain():
             self.initialise_process_handler()
             
         self.process_handler.remove_random_qubit_coupling(model_to_modify)
+    
+
+    def remove_random_defect2defect_coupling(self, model_to_modify):
+        
+        # ensure process handler exists (created at first run):
+        if not self.process_handler:
+            self.initialise_process_handler()
+            
+        self.process_handler.remove_random_defect2defect_coupling(model_to_modify)
                                       
