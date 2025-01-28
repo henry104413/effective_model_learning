@@ -60,15 +60,15 @@ GT.add_TLS(is_qubit = False,
             )
 
 
-# GT.add_TLS(is_qubit = False,
-#             energy = 4.5,
-#             couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
-#                         },
-#             Ls = {
-#                   'sigmaz' : 0.03,
-#                   'sigmax' : 0.03
-#                   }
-#             )
+GT.add_TLS(is_qubit = False,
+            energy = 4.5,
+            couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
+                        },
+            Ls = {
+                  'sigmaz' : 0.03,
+                  'sigmax' : 0.03
+                  }
+            )
 
 
 # GT.add_TLS(is_qubit = False,
@@ -224,12 +224,14 @@ quest = LearningChain(target_times = ts,
                       
                       initial_guess = initial_guess,
                       
-                      max_chain_steps = 1,
+                      max_chain_steps = 10000,
                       chain_MH_temperature = 0.001,
                       chain_step_options = ['tweak all parameters', 'add L', 'remove L',
-                                            'add qubit coupling', 'remove qubit coupling'],
-                      #chain_step_probabilities = [10, 1, 0.1, 0.05, 0.05],
-                      chain_step_probabilities = [50, 1, 1, 1, 1],
+                                            'add qubit coupling', 'remove qubit coupling',
+                                            'add defect-defect coupling', 'remove defect-defect coupling'],
+                      chain_step_probabilities = [10, 0.1, 0.1, 
+                                                  0.05, 0.05, 
+                                                  0.02, 0.02],
                       
                       acceptance_window = 100,
                       acceptance_target = 0.4,

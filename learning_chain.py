@@ -34,8 +34,9 @@ class LearningChain():
                  max_chain_steps = 100,
                  chain_MH_temperature = 0.01,
                  chain_step_options = ['tweak all parameters', 'add L', 'remove L',
-                                       'add qubit coupling', 'remove qubit coupling'],
-                 chain_step_probabilities = [10, 0.1, 0.1, 0.05, 0.05],
+                                       'add qubit coupling', 'remove qubit coupling',
+                                       'add defect-defect coupling', 'remove defect-defect coupling'],
+                 chain_step_probabilities = [10, 0.1, 0.1, 0.05, 0.05, 0.02, 0.02],
                  
                  acceptance_window = 100,
                  acceptance_target = 0.4,
@@ -194,6 +195,12 @@ class LearningChain():
                 self.add_random_qubit_coupling(proposal)
             elif next_step == 'remove qubit coupling':
                 self.remove_random_qubit_coupling(proposal)
+            elif next_step == 'add defect-defect coupling':
+                self.add_random_defect2defect_coupling(proposal)
+            elif next_step == 'remove defect-defect coupling':
+                self.remove_random_defect2defect_coupling(proposal)
+            
+            
             
             # evaluate new proposal:
             proposal_cost = self.cost(proposal)
