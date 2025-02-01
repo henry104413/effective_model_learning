@@ -141,77 +141,6 @@ if __name__ == '__main__' and True:
       
 
 #%% chain hyperparameters:
-# now change this to having an iterable for parallelisation
-    
-    
-# initial guesss generation:
-
-initial_guess = LearningModel()
-
-
-initial_guess.add_TLS(TLS_label = 'qubit',
-                     is_qubit = True,
-                     energy = 5,
-                     couplings = {
-                                  
-                                  },
-                     Ls = {
-                           #'sigmaz' : 0.01
-                           }
-                     )
-
-
-initial_guess.add_TLS(is_qubit = False,
-                     energy = 5.0,
-                     couplings = {#'qubit': [(0.5, 'sigmax', 'sigmax')]
-                                  },
-                     Ls = {
-                           #'sigmax' : 0.01,
-                           #'sigmay' : 0.01
-                           
-                           }
-                     )
-
-
-initial_guess.add_TLS(is_qubit = False,
-                     energy = 5.0,
-                     couplings = {#'qubit': [(0.5, 'sigmax', 'sigmax')]
-                                  },
-                     Ls = {
-                           #'sigmax' : 0.01,
-                           #'sigmay' : 0.01
-                           
-                           }
-                     )
-
-
-# initial_guess.add_TLS(is_qubit = False,
-#                       energy = 5.0,
-#                       couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
-#                                   },
-#                       Ls = {
-#                             #'sigmax' : 0.01,
-#                             #'sigmay' : 0.01
-#                             }
-#                       )
-
-
-# initial_guess.add_TLS(is_qubit = False,
-#                      energy = 5.0,
-#                      couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
-#                                   },
-#                      Ls = {
-#                            'sigmaz' : 0.01
-#                            }
-#                      )
-
-
-
-
-
-initial_guess.build_operators()
-
-
 
 
 #%% perform learning:
@@ -222,7 +151,7 @@ quest = LearningChain(target_times = ts,
                       target_datasets = measurement_datasets,
                       target_observables = measurement_observables,
                       
-                      initial_guess = initial_guess,
+                      initial = (5, 2), # (qubit energy, number of defects)
                       
                       max_chain_steps = 100000,
                       chain_MH_temperature = 0.00001,
@@ -295,9 +224,6 @@ create_model_graph(GT, 'GT_graph')
 create_model_graph(best, 'best_graph')
 
 
-create_model_graph(initial_guess, 'initial_guess')
-
-print(quest.chain_MH_temperature)
 
 #%% save single learning run outputs:
 

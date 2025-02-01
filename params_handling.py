@@ -10,15 +10,9 @@ import time
 import copy
 import numpy as np
 
-from definitions import Constants
+
 import learning_model
-import model
 
-testguy = model.Model()
-#testguy = learning_model.LearningModel()
-
-#print(isinstance(testguy, learning_model.LearningModel))
-#print(isinstance(testguy, model.Model))
 
 
 

@@ -9,7 +9,7 @@ Effective model learning
 
 from definitions import T, ops
 
-from two_level_system import TwoLevelSystem
+import two_level_system
 
 import qutip
 
@@ -102,7 +102,7 @@ class Model():
             
         # make new TLS instance:
         
-        new_TLS = TwoLevelSystem(self, TLS_label, is_qubit, energy, couplings, Ls)        
+        new_TLS = two_level_system.TwoLevelSystem(self, TLS_label, is_qubit, energy, couplings, Ls)        
             
         
         # add label to reference dictionary if one is specified

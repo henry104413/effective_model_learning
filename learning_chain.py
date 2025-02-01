@@ -5,21 +5,21 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
-import time
+#import time
 import copy
 import numpy as np
 
-from learning_model import LearningModel
-from params_handling import ParamsHandler
-from process_handling import ProcessHandler
+import learning_model
+import params_handling
+import process_handling
 
 
 
 
 
-# single instance executes a learning chain (parameter space walk) by controlling learning model
-# has methods for saving different instances of models
-# controls hyperparameters for single chain
+# single instance executes a learning chain; own hyperparameters including initial model (inc. D) 
+
+
 
 class LearningChain():
     
@@ -29,7 +29,7 @@ class LearningChain():
     
     
     def __init__(self, target_times, target_datasets, target_observables, *,
-                 initial_guess = False,
+                 initial = None, # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
                  
                  max_chain_steps = 100,
                  
@@ -116,10 +116,16 @@ class LearningChain():
         self.defect_couplings_library = defect_couplings_library
         
         # initial guess model:
-        if type(initial_guess) == bool and not initial_guess:
-            self.initial = self.make_initial_guess()
+        if type(initial) == learning_model.LearningModel:
+            self.initial = initial
+        elif (type(initial) == tuple or type(initial) == list) and len(initial) == 2:
+            self.initial = self.make_initial_model(initial[0], initial[1]) # assuming argument (qubit_energy, defects_number)
+        elif type(initial) == int:
+            self.initial = self.make_initial_model(1, initial) # assuming initial qubit energy = 1 and argument is defect number
         else:
-            self.initial = initial_guess
+            raise RuntimeWarning('initial model must be specified:\neither as instance of LearningModel,'
+                                 + '\nor tuple or list of (qubit energy, number of defects),'
+                                 + '\n or integer number of defects, assuming qubit energy = 1')
             
         # target data:    
         self.target_datasets = target_datasets
@@ -131,14 +137,16 @@ class LearningChain():
     
     def learn(self, chain_step_options = False, chain_step_probabilities = False):
         
-        
-        # initialise:
+        # learning containers:
         self.explored_models = [] # repository of explored models - currently not saved
         self.explored_costs = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.initial)
         self.current_cost = self.cost(self.current)
         self.best_cost = self.current_cost
+        
+        # acceptance tracking:
+        k = 0 # auxiliary iteration counter    
         self.acceptance_tracker = [] # all accept/reject events (bool)
         self.acceptance_ratios_log = [] # acceptance ratios for subsequent windows
         
@@ -165,12 +173,8 @@ class LearningChain():
         if (temp := sum(chain_step_probabilities)) != 1:
             chain_step_probabilities = [x/temp for x in chain_step_probabilities]
             
-            
-        # acceptance tracking:
-        k = 0    
         
     
-        
         # carry out all chain steps:
         for i in range(self.max_chain_steps):
             
@@ -193,6 +197,7 @@ class LearningChain():
                 # !!! add some adaptation method here!!!
                 
             k += 1                        
+    
             # new proposal container:
             proposal = copy.deepcopy(self.current)
             
@@ -216,12 +221,9 @@ class LearningChain():
             elif next_step == 'remove defect-defect coupling':
                 self.remove_random_defect2defect_coupling(proposal)
             
-            
-            
             # evaluate new proposal:
             proposal_cost = self.cost(proposal)
             self.explored_costs.append(proposal_cost)
-            
             
             # if improvement:
             if proposal_cost <= self.current_cost:
@@ -231,7 +233,7 @@ class LearningChain():
             else: 
                 
                 # MH criterion:
-                # note: for non-zero temperature and this form, this also covers the improvement
+                # note: also covers improvement for non-zero temperature and this likelihood form
                 MH_likelihood = np.exp(-(proposal_cost - self.current_cost)/self.chain_MH_temperature)
                 roll = np.random.uniform()
                 if roll < MH_likelihood:
@@ -240,7 +242,6 @@ class LearningChain():
                 # rejection otherwise:
                 else:
                     accept = False                
-
 
             # acceptance:
             if accept:
@@ -266,35 +267,31 @@ class LearningChain():
     
     
     
-    def make_initial_guess(self):
-        
-        initial_guess = LearningModel()
-        
-        
-        initial_guess.add_TLS(TLS_label = 'qubit',
+    
+    def make_initial_model(self, qubit_energy, defects_number):
+    
+        """
+        Returns empty model with qubit of specified energy,
+        given number of defects initialised to qubit energy,
+        and no couplings or Lindblad processes.
+        """    
+    
+        initial_model = learning_model.LearningModel()
+        initial_model.add_TLS(TLS_label = 'qubit',
                              is_qubit = True,
-                             energy = 5,
-                             couplings = {
-                                          
-                                          },
-                             Ls = {
-                                   'sigmaz' : 0.01
-                                   }
+                             energy = qubit_energy,
+                             couplings = {},
+                             Ls = {}
                              )
-
-
-        initial_guess.add_TLS(is_qubit = False,
-                             energy = 4.5,
-                             couplings = {'qubit': [(0.5, 'sigmax', 'sigmax')]
-                                          },
-                             Ls = {
-                                   'sigmaz' : 0.01
-                                   }
-                             )
+        for i in range(defects_number):
+            initial_model.add_TLS(is_qubit = False,
+                                  energy = qubit_energy,
+                                  couplings = {},
+                                  Ls = {}
+                                  )
+        initial_model.build_operators()
         
-        initial_guess.build_operators()
-        
-        return initial_guess
+        return initial_model
     
     
     
@@ -345,7 +342,7 @@ class LearningChain():
             self.costs_brief = [] # parameters optimiser only best from call
         
         if not self.params_handler: # ie. first run
-            self.params_handler = ParamsHandler(self)
+            self.params_handler = params_handling.ParamsHandler(self)
         
         self.params_handler.set_hyperparams(self.initial_params_handler_hyperparams)
         self.current, best_cost, costs = self.params_handler.do_optimisation(model_to_optimise)
@@ -365,7 +362,7 @@ class LearningChain():
         # initialise parameters handler if not yet done and set to default hyperparameters
         # note: most hyperparameters only relevant to full optimisation
         if not self.params_handler: # ie. first run
-            self.params_handler = ParamsHandler(self)
+            self.params_handler = params_handling.ParamsHandler(self)
             self.params_handler.set_hyperparams(self.initial_params_handler_hyperparams)
         
         return self.params_handler.tweak_all_parameters(model_to_tweak)
@@ -456,7 +453,7 @@ class LearningChain():
         
     def initialise_process_handler(self):
         
-        self.process_handler = ProcessHandler(self,
+        self.process_handler = process_handling.ProcessHandler(self,
                                               qubit_couplings_library = self.qubit_couplings_library,
                                               defect_couplings_library = self.defect_couplings_library,
                                               Ls_library = self.Ls_library)
@@ -482,5 +479,5 @@ class LearningChain():
         
         
         
-    # ADD METHOD TO UPDATE LIBRARIES OF CURRENT PROCESS HANDLER!!!
+    # !!!ADD METHOD TO UPDATE LIBRARIES OF CURRENT PROCESS HANDLER!!!
                                       
