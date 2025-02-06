@@ -15,11 +15,7 @@ import process_handling
 
 
 
-
-
-# single instance executes a learning chain; own hyperparameters including initial model (inc. D) 
-
-
+# single instance executes a learning chain; own hyperparameters including initial model (inc. D): 
 
 class LearningChain():
     

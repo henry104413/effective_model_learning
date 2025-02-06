@@ -11,10 +11,13 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
-from networkx.drawing.nx_pydot import graphviz_layout
-from definitions import Constants
 
+import definitions
 
+# aliases:
+K_to_eV = definitions.Constants.K_to_eV
+t_to_sec = definitions.Constants.definitions.Constants.K_to_eV
+# note: h_bar=1, e=1
 
 
 
@@ -55,7 +58,7 @@ class Output():
             plt.figure()
             
             for i in range(min(len(dynamics_datasets), 4)):    
-                plt.plot(dynamics_ts*Constants.t_to_sec*1e15, dynamics_datasets[i], colours[i], label = get_label(i))
+                plt.plot(dynamics_ts*t_to_sec*1e15, dynamics_datasets[i], colours[i], label = get_label(i))
                 plt.xlabel('time (fs)')
                 #plt.ylabel('qubit excited population')
                 #plt.ylim([0,1.1])
@@ -259,6 +262,7 @@ class Output():
         # pos = nx.spring_layout(G, seed = 0)
         # pos = nx.multipartite_layout(G, subset_key = 'subset')
         
+        graphviz_layout = nx.drawing.nx_pydot.graphviz_layout
         #pos = graphviz_layout(G, prog="twopi")
         #pos = graphviz_layout(G, prog="dot")
         pos = graphviz_layout(G, prog="circo")
@@ -289,8 +293,7 @@ def compare_qutip_Liouvillian(model, ts):
     import numpy as np        
     import matplotlib.pyplot as plt
     import matplotlib.colors as colour
-    from matplotlib import colormaps
-    from definitions import Constants
+    import matplotlib.colormaps as colormaps
     
     
     pop_qutip = model.calculate_dynamics(ts, dynamics_method = 'qutip')
@@ -305,8 +308,8 @@ def compare_qutip_Liouvillian(model, ts):
     
     # qutip vs liouvillian dynamics
     plt.figure()
-    plt.plot(Constants.t_to_sec*ts*1e15, pop_qutip, '-y', label = 'qutip')
-    plt.plot(Constants.t_to_sec*ts*1e15, pop_liouvillian, ':k', label = 'liouvillian')
+    plt.plot(t_to_sec*ts*1e15, pop_qutip, '-y', label = 'qutip')
+    plt.plot(t_to_sec*ts*1e15, pop_liouvillian, ':k', label = 'liouvillian')
     plt.xlabel('time (fs)')
     plt.ylabel('qubit excited population')
     plt.legend()

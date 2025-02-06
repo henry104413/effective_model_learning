@@ -6,18 +6,18 @@ Effective model learning
 """
 
 
-
-from definitions import T, ops
-
-import two_level_system
+import time
+import numpy as np
+import scipy as sp
 
 import qutip
 
-import numpy as np
+import definitions
+import two_level_system
 
-import scipy as sp
-
-import time
+# aliases:
+T = definitions.T
+ops = definitions.ops
 
 
 
@@ -408,7 +408,7 @@ class Model():
         if dynamics_method == 'qutip':
             
             clock = time.time()
-
+            
             qutip_dynamics = qutip.mesolve(self.H,
                                      self.initial_DM,
                                      evaluation_times,

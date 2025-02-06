@@ -8,12 +8,6 @@ Global definitions used throughout the Effective Model Learning codebase.
 
 import qutip as q
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import matplotlib.ticker as tkr
-from copy import deepcopy
-from scipy.optimize import minimize
-from scipy import interpolate
 
 
 
@@ -23,17 +17,11 @@ from scipy import interpolate
 
 
 # constants:
-
+# note: h_bar=1, e=1
 class Constants():
     
-        
-    # note: h_bar=1, e=1
-    
-    
     # conversion factors:
-    
     K_to_eV = 1.381/1.602*1e-4 # multiply by T in K to get energy (k_B*T) in eV
-    
     t_to_sec = 4.136e-15 # multiply by time values before plotting to get the value in seconds
 
 
