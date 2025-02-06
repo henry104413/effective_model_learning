@@ -28,6 +28,8 @@ class LearningChain():
     
     
     
+    
+    
     def __init__(self, target_times, target_datasets, target_observables, *,
                  initial = None, # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
                  
@@ -101,6 +103,7 @@ class LearningChain():
                                      'add qubit coupling', 'remove qubit coupling',
                                      'add defect-defect coupling', 'remove defect-defect coupling']
         self.default_step_probabilities = [1/len(self.default_step_options) for x in self.default_step_options]
+        
         
         # optimiser object and initial hyperparameters for it:
         # (PramsOptimiser instance with attributes for hyperparams
@@ -231,6 +234,8 @@ class LearningChain():
             
             # if detriment:
             else: 
+                
+                # 
                 
                 # MH criterion:
                 # note: also covers improvement for non-zero temperature and this likelihood form

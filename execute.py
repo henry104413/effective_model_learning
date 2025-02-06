@@ -5,39 +5,21 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
-from model import Model
-
-from learning_model import LearningModel
-
-from learning_chain import LearningChain
-
-from output import Output, compare_qutip_Liouvillian, create_model_graph
-
 import multiprocessing
-
+import time
 import numpy as np
 
-import time
-
-
-from definitions import Constants
-
-import matplotlib.pyplot as plt
-
-
-
-
+import basic_model
+import learning_chain
+import output
 
 
 
 #%% generate target data:
+
     
-
-
 # set up ground truth model:  
-
-GT = Model()
-
+GT = basic_model.Model()
 GT.add_TLS(TLS_label = 'qubit',
            is_qubit = True,
            energy = 5,
@@ -48,7 +30,6 @@ GT.add_TLS(TLS_label = 'qubit',
                  'sigmaz' : 0.01
                  }
            )
-
 GT.add_TLS(is_qubit = False,
             energy = 5.8,
             couplings = {'qubit': [(0.6, 'sigmax', 'sigmax')]
@@ -58,8 +39,6 @@ GT.add_TLS(is_qubit = False,
                   'sigmay' : 0.02
                   }
             )
-
-
 GT.add_TLS(is_qubit = False,
             energy = 4.5,
             couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
@@ -69,50 +48,14 @@ GT.add_TLS(is_qubit = False,
                   'sigmax' : 0.06
                   }
             )
-
-
-# GT.add_TLS(is_qubit = False,
-#             energy = 5.5,
-#             couplings = {'qubit': [(0.2, 'sigmax', 'sigmax')]
-#                         },
-#             Ls = {
-#                   'sigmaz' : 0.03
-#                   }
-#             )
-
-
-# GT.add_TLS(is_qubit = False,
-#             energy = 4.0,
-#             couplings = {'qubit': [(0.4, 'sigmax', 'sigmax')]
-#                         },
-#             Ls = {
-#                   'sigmaz' : 0.03
-#                   }
-#             )
-
-
-# GT.add_TLS(is_qubit = False,
-#             energy = 4.5,
-#             couplings = {'qubit': [(0.1, 'sigmax', 'sigmax')]
-#                         },
-#             Ls = {
-#                   'sigmaz' : 0.03
-#                   }
-#             )
-     
 GT.build_operators()
-
 
 # simulate measurements:
 # note: now using 1st qubit excited population at times ts
-
 ts = np.linspace(0, 1e1, int(1000))
-
 measurement_observables = ['sigmaz']
-
 measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
 
-# create_model_graph(GT, 'GTgraph')
 
 
 #%% parallelised runs:
@@ -138,22 +81,19 @@ if __name__ == '__main__' and True:
         chains_outputs = pool.map(execute_chain, chains_inputs)        
         
         
-      
-
-#%% chain hyperparameters:
 
 
 #%% perform learning:
 
 
 # instance of learning (quest for best model):
-quest = LearningChain(target_times = ts,
+quest = learning_chain.LearningChain(target_times = ts,
                       target_datasets = measurement_datasets,
                       target_observables = measurement_observables,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 100000,
+                      max_chain_steps = 10,
                       chain_MH_temperature = 0.00001,
                       chain_MH_temperature_multiplier = 2,
                       chain_step_options = ['tweak all parameters',
@@ -218,10 +158,6 @@ best_data = best.calculate_dynamics(ts, observable_ops = measurement_observables
 
 #%%
 
-create_model_graph(GT, 'GT_graph')
-
-
-create_model_graph(best, 'best_graph')
 
 
 
@@ -233,7 +169,8 @@ create_model_graph(best, 'best_graph')
 class Toggles():    
     comparison = True # plot comparison of dynamics
     cost = True # plot cost function progression
-    acceptance_ratios = True # acceptance ratios over subsequenct windows
+    acceptance_ratios = True # plot acceptance ratios over subsequenct windows
+    graphs = True # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
     text = True # save selected models as text
     hyperparams = True # save chain hyperparameters as json
@@ -247,7 +184,7 @@ timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
 
 # create outputs:
 
-Output(toggles = Toggles, filename = timestamp,
+output.Output(toggles = Toggles, filename = timestamp,
        dynamics_ts = ts, dynamics_datasets = [measurement_datasets[-1], best_data[-1]], dynamics_labels = ['ground truth', 'learned model'],
        cost = costs,
        acceptance_ratios = acceptance_ratios,

@@ -76,10 +76,6 @@ ops = {#'sigma z' : q.sigmaz(),
 
 
 
-
-ops_library = {}
-
-
 # operator parameter labels for plotting:
     
 ops_labels = {'defects energies' : 'energy (eV)',
@@ -107,10 +103,6 @@ for key in rates_arrays:
     
     rates_arrays[key] = np.logspace(*rates_bounds[key], 10)
 
-
-
-
-#%% global functions:
 
     
 

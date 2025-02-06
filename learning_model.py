@@ -6,15 +6,14 @@ Effective model learning
 """
 
 
-from model import Model
-
+import basic_model
 import numpy as np
 
 
 # enhanced model with ability to modify itself
 # methods to change parameters, methods to add/remove processes, and methods to add/remove subsystems
 
-class LearningModel(Model):
+class LearningModel(basic_model.Model):
     
     
     
