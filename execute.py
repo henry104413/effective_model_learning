@@ -93,20 +93,12 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 10,
+                      max_chain_steps = 1000,
                       chain_MH_temperature = 0.00001,
                       chain_MH_temperature_multiplier = 2,
-                      chain_step_options = ['tweak all parameters',
-                                            'add L', 'remove L',
-                                            'add qubit coupling', 'remove qubit coupling',
-                                            'add defect-defect coupling', 'remove defect-defect coupling'],
+                      chain_step_options = False,
                       
-                      chain_step_probabilities = [10,
-                                                  1, 1, 
-                                                  1, 1, 
-                                                  1, 1],
-                      
-                      acceptance_window = 50,
+                      acceptance_window = 20,
                       acceptance_target = 0.4,
                       acceptance_band = 0.2,
                       
@@ -147,7 +139,7 @@ quest = learning_chain.LearningChain(target_times = ts,
 # ph.tweak_all_parameters(initial_guess)
 
 
-best = quest.learn()
+best = quest.run()
 
 #raise SystemExit(0)
 

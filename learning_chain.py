@@ -5,7 +5,7 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
-#import time
+
 import copy
 import numpy as np
 
@@ -17,132 +17,174 @@ import process_handling
 
 # single instance executes a learning chain; own hyperparameters including initial model (inc. D): 
 
-class LearningChain():
+class LearningChain:
     
+    """
+    Single instance executes a reversible-jump Monte Carlo Markov chain given some target data.
     
+    Hyperparameters currently set at initialisation. These include chain length in steps,
+    as well as properties of upcoming step proposals and acceptance.
+    The main method to interact with externally is run(), which returns the best model found.
+    It also populates instance variables such as explored_costs, 
+    which can be accessed externally for plotting etc.
     
+    TO ADD:
+    An outward facing method to modify hyperparameters after initialisation.
+    """
     
-    
-    
-    
-    
-    def __init__(self, target_times, target_datasets, target_observables, *,
-                 initial = None, # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
-                 
-                 max_chain_steps = 100,
-                 
-                 chain_MH_temperature = 0.01,
-                 chain_MH_temperature_multiplier = 2,
-                 
-                 chain_step_options = ['tweak all parameters', 'add L', 'remove L',
-                                       'add qubit coupling', 'remove qubit coupling',
-                                       'add defect-defect coupling', 'remove defect-defect coupling'],
-                 chain_step_probabilities = [10, 0.1, 0.1, 0.05, 0.05, 0.02, 0.02],
-                 
-                 acceptance_window = 100,
-                 acceptance_target = 0.4,
-                 acceptance_band = 0.2,
-                 
-                 params_handler_hyperparams = {
-                     'initial_jump_lengths': {'couplings' : 0.001,
-                                              'energy' : 0.01,
-                                              'Ls' : 0.00001
-                                              },
-                     },
-                 
-                 Ls_library = { # will draw from uniform distribution from specified range)
-                     'sigmax': (0.001, 0.2)
-                    ,'sigmay': (0.001, 0.2)
-                    ,'sigmaz': (0.001, 0.2)
-                    },
-      
-                 qubit_couplings_library = { # will draw from uniform distribution from specified range)
-                     'sigmax': (-0.05, 0.05)
-                    ,'sigmay': (-0.05, 0.05)
-                    ,'sigmaz': (-0.05, 0.05)
-                    },
-                 
-                 defect_couplings_library = { # will draw from uniform distribution from specified range)
-                     'sigmax': (-0.05, 0.05)
-                    ,'sigmay': (-0.05, 0.05)
-                    ,'sigmaz': (-0.05, 0.05)
-                    }
+    # bundle of default values for single chain hyperparameters:
+    class Defaults:
+        
+        initial = False, # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
+        
+        max_chain_steps = 100,
+        
+        chain_MH_temperature = 0.01,
+        chain_MH_temperature_multiplier = 2,
+        
+        chain_step_options = {
+            'tweak all parameters': 10,
+            'add L': 0.1,
+            'remove L': 0.1,
+            'add qubit coupling': 0.05, 
+            'remove qubit coupling': 0.05,
+            'add defect-defect coupling': 0.025, 
+            'remove defect-defect coupling': 0.025
+            }
+        
+        acceptance_window = 100,
+        acceptance_target = 0.4,
+        acceptance_band = 0.2,
+        
+        params_handler_hyperparams = {
+            'initial_jump_lengths': {'couplings' : 0.001,
+                                     'energy' : 0.01,
+                                     'Ls' : 0.00001
+                                     }
+            }
+        
+        Ls_library = { # will draw from uniform distribution from specified range)
+            'sigmax': (0.001, 0.2)
+           ,'sigmay': (0.001, 0.2)
+           ,'sigmaz': (0.001, 0.2)
+           }
 
+        qubit_couplings_library = { # will draw from uniform distribution from specified range)
+            'sigmax': (-0.05, 0.05)
+           ,'sigmay': (-0.05, 0.05)
+           ,'sigmaz': (-0.05, 0.05)
+           }
+        
+        defect_couplings_library = { # will draw from uniform distribution from specified range)
+            'sigmax': (-0.05, 0.05)
+           ,'sigmay': (-0.05, 0.05)
+           ,'sigmaz': (-0.05, 0.05)
+           }
+
+    
+    
+    
+    def __init__(self,
+                                  
+                 target_times: np.ndarray,
+                 target_datasets: np.ndarray | list[np.ndarray],
+                 target_observables: str | list[str],
+                 *,
                  
+                 initial:type(learning_model.LearningModel) | tuple | list = False,
+                 # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
+                 
+                 # note: arguments below should have counterpart in class Defaults:
+
+                 max_chain_steps: int = False,
+                 
+                 chain_MH_temperature: float = False,
+                 chain_MH_temperature_multiplier: float = False,
+                 
+                 chain_step_options: dict[str, float | int] = False,
+                 
+                 acceptance_window: float = False,
+                 acceptance_target: float = False,
+                 acceptance_band: float = False,
+                 
+                 params_handler_hyperparams: dict[dict] = False,
+                 # note: can contain lots of things - class to be simplified
+                 
+                 Ls_library: dict[str, list | tuple] = False,
+      
+                 qubit_couplings_library: dict[str, list | tuple] = False,
+                 
+                 defect_couplings_library: dict[str, list | tuple] = False,
                  ):
         
         
+        # all argument names and values:
+        args = copy.deepcopy(locals())
         
+        # container for initial hyperparameters:
+        self.init_hyperparams = {} 
         
-        # holders for different model instances in play:
-        self.best = None
-        self.current = None
+        # if passed as false or not passed (False by default),
+        # set instance variables to defaults defined for class,
+        # otherwise set to passed arguments;
+        # then save all in initial hyperparameters dictionary
+        # except instance reference, initial guess, target data:
+        for key, val in args.items():
+            if type(val) == bool and not val:
+                val = getattr(self.Defaults, key) # new value taken from Defaults
+                setattr(self, key, val)
+            else:
+                setattr(self, key, val)
+            if key not in ['self', 'initial',
+                           'target_times', 'target_datasets', 'target_observables']:
+                self.init_hyperparams[key] = val
         
-        # trackers: defined in methods that use them - for now
-        self.acceptance_log = []
-        
-        
-        # chain parameters:
-        self.max_chain_steps = max_chain_steps
-        self.chain_MH_temperature = chain_MH_temperature
-        self.chain_MH_temperature_multiplier = chain_MH_temperature_multiplier
-        self.chain_step_options = chain_step_options
-        self.chain_step_probabilities = chain_step_probabilities
-        
-        self.acceptance_window = acceptance_window
-        self.acceptance_target = acceptance_target
-        self.acceptance_band = acceptance_band
-        
-        
-        # default step options (all implemented possibilities) and default probabilities (here equal):
-        self.default_step_options = ['tweak all parameters', 'add L', 'remove L',
-                                     'add qubit coupling', 'remove qubit coupling',
-                                     'add defect-defect coupling', 'remove defect-defect coupling']
-        self.default_step_probabilities = [1/len(self.default_step_options) for x in self.default_step_options]
-        
-        
-        # optimiser object and initial hyperparameters for it:
-        # (PramsOptimiser instance with attributes for hyperparams
-        # ...and methods to carry out params optimisation, set and output hyperparams)
-        self.params_handler = None 
-        self.initial_params_handler_hyperparams = params_handler_hyperparams
-        
-        # process handler object:
-        # (ModelModifier instance)
-        self.process_handler = None
-        self.Ls_library = Ls_library 
-        self.qubit_couplings_library = qubit_couplings_library
-        self.defect_couplings_library = defect_couplings_library
-        
-        # initial guess model:
-        if type(initial) == learning_model.LearningModel:
-            self.initial = initial
-        elif (type(initial) == tuple or type(initial) == list) and len(initial) == 2:
+        # initial model check or creation if specified only by defects number and qubit energy:
+        if (temp := type(self.initial)) == learning_model.LearningModel:
+            # ie. already a modifiable model
+            pass
+        elif (temp == tuple or temp == list) and len(self.initial) == 2:
             self.initial = self.make_initial_model(initial[0], initial[1]) # assuming argument (qubit_energy, defects_number)
-        elif type(initial) == int:
+        elif temp == int:
             self.initial = self.make_initial_model(1, initial) # assuming initial qubit energy = 1 and argument is defect number
         else:
             raise RuntimeWarning('initial model must be specified:\neither as instance of LearningModel,'
                                  + '\nor tuple or list of (qubit energy, number of defects),'
                                  + '\n or integer number of defects, assuming qubit energy = 1')
             
-        # target data:    
-        self.target_datasets = target_datasets
-        self.target_observables = target_observables
-        self.target_times = target_times
+        # chain step options check and normalisation:
+        # note: run() method throws error if option not implemented - not checked here
+        temp = 0 # 
+        for option in (options := [x for x in self.chain_step_options]):
+            if type(self.chain_step_options[option]) not in [int, float]:
+                raise RuntimeError('Chain step options need to have relative probabilities\n'
+                                   +'specified by a single number')
+            else:
+                temp += self.chain_step_options[option]
+        self.next_step_labels = options # next step labels for use in run()
+        self.next_step_probabilities = [self.chain_step_options[option]/temp for option in options]
+        # ^corresponding normalised propabilities
         
         
-    
-    
-    def learn(self, chain_step_options = False, chain_step_probabilities = False):
         
-        # learning containers:
+        # process and parameter objects to perform chain steps:
+        # note: initialised at first call of methods that use them
+        self.params_handler = None 
+        self.process_handler = None
+        
+        # chain outcome containers:
         self.explored_models = [] # repository of explored models - currently not saved
         self.explored_costs = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.initial)
         self.current_cost = self.cost(self.current)
         self.best_cost = self.current_cost
+        self.acceptance_log = []
+        
+    
+    
+    def run(self, chain_step_options = False, chain_step_probabilities = False):
+        
         
         # acceptance tracking:
         k = 0 # auxiliary iteration counter    
@@ -150,35 +192,11 @@ class LearningChain():
         self.acceptance_ratios_log = [] # acceptance ratios for subsequent windows
         
         
-        # step options settings checks:
-        
-        # if options not passed, use ones set for chain:
-        if (not chain_step_options or not chain_step_probabilities): 
-            chain_step_options = self.chain_step_options
-            chain_step_probabilities = self.chain_step_probabilities
-        
-        # if options neither passed nor set for chain, do all available steps with default probability:
-        if (not chain_step_options or not chain_step_probabilities):
-            chain_step_options = self.default_step_options
-            chain_step_probabilities = self.default_step_probabilities
-            
-        # check all step options recognised (assuming default ones all implemented):
-        if not set(chain_step_options).issubset(set(self.default_step_options)):
-            raise RuntimeError('Some chain step options not recognised')
-            
-        # check option probabilities array length matches options and normalise if not normalised:
-        if len(chain_step_probabilities) != len(chain_step_options):
-            raise RuntimeError('array of probabilities of chain step options is the wrong length')
-        if (temp := sum(chain_step_probabilities)) != 1:
-            chain_step_probabilities = [x/temp for x in chain_step_probabilities]
-            
-        
-    
         # carry out all chain steps:
         for i in range(self.max_chain_steps):
             
             # acceptance tally:
-            if k >= self.acceptance_window:
+            if k >= self.acceptance_window: # ie, end of last window reached
                 k = 0
                 window_accepted_total = \
                     sum(self.acceptance_tracker[len(self.acceptance_tracker)-self.acceptance_window:len(self.acceptance_tracker)])
@@ -201,7 +219,7 @@ class LearningChain():
             proposal = copy.deepcopy(self.current)
             
             # choose next step and modify proposal accordingly:
-            next_step = np.random.choice(chain_step_options, p = chain_step_probabilities)
+            next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities)
             if next_step == 'tweak all parameters':
                 self.tweak_params(proposal)
                 #print('tweaking')
@@ -219,6 +237,8 @@ class LearningChain():
                 self.add_random_defect2defect_coupling(proposal)
             elif next_step == 'remove defect-defect coupling':
                 self.remove_random_defect2defect_coupling(proposal)
+            else:
+                raise RuntimeError('Chain step option \'' + next_step + '\' is not implemented') 
             
             # evaluate new proposal:
             proposal_cost = self.cost(proposal)
@@ -297,27 +317,24 @@ class LearningChain():
     
     
 
-    # calculates and returns cost of model,
-    # using target_times and target_data set at instance level,
-    # currently using mean squared error between dynamics:
-    # note: here is where any weighting or similar should be implemented
-    # assumed: either target data is listof numpy arrays and target observables is list of operator labels
-    # ...or target data is just numpy array and target observables is single label (in which case instance variables listified)
-    
-    def cost(self, model):
+    def cost(self, model: type(learning_model.LearningModel)) -> float:
+
+        """
+        Calculates and returns cost/loss of argument model given target data.
+        
+        Now uses equal sum of mean squared error across different observables and corresponding datasets.
+        Any wighting or other modifications can be inserted here.
+        Assumes target data is list of numpy arrays and target observables is list of operator labels.
+        Can also handle single array and single label.
+        
+        """
         
         if isinstance(self.target_datasets, np.ndarray) and isinstance(self.target_observables, str):
             self.target_datasets =  [self.target_datasets]
             self.target_observables = [self.target_observables]
         
         model_datasets = model.calculate_dynamics(evaluation_times = self.target_times, observable_ops = self.target_observables)
-        
-        # # skip now and if done, redo for all elements of lists... check these are numpy arrays to use array operators below:
-   
-        # if type(model_data) != type(np.array([])) or type(self.target_data) != type(np.array([])):
-   
-        #     raise RuntimeError('error calculating cost: arguments must be numpy arrays!\n')
-        
+          
         # add up mean-squared-error over different observables, assuming equal weighting:
         # note: now datasets should all be lists of numpy arrays
         total_MSE = 0
@@ -364,7 +381,7 @@ class LearningChain():
         # note: most hyperparameters only relevant to full optimisation
         if not self.params_handler: # ie. first run
             self.params_handler = params_handling.ParamsHandler(self)
-            self.params_handler.set_hyperparams(self.initial_params_handler_hyperparams)
+            self.params_handler.set_hyperparams(self.params_handler_hyperparams)
         
         return self.params_handler.tweak_all_parameters(model_to_tweak)
         

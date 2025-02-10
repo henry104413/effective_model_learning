@@ -16,7 +16,7 @@ import definitions
 
 # aliases:
 K_to_eV = definitions.Constants.K_to_eV
-t_to_sec = definitions.Constants.definitions.Constants.K_to_eV
+t_to_sec = definitions.Constants.K_to_eV
 # note: h_bar=1, e=1
 
 
