@@ -28,8 +28,11 @@ class LearningChain:
     It also populates instance variables such as explored_costs, 
     which can be accessed externally for plotting etc.
     
-    TO ADD:
-    An outward facing method to modify hyperparameters after initialisation.
+    !!! TO ADD:
+    Outward facing methods to:
+        1) modify chain hyperparameters after initialisation.
+        2) update them in existing parameter and process hadnlers 
+    
     """
     
     # bundle of default values for single chain hyperparameters:
@@ -309,17 +312,18 @@ class LearningChain:
         return initial_model
     
     
-
-    def cost(self, model: type(learning_model.LearningModel)) -> float:
+    
+    def total_deviation(self, model: type(learning_model.LearningModel)) -> float:
 
         """
-        Calculates and returns cost/loss of argument model given target data.
+        Calculates total deviation of argument model from set target data over set observables. 
         
-        Now uses equal sum of mean squared error across different observables and corresponding datasets.
-        Any wighting or other modifications can be inserted here.
+        Returns equal sum over all instance-level target ovservables
+        of mean squared error between instance-level target data
+        and argument model data evaluated at instance-level target times.
+        
         Assumes target data is list of numpy arrays and target observables is list of operator labels.
-        Can also handle single array and single label.
-        
+        Changes these to lists if currently single array and single label.
         """
         
         if isinstance(self.target_datasets, np.ndarray) and isinstance(self.target_observables, str):
@@ -338,11 +342,15 @@ class LearningChain:
     
     
     
-    # performs full paramter optimisation on argument model, setting hyperparameterd to chain attribute,
-    # saving resulting model to current working model and saving full cost progression and best cost achieved 
-    # returns best cost achieved
-    
     def optimise_params(self, model_to_optimise):
+    
+        """
+        Performs full paramter optimisation on argument model. 
+        
+        Uses hyperparameters set for chain instance.
+        Saves resulting model to current working model and full cost progression and best cost achieved. 
+        Returns best cost achieved.
+        """
         
         # note: trackers initialised here as only used by this method, checker avoids resetting on repeat calls
         if not hasattr(self, 'costs_full') and not hasattr(self, 'costs_brief'):
@@ -361,10 +369,12 @@ class LearningChain:
         
     
     
-    # performs a single step in the parameter landscape:
-    # works on (ie modifies) argument model, also returns it
-    
     def tweak_params(self, model_to_tweak):
+    
+        """
+        Performs a single step in existing process parameters landscape:
+        Modifies argument model, also returns it
+        """
         
         # initialise parameters handler if not yet done and set to default hyperparameters
         # note: most hyperparameters only relevant to full optimisation
@@ -376,24 +386,24 @@ class LearningChain:
         
     
     
-    # returns JSON compatible dictionary of hyperparameters (relevant heuristics):
-    # namely: initial jump lengths, annealing rate
-    
-    def chain_hyperparams_dict(self):
-       
-        chain_hyperparams_dict = {
-                                  'initial guess': self.initial.model_description_dict()          
-                                  }
-        if self.params_handler:
-            chain_hyperparams_dict['params optimisation initial hyperparameters'] = self.params_handler.output_hyperparams_init()
-        return chain_hyperparams_dict 
+    def get_initi_hyperparams(self):
+
+        """
+        Returns JSON compatible dictionary of initial chain hyperparameters.    
+        """
+        
+        output = copy.deepcopy(self.init_hyperparams)
+        output['initial guess'] = self.initial.model_description_dict()          
+        return output
     
     
-    
-    # performs addition of random Linblad process to random subsystem:
-    # works on (ie modifies) argument model, also returns it
         
     def add_random_L(self, model_to_modify, Ls_library = False):
+    
+        """
+        Performs addition of random Linblad process to random subsystem.
+        Modifies argument model, also returns it.
+        """
         
         # ensure process handler exists (created at first run):
         if not self.process_handler:
@@ -407,10 +417,12 @@ class LearningChain:
     
     
     
-    # performs removal of random Lindblad process from random subsystem:
-    # works on (ie modifies) argument model, also returns it
-        
     def remove_random_L(self, model_to_modify):
+    
+        """
+        Performs removal of random Lindblad process from random subsystem.
+        Modifies argument model, also returns it.
+        """    
         
         # ensure process handler exists (created at first run):
         if not self.process_handler: # ie. first run
@@ -419,12 +431,14 @@ class LearningChain:
         self.process_handler.remove_random_L(model_to_modify)
     
     
-    
-    # performs addition of random symmetric single-operator coupling between random defect and qubit:
-    # works on (ie modifies) argument model, also returns it
         
     def add_random_qubit_coupling(self, model_to_modify, qubit_couplings_library = False):
-        
+         
+        """
+        Performs addition of random symmetric single-operator coupling between random defect and qubit.
+        Modifies argument model, also returns it.
+        """
+    
         # ensure process handler exists (created at first run):
         if not self.process_handler:
             self.initialise_process_handler()
@@ -437,10 +451,12 @@ class LearningChain:
         
         
     
-    # performs addition of random symmetric single-operator coupling between twp random defects:
-    # works on (ie modifies) argument model, also returns it
-        
     def add_random_defect2defect_coupling(self, model_to_modify, defect_couplings_library = False):
+    
+        """
+        Performs addition of random symmetric single-operator coupling between twp random defects.
+        Modifies argument model, also returns it.
+        """    
         
         # ensure process handler exists (created at first run):
         if not self.process_handler:
@@ -450,15 +466,16 @@ class LearningChain:
         if not defect_couplings_library:
             defect_couplings_library = self.defect_couplings_library
             
-    #    self.process_handler.add_random_qubit_coupling(model_to_modify)
         self.process_handler.add_random_defect2defect_coupling(model_to_modify)
     
     
-    
-    # constructs process handler and sets all process libraries:
         
     def initialise_process_handler(self):
-        
+    
+        """
+        Constructs process handler and sets all process libraries:
+        """    
+    
         self.process_handler = process_handling.ProcessHandler(self,
                                               qubit_couplings_library = self.qubit_couplings_library,
                                               defect_couplings_library = self.defect_couplings_library,
@@ -467,6 +484,11 @@ class LearningChain:
         
     
     def remove_random_qubit_coupling(self, model_to_modify):
+        
+        """
+        Performs removal of random existing coupling between qubit and defect.
+        Modifies argument model, also returns it.
+        """    
         
         # ensure process handler exists (created at first run):
         if not self.process_handler:
@@ -478,6 +500,11 @@ class LearningChain:
 
     def remove_random_defect2defect_coupling(self, model_to_modify):
         
+        """
+        Performs removal of random existing coupling between two defects.
+        Modifies argument model, also returns it.
+        """    
+        
         # ensure process handler exists (created at first run):
         if not self.process_handler:
             self.initialise_process_handler()
@@ -486,5 +513,4 @@ class LearningChain:
         
         
         
-    # !!!ADD METHOD TO UPDATE LIBRARIES OF CURRENT PROCESS HANDLER!!!
                                       
