@@ -83,7 +83,6 @@ class LearningChain:
 
     
     
-    
     def __init__(self,
                                   
                  target_times: np.ndarray,
@@ -91,7 +90,7 @@ class LearningChain:
                  target_observables: str | list[str],
                  *,
                  
-                 initial:type(learning_model.LearningModel) | tuple | list = False,
+                 initial: type(learning_model.LearningModel) | tuple | list = False,
                  # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
                  
                  # note: arguments below should have counterpart in class Defaults:
@@ -114,7 +113,7 @@ class LearningChain:
       
                  qubit_couplings_library: dict[str, list | tuple] = False,
                  
-                 defect_couplings_library: dict[str, list | tuple] = False,
+                 defect_couplings_library: dict[str, list | tuple] = False
                  ):
         
         
@@ -164,7 +163,6 @@ class LearningChain:
         self.next_step_labels = options # next step labels for use in run()
         self.next_step_probabilities = [self.chain_step_options[option]/temp for option in options]
         # ^corresponding normalised propabilities
-        
         
         
         # process and parameter objects to perform chain steps:
@@ -251,8 +249,6 @@ class LearningChain:
             # if detriment:
             else: 
                 
-                # 
-                
                 # MH criterion:
                 # note: also covers improvement for non-zero temperature and this likelihood form
                 MH_likelihood = np.exp(-(proposal_cost - self.current_cost)/self.chain_MH_temperature)
@@ -280,12 +276,10 @@ class LearningChain:
             
             # rejection:
             else:
-                #print('reject')
                 self.acceptance_tracker.append(False)
                 pass
             
         return self.best
-    
     
     
     
@@ -313,7 +307,6 @@ class LearningChain:
         initial_model.build_operators()
         
         return initial_model
-    
     
     
 
@@ -345,9 +338,6 @@ class LearningChain:
     
     
     
-     
-    
-    
     # performs full paramter optimisation on argument model, setting hyperparameterd to chain attribute,
     # saving resulting model to current working model and saving full cost progression and best cost achieved 
     # returns best cost achieved
@@ -369,7 +359,6 @@ class LearningChain:
         
         return best_cost
         
-        
     
     
     # performs a single step in the parameter landscape:
@@ -385,7 +374,6 @@ class LearningChain:
         
         return self.params_handler.tweak_all_parameters(model_to_tweak)
         
-    
     
     
     # returns JSON compatible dictionary of hyperparameters (relevant heuristics):
@@ -485,6 +473,7 @@ class LearningChain:
             self.initialise_process_handler()
             
         self.process_handler.remove_random_qubit_coupling(model_to_modify)
+    
     
 
     def remove_random_defect2defect_coupling(self, model_to_modify):

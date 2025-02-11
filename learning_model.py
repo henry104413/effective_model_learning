@@ -15,14 +15,17 @@ import numpy as np
 
 class LearningModel(basic_model.Model):
     
-    
+    """
+    Instances based on BasicModel (hold information about systems, couplings, processes;
+    able to generate dynamics accodring to Lindblad Master Equation).
+    Implements method to shift all parameters by randomly sampled amount,
+    with width for each type of parameter set for instance as jump lengths hyperparameter.
+    """    
     
     def __init__(self, *args, initial_guess = False, jump_lengths = False, **kwargs):
         
-        
-        
-        # parent constructor sets up model parameters:
-        # note: for now models initialised empty and systems added dynamically 
+        # parent initialiser sets up model parameters:
+        # note: often initialised empty and components added dynamically 
         
         super().__init__(*args, **kwargs)
         

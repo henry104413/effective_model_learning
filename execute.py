@@ -93,12 +93,12 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 1000,
+                      max_chain_steps = 10,
                       chain_MH_temperature = 0.00001,
                       chain_MH_temperature_multiplier = 2,
                       chain_step_options = False,
                       
-                      acceptance_window = 20,
+                      acceptance_window = 2,
                       acceptance_target = 0.4,
                       acceptance_band = 0.2,
                       
@@ -131,21 +131,11 @@ quest = learning_chain.LearningChain(target_times = ts,
                       )
 
 #%%
-
-# import params_handling
-
-# ph = params_handling.ParamsHandler(quest)
-
-# ph.tweak_all_parameters(initial_guess)
-
-
 best = quest.run()
 
-#raise SystemExit(0)
 
 costs = quest.explored_costs
 acceptance_ratios = quest.acceptance_ratios_log
-
 best_data = best.calculate_dynamics(ts, observable_ops = measurement_observables)
 
 #%%
