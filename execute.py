@@ -93,12 +93,15 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 10,
-                      chain_MH_temperature = 0.00001,
-                      chain_MH_temperature_multiplier = 2,
+                      max_chain_steps = 10000,
                       chain_step_options = False,
                       
-                      acceptance_window = 2,
+                      temperature_proposal_shape = 0.01, # aka k
+                      temperature_proposal_scale = 0.01, # aka theta
+                      
+                      jump_length_rescaling_factor = 1, # for scaling up or down jump lengths of parameter handler
+                      
+                      acceptance_window = 50,
                       acceptance_target = 0.4,
                       acceptance_band = 0.2,
                       
@@ -172,7 +175,7 @@ output.Output(toggles = Toggles, filename = timestamp,
        acceptance_ratios = acceptance_ratios,
        models_to_save = [GT, best],
        model_names = ['GT', 'best'],
-       chain_hyperparams = quest.chain_hyperparams_dict()
+       chain_hyperparams = quest.get_init_hyperparams()
        )
 
 

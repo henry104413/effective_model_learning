@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+LearningChain class file
 Effective model learning
 @author: Henry (henry104413)
 """
@@ -33,18 +34,15 @@ class LearningChain:
         1) modify chain hyperparameters after initialisation.
         2) update them in existing parameter and process hadnlers 
     
+    Also potentially take parameter handler jump lengths out of outer dictionary.
     """
     
     # bundle of default values for single chain hyperparameters:
     class Defaults:
         
-        initial = False, # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
+        initial = False # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
         
-        max_chain_steps = 100,
-        
-        chain_MH_temperature = 0.01,
-        chain_MH_temperature_multiplier = 2,
-        
+        max_chain_steps = 100
         chain_step_options = {
             'tweak all parameters': 10,
             'add L': 0.1,
@@ -55,9 +53,14 @@ class LearningChain:
             'remove defect-defect coupling': 0.025
             }
         
-        acceptance_window = 100,
-        acceptance_target = 0.4,
-        acceptance_band = 0.2,
+        temperature_proposal_shape = 0.01 # aka k
+        temperature_proposal_scale = 0.01 # aka theta
+        
+        jump_length_rescaling_factor = 2 # for scaling up or down jump lengths of parameter handler
+        
+        acceptance_window = 100
+        acceptance_target = 0.4
+        acceptance_band = 0.2
         
         params_handler_hyperparams = {
             'initial_jump_lengths': {'couplings' : 0.001,
@@ -99,11 +102,12 @@ class LearningChain:
                  # note: arguments below should have counterpart in class Defaults:
 
                  max_chain_steps: int = False,
-                 
-                 chain_MH_temperature: float = False,
-                 chain_MH_temperature_multiplier: float = False,
-                 
                  chain_step_options: dict[str, float | int] = False,
+                 
+                 temperature_proposal_shape: float = False, # aka k
+                 temperature_proposal_scale:float = False, # aka theta
+                 
+                 jump_length_rescaling_factor: float = False,
                  
                  acceptance_window: float = False,
                  acceptance_target: float = False,
@@ -178,7 +182,7 @@ class LearningChain:
         self.explored_costs = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.initial)
-        self.current_cost = self.cost(self.current)
+        self.current_cost = self.total_deviation(self.current)
         self.best_cost = self.current_cost
         self.acceptance_log = []
         
@@ -186,6 +190,9 @@ class LearningChain:
     
     def run(self, chain_step_options = False, chain_step_probabilities = False):
         
+        
+        # ADD temperature sampling
+        self.MH_temperature = 0.00001
         
         # acceptance tracking:
         k = 0 # auxiliary iteration counter    
@@ -207,13 +214,10 @@ class LearningChain:
                 # adaptation:
                 # note: assuming acceptance band is positive = maximum difference either way of ratio and target before adaptation
                 if acceptance_ratio - self.acceptance_target > self.acceptance_band: # ie. accepting too much -> cool down
-                    self.chain_MH_temperature *= (1/self.chain_MH_temperature_multiplier)
-                    #print('cooling down')
+                    self.cool_down()
                 elif acceptance_ratio - self.acceptance_target < -self.acceptance_band: # ie. accepting too little -> heat up
-                    self.chain_MH_temperature *= self.chain_MH_temperature_multiplier
-                    #print('heating up')
-                # !!! add some adaptation method here!!!
-                
+                    self.heat_up()
+                    
             k += 1                        
     
             # new proposal container:
@@ -242,7 +246,7 @@ class LearningChain:
                 raise RuntimeError('Chain step option \'' + next_step + '\' is not implemented') 
             
             # evaluate new proposal:
-            proposal_cost = self.cost(proposal)
+            proposal_cost = self.total_deviation(proposal)
             self.explored_costs.append(proposal_cost)
             
             # if improvement:
@@ -254,7 +258,7 @@ class LearningChain:
                 
                 # MH criterion:
                 # note: also covers improvement for non-zero temperature and this likelihood form
-                MH_likelihood = np.exp(-(proposal_cost - self.current_cost)/self.chain_MH_temperature)
+                MH_likelihood = np.exp(-(proposal_cost - self.current_cost)/self.MH_temperature)
                 roll = np.random.uniform()
                 if roll < MH_likelihood:
                         accept = True
@@ -379,14 +383,36 @@ class LearningChain:
         # initialise parameters handler if not yet done and set to default hyperparameters
         # note: most hyperparameters only relevant to full optimisation
         if not self.params_handler: # ie. first run
-            self.params_handler = params_handling.ParamsHandler(self)
-            self.params_handler.set_hyperparams(self.params_handler_hyperparams)
-        
+            self.initialise_params_handler()
         return self.params_handler.tweak_all_parameters(model_to_tweak)
+    
+    
+    
+    def cool_down(self):
+        
+        """
+        Scale down parameter handler jump length by instance-level rescaling factor.
+        """
+        
+        if not self.params_handler: # ie. first run
+            self.initialise_params_handler()
+        self.params_handler.rescale_jump_lengths(1/self.jump_length_rescaling_factor)
+        
         
     
+    def heat_up(self):
+        
+        """
+        Scale up parameter handler jump length by instance-level rescaling factor.
+        """
+        
+        if not self.params_handler: # ie. first run
+            self.initialise_params_handler()
+        self.params_handler.rescale_jump_lengths(self.jump_length_rescaling_factor)
     
-    def get_initi_hyperparams(self):
+    
+    
+    def get_init_hyperparams(self):
 
         """
         Returns JSON compatible dictionary of initial chain hyperparameters.    
@@ -469,11 +495,21 @@ class LearningChain:
         self.process_handler.add_random_defect2defect_coupling(model_to_modify)
     
     
+    
+    def initialise_params_handler(self):
         
+        """
+        Constructs parameters handler and sets initial hyperparameters (including jump lenghts).
+        """    
+
+        self.params_handler = params_handling.ParamsHandler(self)
+        self.params_handler.set_hyperparams(self.params_handler_hyperparams)
+
+    
     def initialise_process_handler(self):
     
         """
-        Constructs process handler and sets all process libraries:
+        Constructs process handler and sets all process libraries.
         """    
     
         self.process_handler = process_handling.ProcessHandler(self,
