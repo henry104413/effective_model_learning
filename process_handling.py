@@ -39,11 +39,16 @@ class ProcessHandler():
 
         
 
-    # adds random new single-site Linblad process from process library to random subsystem (qubit or defect for now) 
-    # with rate drawn from uniform distribution between bounds given by tuple for each process library entry  
-    # works on and returns argument model
-    # argument process library used if passed, otherwise use that of handler if already set, error if neither available  
     def add_random_L(self, model, Ls_library = False):
+        
+        """
+        Adds random new single-site Linblad process from process library to random subsystem.
+        Modifies argument model, also returns it.  
+        Argument library used if passed, instance-level one otherwise, error if neither available.  
+        
+        Currently rate sampled from uniform distribution, bounds given by tuple for each library entry.
+        !!! To do: Change this to another distribution with unbounded tails, possibly mirrored gamma.
+        """
         
         # check library available:
         if not Ls_library:
@@ -66,25 +71,32 @@ class ProcessHandler():
             new_rate = np.random.uniform(*Ls_library[operator])
             subsystem.Ls[operator] = new_rate 
             model.build_operators()
-            # print('adding operator ' + operator + ' to TLS no. ' + str(model.TLSs.index(subsystem)) + ' with rate ' + str(new_rate))
             # note: this directly modifies variable another classe's object
             # ...perhaps could be changed to instead work via method of that class?
-            
         else:
-            #print('no options for adding operator to TLS no. ' + str(model.TLSs.index(subsystem)))
             pass
         
         return model
     
     
     
-    # adds random single-operator coupling between first qubit and random defect:
-    # note: this way the single operator should be hermitian and same on both subsystems
-    # future: expand to multiple operators - requires rewrtiting coupling generation 
-    # note: !! at the moment two-system coupling information is only stored on one of the systems
-    # its stored like: { partner : [(strength, op_this, op_partner)]} ...this and partner are TLS objects (pointer)
-    # !!!
     def add_random_qubit_coupling(self, model, qubit_couplings_library = False):
+        
+        """
+        Adds random coupling between first qubit and random defect.
+        
+        Currently only supports same operator acting on both participants to ensure Hermiticity.
+        
+        !!! To do: Extend to multiple operators (eg. sigmap on one sigmam on other plus conjugate).
+        Will entail either rewriting how coupling information is stor in model
+        so that multiple operators are grouped under single parameter (another layer of list),
+        or params handling tweak method to check for related couplings (Hermitian conjugates)
+        and only vary their parameter together to preserve Hermiticity.
+        
+        Presently coupling information only stored on one participant TLS to avoid duplication.
+        Storage format: 
+        {partner : [(strength, op_this, op_partner)]} # partner is object reference and ops label strings
+        """
         
         # check library available:
         if not qubit_couplings_library:
@@ -118,7 +130,6 @@ class ProcessHandler():
                 
                 if operator in [y[1] for y in defect.couplings[qubit]]: 
                 # note: checking this against operator on defect but both should be same so far until mixed operators implemented
-                    #print('coupling via '  + operator + ' already exists')
                     continue
                     
             # likewise check on qubit:
@@ -126,7 +137,6 @@ class ProcessHandler():
                 some_coupling = True
                 if operator in [y[1] for y in qubit.couplings[defect]]:
                 # note: checking this against operator on qubit but both should be same so far until mixed operators implemented
-                    #print('coupling via ' + operator + ' already exists')
                     continue
             
             
@@ -140,7 +150,6 @@ class ProcessHandler():
                 qubit.couplings[defect] = []
             
             # add new coupling:
-            #print(qubit.couplings)
             qubit.couplings[defect].append((strength, operator, operator))
             model.build_operators()
             
@@ -150,13 +159,23 @@ class ProcessHandler():
             
         
         
-    # adds random single-operator coupling between first qubit and random defect:
-    # note: this way the single operator should be hermitian and same on both subsystems
-    # future: expand to multiple operators - requires rewrtiting coupling generation 
-    # note: !! at the moment two-system coupling information is only stored on one of the systems
-    # its stored like: { partner : [(strength, op_this, op_partner)]} ...this and partner are TLS objects (pointer)
-    # !!!
     def add_random_defect2defect_coupling(self, model, defect_couplings_library = False):
+        
+        """
+        Adds random coupling between two random defects.
+        
+        Currently only supports same operator acting on both participants to ensure Hermiticity.
+        
+        !!! To do: Extend to multiple operators (eg. sigmap on one sigmam on other plus conjugate).
+        Will entail either rewriting how coupling information is stor in model
+        so that multiple operators are grouped under single parameter (another layer of list),
+        or params handling tweak method to check for related couplings (Hermitian conjugates)
+        and only vary their parameter together to preserve Hermiticity.
+        
+        Presently coupling information only stored on one participant TLS to avoid duplication.
+        Storage format: 
+        {partner : [(strength, op_this, op_partner)]} # partner is object reference and ops label strings
+        """
         
         # check library available:
         if not defect_couplings_library:
@@ -165,11 +184,8 @@ class ProcessHandler():
             else:
                 raise RuntimeError('Cannot add random defects coupling as library not specified')
                 
-                
         # all defects:
         defects = [x for x in model.TLSs if not x.is_qubit]
-        
-        
             
         # reapeat up to iterations limit in case randomly chosen coupling already exists
         for i in range(10):
@@ -193,7 +209,6 @@ class ProcessHandler():
                 some_coupling = True
                 if operator in [y[1] for y in defect1.couplings[defect2]]: 
                 # note: checking this against operator on defect but both should be same so far until mixed operators implemented
-                    #print('coupling via '  + operator + ' already exists')
                     continue
                     
             # likewise check on defect2:
@@ -201,9 +216,7 @@ class ProcessHandler():
                 
                 if operator in [y[1] for y in defect2.couplings[defect1]]:
                 # note: checking this against operator on qubit but both should be same so far until mixed operators implemented
-                    #print('coupling via ' + operator + ' already exists')
                     continue
-            
             
             # ie coupling via this operator between the two not yet existing:
                 
@@ -215,7 +228,6 @@ class ProcessHandler():
                 defect1.couplings[defect2] = []
             
             # add new coupling:
-            #print(qubit.couplings)
             defect1.couplings[defect2].append((strength, operator, operator))
             model.build_operators()
             
@@ -223,17 +235,15 @@ class ProcessHandler():
         
             break # safety break
         
-         # key error when running again (defect2 as key bugs)
-        
-    
         
         
-        
-        
-    # removes random Lindblad process from random subsystem
-    # works on and returns argument model
     def remove_random_L(self, model):
-        
+    
+        """
+        Removes random Lindblad process from random subsystem
+        Modifies argument model, also returns it.
+        """
+    
         # select subsystem:
         subsystems = [x for x in model.TLSs]# if not x.is_qubit]
         subsystem = np.random.choice(subsystems)
@@ -246,40 +256,43 @@ class ProcessHandler():
             operator = np.random.choice(options)
             subsystem.Ls.pop(operator)
             model.build_operators()
-            #print('removing operator ' + operator + ' from TLS no. ' + str(model.TLSs.index(subsystem)))
-            
         else:
-            #print('no options for removing operator from TLS no. ' + str(model.TLSs.index(subsystem)))
             pass
         
+    
         
-    
-    
-    
-    # sets process library post-constructor: 
     def define_Ls_library(self, Ls_library):
-    
+        
+        """
+        Sets process library post-initialisation.
+        """ 
+        
         self.Ls_library = Ls_library
         
         
         
-    # resets Ls library to initial one:    
     def reset_Ls_library(self):
         
+        """
+        Resets Ls library to initial one.   
+        """    
+    
         self.Ls_library = copy.deepcopy(self.initial_Ls_library)
         
     
     
-    # rescales bound distance from middle of range by half of given factor for all process library rates:
-    # note: range hence changes by up to factor
-    # rates assumed positive and capped at zero from left (hence range can change less)
     def rescale_Ls_library_range(self, factor):
+    
+        """
+        Rescales bound distance from middle of range by half of given factor for all process library rates.
+        Range hence changes by up to factor.
+        Rates assumed positive and capped at zero from left (hence range can change less).
+        """
     
         if type(self.Ls_library) == bool and not self.Ls_library:
             raise RuntimeError('Process library not retained by handler so cannot rescale range')
     
         for operator in self.Ls_library:
-            
             # note: bounds are currently tuples and not mutable!
             
             # calculate new bounds:
@@ -294,9 +307,11 @@ class ProcessHandler():
             
             
             
-    # removes random coupling process between qubit and defect:        
     def remove_random_qubit_coupling(self, model):
-        
+        """
+        Removes random coupling process between qubit and defect.
+        """        
+            
         # make list of all model's individual couplings provided they are qubit-defect:
         couplings = [] # now tuples of (holding_TLS, partner, index in list)
         for TLS in model.TLSs:
@@ -323,13 +338,15 @@ class ProcessHandler():
             model.build_operators()  
         
         return model
+        
+        
             
-        
-        
-    
-    # removes random coupling process between two different defects:        
     def remove_random_defect2defect_coupling(self, model):
         
+        """
+        Removes random coupling process between two different defects.    
+        """
+    
         # make list of all model's individual couplings provided they are defect-defect:
         couplings = [] # now tuples of (holding_TLS, partner, index in list)
         for TLS in model.TLSs:

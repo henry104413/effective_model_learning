@@ -379,7 +379,7 @@ class LearningChain:
     def tweak_params(self, model_to_tweak):
     
         """
-        Performs a single step in existing process parameters landscape:
+        Performs a single step in existing process parameters landscape.
         Modifies argument model, also returns it
         """
         
@@ -554,6 +554,8 @@ class LearningChain:
 """ to do:
 
 likelihood(temperature, total_deviation)
+
+account for probability of moves - reversibility
 
 run documentation
 
