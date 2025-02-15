@@ -15,7 +15,6 @@ import params_handling
 import process_handling
 
 
-
 # single instance executes a learning chain; own hyperparameters including initial model (inc. D): 
 
 class LearningChain:
@@ -25,8 +24,8 @@ class LearningChain:
     
     Hyperparameters currently set at initialisation. These include chain length in steps,
     as well as properties of upcoming step proposals and acceptance.
-    The main method to interact with externally is run(), which returns the best model found.
-    It also populates instance variables such as explored_costs, 
+    Main method to interact with externally is run(), which returns best model found.
+    It also populates instance variables such as progression trackers, 
     which can be accessed externally for plotting etc.
     
     !!! TO ADD:
@@ -188,8 +187,12 @@ class LearningChain:
         
     
     
-    def run(self, chain_step_options = False, chain_step_probabilities = False):
+    def run(self):
         
+        """
+        Carries out the chain using instance-level hyperparameters;
+        populates instance-level progression trackers, returns best model found.
+        """
         
         # ADD temperature sampling
         self.MH_temperature = 0.00001
@@ -548,5 +551,13 @@ class LearningChain:
         self.process_handler.remove_random_defect2defect_coupling(model_to_modify)
         
         
-        
-                                      
+""" to do:
+
+likelihood(temperature, total_deviation)
+
+run documentation
+
+temperature sampling
+
+"""        
+pass                                      

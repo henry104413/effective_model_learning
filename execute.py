@@ -93,13 +93,13 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 10000,
+                      max_chain_steps = 1000,
                       chain_step_options = False,
                       
                       temperature_proposal_shape = 0.01, # aka k
                       temperature_proposal_scale = 0.01, # aka theta
                       
-                      jump_length_rescaling_factor = 1, # for scaling up or down jump lengths of parameter handler
+                      jump_length_rescaling_factor = 1.05, # for scaling up or down jump lengths of parameter handler
                       
                       acceptance_window = 50,
                       acceptance_target = 0.4,
@@ -140,9 +140,6 @@ best = quest.run()
 costs = quest.explored_costs
 acceptance_ratios = quest.acceptance_ratios_log
 best_data = best.calculate_dynamics(ts, observable_ops = measurement_observables)
-
-#%%
-
 
 
 
