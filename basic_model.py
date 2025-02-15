@@ -331,7 +331,7 @@ class Model():
         
         # check method argument:
             
-        if dynamics_method == False: dynamics_method == 'qutip'
+        if dynamics_method == False: dynamics_method = 'qutip'
         
         if dynamics_method not in ['qutip', 'liouvillian']:
             

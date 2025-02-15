@@ -93,7 +93,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 1000,
+                      max_chain_steps = 5000,
                       chain_step_options = False,
                       
                       temperature_proposal_shape = 0.01, # aka k
