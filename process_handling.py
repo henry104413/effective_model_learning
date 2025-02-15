@@ -9,20 +9,15 @@ import copy
 import numpy as np
 
 
- 
-#%%
-
-
-
-# executes any modification to model processes (operators)
-# stores available process library
-
-# methods should take model as argument and work on it
-# same process handling object expected to be used on various models 
 
 class ProcessHandler():
     
+    """
+    Instance provides access to methods adding and removing model processes,
+    ie. coupling terms in Hamiltonian or Lindblad operators.
     
+    Holds libraries of available processes and corresponding distributions their parameters are sampled from.
+    """    
     
     def __init__(self, chain = False, model = False,
                  Ls_library = False,

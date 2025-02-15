@@ -230,13 +230,10 @@ class LearningChain:
             next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities)
             if next_step == 'tweak all parameters':
                 self.tweak_params(proposal)
-                #print('tweaking')
             elif next_step == 'add L':
                 self.add_random_L(proposal)
-                #print('adding L')
             elif next_step == 'remove L':
                 self.remove_random_L(proposal)
-                #print('removing L')
             elif next_step == 'add qubit coupling':
                 self.add_random_qubit_coupling(proposal)
             elif next_step == 'remove qubit coupling':

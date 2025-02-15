@@ -187,7 +187,6 @@ class ParamsHandler():
             # if detriment, still accept with given likelihood (like in Metropolis-Hastings)
             # AND update current to proposal (now worse than previous current)
             elif (self.MH_acceptance): 
-                switch_print = False
                 if self.MH_temperature == 0:
                     MH_likelihood = 0
                 else:

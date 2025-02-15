@@ -335,7 +335,7 @@ class Model():
         
         if dynamics_method not in ['qutip', 'liouvillian']:
             
-            # print('dynamics calculation method not recognised, hence using qutip')
+            print('Model dynamics calculation method not recognised, hence using qutip')
             
             dynamics_method = 'qutip'
         
@@ -396,11 +396,6 @@ class Model():
                 
                 
                 
-        # solve ME and return observable data array:
-          
-        switch_print_profiling = False  
-            
-        
         
         # solve ODE using qutip (default option):
         # return list of arrays of observables values across evaluation times, in order of observable operators
@@ -420,8 +415,6 @@ class Model():
             
             qutip_observables = qutip_dynamics.expect # CONTINUE HERE - CHANGE TO GET ALL THE ARRAYS FOR ALL THE OBSERVABLES!!
 
-            if switch_print_profiling: ('Using qutip:\n' + str(time.time() - clock)) 
-            
             return qutip_observables # qutip_dynamics.states
     
     
@@ -501,11 +494,6 @@ class Model():
                 time_prop += time.time() - clock2
                 
                 liouvillian_observable.append(new_value) # extract and save observable
-                
-            if switch_print_profiling:    
-                print('__________\nUsing liouvillian:\n' + str(time.time() - clock)) 
-                print('exponentiation:\n' + str(time_expm))
-                print('propagation total:\n' + str(time_prop))
             
             return liouvillian_observable    
                 
