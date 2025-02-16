@@ -93,7 +93,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 5000,
+                      max_chain_steps = 50,
                       chain_step_options = False,
                       
                       temperature_proposal_shape = 0.01, # aka k
@@ -101,7 +101,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       jump_length_rescaling_factor = 1.05, # for scaling up or down jump lengths of parameter handler
                       
-                      acceptance_window = 50,
+                      acceptance_window = 10,
                       acceptance_target = 0.4,
                       acceptance_band = 0.2,
                       
@@ -113,11 +113,11 @@ quest = learning_chain.LearningChain(target_times = ts,
                           },
                       
                       Ls_library = { # will draw from uniform distribution from specified range)
-                                                         'sigmax': (0.01, 0.1)
-                                                        ,'sigmay': (0.01, 0.1)
-                                                        ,'sigmaz': (0.01, 0.1)
-                                                        },
-           
+                         'sigmax': (0.01, 0.1)
+                         ,'sigmay': (0.01, 0.1)
+                         ,'sigmaz': (0.01, 0.1)
+                         },
+                   
                       qubit_couplings_library = { # will draw from uniform distribution from specified range)
                           'sigmax': (-1, 1)
                          ,'sigmay': (-1, 1)
@@ -135,6 +135,7 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 #%%
 best = quest.run()
+
 
 
 costs = quest.explored_costs

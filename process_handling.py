@@ -52,26 +52,31 @@ class ProcessHandler():
             else:
                 raise RuntimeError('Cannot add Lindblad process as process library not specified')
             
-        # select subsystem:
-        subsystems = [x for x in model.TLSs]# if not x.is_qubit]
-        subsystem = np.random.choice(subsystems)
-        
-        # identify Ls in library not yet present on selected subsystem:
-        existing = [x for x in subsystem.Ls]
-        options = [x for x in Ls_library if x not in existing] # note: could just put subsystem.Ls instead of existing...
-        
-        # select new operator if available, draw rate from uniform distribution between bounds, and add:
-        if options:
-            operator = np.random.choice(options)
+        # gather all possible additions, ie. combinations (TLS, L in library but not on TLS)
+        # (all treated as equally probable)
+        possible_additions = []
+        for TLS in model.TLSs:
+            addable_Ls = [x for x in Ls_library if x not in TLS.Ls] # addable Ls for this TLS
+            possible_additions = possible_additions + [(TLS, x) for x in addable_Ls]
+        # !!! check if there's a more efficient method than concatenation 
+      
+        # update model if required and additions possible, otherwise leave unchanged:
+        if possible_additions:
+            # pick one pair of TLS and L operator:
+            #TLS, operator = np.random.choice(possible_additions) # nope - choice doesn't like list of tuples
+            TLS, operator = possible_additions[np.random.choice(len(possible_additions))]
+            
+            # sample rate from distribution of type specified here and properties in library
             new_rate = np.random.uniform(*Ls_library[operator])
-            subsystem.Ls[operator] = new_rate 
+            
+            # update model:
+            TLS.Ls[operator] = new_rate
             model.build_operators()
-            # note: this directly modifies variable another classe's object
-            # ...perhaps could be changed to instead work via method of that class?
         else:
             pass
         
-        return model
+        # return model and number of possible additions - used in prior/marginal probability calculation:
+        return model, len(possible_additions)
     
     
     
