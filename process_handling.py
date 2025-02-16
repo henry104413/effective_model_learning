@@ -38,7 +38,7 @@ class ProcessHandler():
         
         """
         Adds random new single-site Linblad process from process library to random subsystem.
-        Modifies argument model, also returns it.  
+        Modifies argument model and also returns it.
         Argument library used if passed, instance-level one otherwise, error if neither available.  
         
         Currently rate sampled from uniform distribution, bounds given by tuple for each library entry.

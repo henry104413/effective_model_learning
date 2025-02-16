@@ -346,6 +346,51 @@ class LearningChain:
     
     
     
+    def acceptance_probability(self, current, proposal, step_type):
+        
+        # maybe sample new temperature?
+        
+        # another method calculates probability of moving proposal->current
+    
+        pass
+    
+    
+    
+    # def reversibility_factor(self, next_step):
+    #     pass
+    #     """
+    #     Calculates and returns ratio of prior to marginal,
+    #     ie. probability of proposal given current divided by
+    #     probability of current given prior (= step reversal).
+        
+    #     Note: Only processes not present can be added and those present removed,
+    #     hence this depends on current model as well as possibilities allowed by process library.
+    #     """
+    
+    #     if next_step == 'tweak all parameters':
+    #         return 1
+        
+    #     elif next_step == 'add L':
+    #         self.add_random_L(proposal)
+            
+    #     elif next_step == 'remove L':
+    #         self.remove_random_L(proposal)
+            
+    #     elif next_step == 'add qubit coupling':
+    #         self.add_random_qubit_coupling(proposal)
+            
+    #     elif next_step == 'remove qubit coupling':
+    #         self.remove_random_qubit_coupling(proposal)
+            
+    #     elif next_step == 'add defect-defect coupling':
+    #         self.add_random_defect2defect_coupling(proposal)
+            
+    #     elif next_step == 'remove defect-defect coupling':
+    #         self.remove_random_defect2defect_coupling(proposal)
+        
+    
+    
+    
     def optimise_params(self, model_to_optimise):
     
         """
@@ -548,13 +593,13 @@ class LearningChain:
         self.process_handler.remove_random_defect2defect_coupling(model_to_modify)
         
         
+
+        
 """ to do:
 
 likelihood(temperature, total_deviation)
 
 account for probability of moves - reversibility
-
-run documentation
 
 temperature sampling
 
