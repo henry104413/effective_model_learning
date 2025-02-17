@@ -34,12 +34,14 @@ class ProcessHandler():
 
         
 
-    def add_random_L(self, model, Ls_library = False):
+    def add_random_L(self, model, Ls_library = False, update = True):
         
         """
-        Adds random new single-site Linblad process from process library to random subsystem.
-        Modifies argument model and also returns it.
+        Can add random new single-site Linblad process from process library to random subsystem.
+        Modifies argument model and returns: updated model, number of addable Ls.
         Argument library used if passed, instance-level one otherwise, error if neither available.  
+        Update flag true means addition performed; false avoids changing model,
+        to only get count of addable Ls for prior/marginal probabilities calculation.
         
         Currently rate sampled from uniform distribution, bounds given by tuple for each library entry.
         !!! To do: Change this to another distribution with unbounded tails, possibly mirrored gamma.
@@ -57,13 +59,11 @@ class ProcessHandler():
         possible_additions = []
         for TLS in model.TLSs:
             addable_Ls = [x for x in Ls_library if x not in TLS.Ls] # addable Ls for this TLS
-            possible_additions = possible_additions + [(TLS, x) for x in addable_Ls]
-        # !!! check if there's a more efficient method than concatenation 
-      
+            possible_additions.extend([(TLS, x) for x in addable_Ls])
+        
         # update model if required and additions possible, otherwise leave unchanged:
         if possible_additions:
             # pick one pair of TLS and L operator:
-            #TLS, operator = np.random.choice(possible_additions) # nope - choice doesn't like list of tuples
             TLS, operator = possible_additions[np.random.choice(len(possible_additions))]
             
             # sample rate from distribution of type specified here and properties in library
@@ -75,7 +75,7 @@ class ProcessHandler():
         else:
             pass
         
-        # return model and number of possible additions - used in prior/marginal probability calculation:
+        # return model and number of possible additions:
         return model, len(possible_additions)
     
     
@@ -237,28 +237,34 @@ class ProcessHandler():
         
         
         
-    def remove_random_L(self, model):
+    def remove_random_L(self, model, update = True):
     
         """
-        Removes random Lindblad process from random subsystem
-        Modifies argument model, also returns it.
+        Can remove random existing single-site Linblad process from random subsystem.
+        Modifies argument model and returns: updated model, number of removable Ls.
+        Update flag true means removal performed; false avoids changing model,
+        to only get count of removable Ls for prior/marginal probabilities calculation.
         """
-    
-        # select subsystem:
-        subsystems = [x for x in model.TLSs]# if not x.is_qubit]
-        subsystem = np.random.choice(subsystems)
         
-        # identify Ls present on selected subsystem:
-        options = [x for x in subsystem.Ls]
+        # gather all possible removals, ie. combinations (TLS, existing L on TLS)
+        # (all treated as equally probable)
+        possible_removals = []
+        for TLS in model.TLSs:
+            possible_removals.extend([(TLS, x) for x in TLS.Ls])
         
-        # select operator and remove:
-        if options:
-            operator = np.random.choice(options)
-            subsystem.Ls.pop(operator)
+        # pick one pair of TLS and L operator:
+        if possible_removals:
+            TLS, operator = possible_removals[np.random.choice(len(possible_removals))]
+            
+            # update model:
+            TLS.Ls.pop(operator)
             model.build_operators()
         else:
             pass
-        
+            
+        # return model and number of possible removals:
+        return model, len(possible_removals)
+     
     
         
     def define_Ls_library(self, Ls_library):

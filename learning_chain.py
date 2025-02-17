@@ -367,27 +367,7 @@ class LearningChain:
     #     hence this depends on current model as well as possibilities allowed by process library.
     #     """
     
-    #     if next_step == 'tweak all parameters':
-    #         return 1
-        
-    #     elif next_step == 'add L':
-    #         self.add_random_L(proposal)
-            
-    #     elif next_step == 'remove L':
-    #         self.remove_random_L(proposal)
-            
-    #     elif next_step == 'add qubit coupling':
-    #         self.add_random_qubit_coupling(proposal)
-            
-    #     elif next_step == 'remove qubit coupling':
-    #         self.remove_random_qubit_coupling(proposal)
-            
-    #     elif next_step == 'add defect-defect coupling':
-    #         self.add_random_defect2defect_coupling(proposal)
-            
-    #     elif next_step == 'remove defect-defect coupling':
-    #         self.remove_random_defect2defect_coupling(proposal)
-        
+    #    
     
     
     
