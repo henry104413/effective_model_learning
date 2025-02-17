@@ -8,6 +8,8 @@ Effective model learning
 import copy
 import numpy as np
 
+import basic_model
+import learning_model
 
 
 class ProcessHandler():
@@ -34,7 +36,11 @@ class ProcessHandler():
 
         
 
-    def add_random_L(self, model, Ls_library = False, update = True):
+    def add_random_L(self,
+                     model: type(basic_model.BasicModel) | type(learning_model.LearningModel),
+                     Ls_library: dict(str, tuple | list) = False,
+                     update: bool = True
+                     ) -> (type(basic_model.BasicModel) | type(learning_model.LearningModel), int):
         
         """
         Can add random new single-site Linblad process from process library to random subsystem.
@@ -237,7 +243,10 @@ class ProcessHandler():
         
         
         
-    def remove_random_L(self, model, update = True):
+    def remove_random_L(self,
+                        model: type(basic_model.BasicModel) | type(learning_model.LearningModel),
+                        update: bool = True
+                        ) -> (type(basic_model.BasicModel) | type(learning_model.LearningModel), int):
     
         """
         Can remove random existing single-site Linblad process from random subsystem.
