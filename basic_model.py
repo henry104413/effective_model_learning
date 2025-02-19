@@ -149,8 +149,6 @@ class Model():
         
         
     
-    # builds full system Hamiltonian:
-    
     def build_H(self):
         
         """
@@ -181,55 +179,40 @@ class Model():
             H = H + temp
             
             
-        # add coupling terms for each TLS that has any coupling:
-        # note: now coupling is only recorded in one TLS of each coupled pair
+        # go over all TLSs and build all its couplings:
+        # note: now coupling only recorded within one TLS of each coupled pair
+        # assumed structure: {partner: [(rate, [(op_self, op_partner), (op_self, op_partner)]]}
         for TLS in self.TLSs:
             
             # go over all partners to this TLS:
             for partner in TLS.couplings:
-                
-                # go over all couplings to this partner:
-                # note: this may be a single tuple or a list of them (in case of multiple types of coupling to this partner)
-                # hence type check here and convert to list to allow loop
-                
-                all_couplings_properties = TLS.couplings[partner]
-                
-                if type(all_couplings_properties) != list:
                     
-                    all_couplings_properties = [all_couplings_properties]
+                # go over couplings with this parner
+                # ie. tuples of (rate, [(op_this, op_partner), (op_this, op_partner), ...]):
+                for coupling in TLS.couplings[partner]:
                     
-                for single_coupling_properties in all_couplings_properties:
-               
-               
-                   # add Hamiltonian term for this partner and this type of coupling:
-                       
-                
-                    strength, op_on_TLS, op_on_partner = single_coupling_properties
-                    
-                    
-                    temp = 1
-                    
-                    # go over all places, putting correct operators in right places and identities elsewhere
-                    
-                    for place in self.TLSs:
+                    # go over all operator combinations sharing same strenght/rate
+                    # ie. tuples of (op_on_TLS, op_on_partner):
+                    strength, op_pairs = coupling
+                    for op_pair in op_pairs:
+                        op_on_TLS, op_on_partner = op_pair
+                        temp = 1
                         
-                        if place == TLS:
+                        # insert appropriate operator in each place in Kronecker product 
+                        for place in self.TLSs:
                             
-                            temp = T(temp, ops[op_on_TLS]*strength) # rescaled by strength here - do not rescale at partner!
-                            
-                        elif place == partner:
-                            
-                            temp = T(temp, ops[op_on_partner])
-                            
-                        else:
-                            
-                            temp = T(temp, ops['id2'])
-                
-                    H = H + temp
-            
+                            if place == TLS:
+                                temp = T(temp, strength*op_on_TLS)
+                            elif place == partner:
+                                temp = T(temp, strength*op_on_partner)
+                            else:
+                                temp = T(temp, ops['id2'])
+                                
+                        H = H + temp
+                        
+             
         self.H = H
         return H
-    # !!! redo this for new coupling
     
     
     
@@ -442,8 +425,6 @@ class Model():
             outdict[TLS_id] = subdict
                     
         return outdict
-    
-    
     
     
     
