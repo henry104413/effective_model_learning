@@ -4,11 +4,15 @@
 Effective model learning
 @author: Henry (henry104413)
 """
-
-import basic_model
-import learning_model
+from __future__ import annotations
 import typing
-
+if typing.TYPE_CHECKING:
+    from basic_model import BasicModel
+    from learning_model import LearningModel
+# note: terrible business... cyclical imports when type checking...
+# fix: import only when typing.TYPE_CHECKING AND a) replace dependent types by strings ("forward reference")
+# ... OR b) at start of file: from __future__ import annotations (to not have to wrap types into strings for runtime unimported stuff)
+# also within TYPE_CHEKCING maybe don't do the full import but only from ... import ... - should be cheaper
 
 class TwoLevelSystem():
     
@@ -32,7 +36,7 @@ class TwoLevelSystem():
       
     """
     
-    def __init__(self, model: type(basic_model.BasicModel) | type(learning_model.LearningModel),
+    def __init__(self, model: type(BasicModel) | type(LearningModel),
                  TLS_id: str = "",
                  is_qubit: bool = False,
                  energy: int|float = None,

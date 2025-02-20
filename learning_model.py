@@ -13,7 +13,7 @@ import numpy as np
 # enhanced model with ability to modify itself
 # methods to change parameters, methods to add/remove processes, and methods to add/remove subsystems
 
-class LearningModel(basic_model.Model):
+class LearningModel(basic_model.BasicModel):
     
     """
     Instances based on BasicModel (hold information about systems, couplings, processes;

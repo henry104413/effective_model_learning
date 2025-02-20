@@ -32,22 +32,22 @@ GT.add_TLS(TLS_label = 'qubit',
            )
 GT.add_TLS(is_qubit = False,
             energy = 5.8,
-            couplings = {'qubit': [(0.6, 'sigmax', 'sigmax')]
+            couplings = {'qubit': [(0.6, ['sigmax', 'sigmax'])]
                         },
             Ls = {
                   'sigmaz' : 0.05,
                   'sigmay' : 0.02
                   }
             )
-GT.add_TLS(is_qubit = False,
-            energy = 4.5,
-            couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
-                        },
-            Ls = {
-                  'sigmaz' : 0.03,
-                  'sigmax' : 0.06
-                  }
-            )
+# GT.add_TLS(is_qubit = False,
+#             energy = 4.5,
+#             couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
+#                         },
+#             Ls = {
+#                   'sigmaz' : 0.03,
+#                   'sigmax' : 0.06
+#                   }
+#             )
 GT.build_operators()
 
 # simulate measurements:
@@ -56,7 +56,7 @@ ts = np.linspace(0, 1e1, int(1000))
 measurement_observables = ['sigmaz']
 measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
 
-
+raise SystemExit()
 
 #%% parallelised runs:
 

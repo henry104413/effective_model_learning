@@ -6,7 +6,6 @@ Effective model learning
 """
 
 
-import time
 import numpy as np
 import scipy as sp
 
@@ -21,7 +20,7 @@ ops = definitions.ops
 
 
 
-class Model():
+class BasicModel():
     
     # container for references to all existing Model instances:
     existing_models = []
@@ -96,7 +95,6 @@ class Model():
         
       
     def build_operators(self):
-        
         """
         Builds all full system operators - to be called after any changes to model.    
         """
@@ -108,7 +106,6 @@ class Model():
     
     
     def build_Ls(self) -> list[type(qutip.Qobj)]:
-    
         """
         Builds all full system Lindblad operators (dissipators).
         Saves list of all to this model's container, also returns it.
@@ -150,7 +147,6 @@ class Model():
         
     
     def build_H(self):
-        
         """
         Builds full system Hamiltonian.
         Saves to this model's container, also returns it.
@@ -295,7 +291,6 @@ class Model():
         # solve ODE using qutip (default option):
         # return list of arrays of observables values across evaluation times, in order of observable operators
         if dynamics_method == 'qutip':
-            clock = time.time()
             qutip_dynamics = qutip.mesolve(self.H,
                                      self.initial_DM,
                                      evaluation_times,
