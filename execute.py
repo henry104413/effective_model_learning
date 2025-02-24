@@ -19,7 +19,7 @@ import output
 
     
 # set up ground truth model:  
-GT = basic_model.Model()
+GT = basic_model.BasicModel()
 GT.add_TLS(TLS_label = 'qubit',
            is_qubit = True,
            energy = 5,
@@ -32,7 +32,7 @@ GT.add_TLS(TLS_label = 'qubit',
            )
 GT.add_TLS(is_qubit = False,
             energy = 5.8,
-            couplings = {'qubit': [(0.6, ['sigmax', 'sigmax'])]
+            couplings = {'qubit': [(0.6, [('sigmay', 'sigmay')])]
                         },
             Ls = {
                   'sigmaz' : 0.05,

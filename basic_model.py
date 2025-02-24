@@ -49,7 +49,7 @@ class BasicModel():
         self.initial_DM = None
         
         # save instance:
-        Model.existing_models.append(self)
+        BasicModel.existing_models.append(self)
         
     
     
@@ -198,9 +198,9 @@ class BasicModel():
                         for place in self.TLSs:
                             
                             if place == TLS:
-                                temp = T(temp, strength*op_on_TLS)
+                                temp = T(temp, strength*ops[op_on_TLS])
                             elif place == partner:
-                                temp = T(temp, strength*op_on_partner)
+                                temp = T(temp, strength*ops[op_on_partner])
                             else:
                                 temp = T(temp, ops['id2'])
                                 

@@ -38,7 +38,7 @@ class ProcessHandler():
 
     def add_random_L(self,
                      model: type(basic_model.BasicModel) | type(learning_model.LearningModel),
-                     Ls_library: dict(str, tuple | list) = False,
+                     Ls_library: dict[str, tuple | list] = False,
                      update: bool = True
                      ) -> (type(basic_model.BasicModel) | type(learning_model.LearningModel), int):
         
