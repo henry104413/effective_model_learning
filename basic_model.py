@@ -373,7 +373,6 @@ class BasicModel():
                 outstring += ('\n   ' + L + ': ' + str(TLS.Ls[L]))
         outstring += '\n__________________'
         return outstring
-    # !!! need to redo couplings here with new form
     
     
     
@@ -422,7 +421,7 @@ class BasicModel():
                      defects_energies_range: tuple[int, float]  = (3, 7), # tuple of two floats for range
                      allowed_couplings: dict = {
                          # identifier: now should be qubit due to restrictions
-                         'qubit': [(1, (0.1, 1) , 'sigmax', 'sigmax')] # partner: [(probability, rate range, type)]
+                         'qubit': [(1, (0.1, 1) , [('sigmax', 'sigmax')])] # partner: [(probability, (rate min, rate max), [type])]
                          #...list for different couplings to this partner
                          },
                      allowed_Ls: dict[str, tuple[int|float, tuple[int|float]]] = {
@@ -434,6 +433,8 @@ class BasicModel():
         Randomly populates model.
         Warning: Calling this replaces any previous configuration.
         Now assuming 1 qubit and couplings only between it and single defects.
+        
+        Method not fully maintained.
         """
         
         # remove old constituents: (operators get replaced by #calling build_operators() later)
@@ -455,7 +456,7 @@ class BasicModel():
         # returns dictionary of couplings generated according to input to configure single TLS:                                      
         def get_couplings():
             couplings = {}
-            for partner, val in allowed_couplings.items(): # now redundant since only assuming coupling to qubit
+            for partner, val in allowed_couplings.items():
             # for this partner now go over all possible couplings:
                 complete = []
                 for coupling in val:
@@ -463,11 +464,10 @@ class BasicModel():
                     if not np.random.uniform() < coupling[0]: # ie. NOT included 
                         continue
                     else: # ie. included
-                        complete.append((np.random.uniform(*coupling[1]), coupling[2], coupling[3]))
+                        complete.append((np.random.uniform(*coupling[1]), coupling[2]))
                 couplings[partner] = complete
             return couplings
-        # !!! redo with new couplings form 
-                    
+            
         # make one qubit: (assumed to only be one)        
         self.add_TLS(TLS_label = 'qubit',
                      is_qubit = True,
