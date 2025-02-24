@@ -56,7 +56,7 @@ ts = np.linspace(0, 1e1, int(1000))
 measurement_observables = ['sigmaz']
 measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
 
-raise SystemExit()
+
 
 #%% parallelised runs:
 

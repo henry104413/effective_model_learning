@@ -241,7 +241,7 @@ class BasicModel():
         Calculates dynamics and returns list of arrays of measurements at evaluation_times;
         each array is measurement with respect to corresponding observable argument observable_ops.
         
-        If not observable not specified, assume population in site basis of first qubit in system.
+        If observable not specified, assume population in site basis of first qubit in system.
         If string matching existing operator, take that observable on first qubit found with identities elsewhere.
         """
     
@@ -378,7 +378,7 @@ class BasicModel():
     
     def model_description_dict(self):
         """
-        Return model description as a JSON compatible dictionary.
+        Returns model description as a JSON compatible dictionary.
         """
     
         # make nested dictionary:

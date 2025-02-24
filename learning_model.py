@@ -69,15 +69,15 @@ class LearningModel(basic_model.BasicModel):
                 TLS.energy += np.random.normal(0, self.jump_lengths['energy'])
             
             # modify all its couplings to each partner:
+            # {partner: [(rate, [(op_on_self, op_on_partner)])]}
             for partner in TLS.couplings: # partner is key and value is list of tuples
-                current_list = TLS.couplings[partner] # list of couplings to current partner
-                for i in range(len(current_list)):
-                    current_list[i] = (current_list[i][0] + np.random.normal(0, self.jump_lengths['couplings']),
-                                       current_list[i][1], current_list[i][2])
+                this_partner_couplings = TLS.couplings[partner] # list of couplings to current partner
+                for i, coupling in enumerate(TLS.couplings[partner]): # coupling now (rate, [(op_on_self, op_on_partner), ...])
+                    strength, op_pairs = coupling
+                    TLS.couplings[partner][i] = (strength + np.random.normal(0, self.jump_lengths['couplings']), op_pairs)
             
             # modify all its Lindblad ops:
             for L in TLS.Ls:
-                
                 # make up to specified number of proposals ensuring result positive
                 max_attempts = 10
                 for _ in range(max_attempts):    
