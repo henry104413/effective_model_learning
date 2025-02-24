@@ -353,7 +353,7 @@ class BasicModel():
                     
     
     
-    def model_description_str(self, concise: bool = True) -> str:
+    def model_description_str(self) -> str:
         "Returns model description as a string (to either print or save to file)."
         outstring = '______Model:______'    
         for TLS in self.TLSs:
@@ -361,24 +361,16 @@ class BasicModel():
             else: outstring += ('\n\n(' + str(self.TLSs.index(TLS)) + ') - Defect')
             outstring += ('\nEnergy: ' + str(TLS.energy))
             outstring += ('\nCouplings:')
-            if concise: # concise version
-                for partner in TLS.couplings: # note: each iterand: partner TLS
-                    outstring += ('\n   Partner: TLS (' + str(self.TLSs.index(partner)) + ')')
-                    for coupling in TLS.couplings[partner]: # note: each iterand: tuple of individual coupling term details 
-                        outstring += ('\n      (' + str(coupling[0]) + ', ' + (coupling[1]) + ', ' + (coupling[2]) + ')')
-                outstring += ('\nLindblad processes:')
-                for L in TLS.Ls: # note: each iterand: Lindblad process        
-                    outstring += ('\n   ' + L + ': ' + str(TLS.Ls[L]))
-            else: # verbose version
-                for partner in TLS.couplings: # note: each iterand: partner TLS
-                    outstring += ('\n   Partner: TLS ' + str(self.TLSs.index(partner)))
-                    for coupling in TLS.couplings[partner]: # note: each iterand: tuple of individual coupling term details 
-                        outstring += (' \n      Strength: ' + str(coupling[0]))
-                        outstring += (' \n      On this: ' + (coupling[1]))
-                        outstring += (' \n      On partner: ' + (coupling[2]))
-                outstring += (' \nLindblad processes:')
-                for L in TLS.Ls: # note: each iterand: Lindblad process        
-                    outstring += (' \n   Type: ' + L + ' Rate: ' + str(TLS.Ls[L]))
+            for partner in TLS.couplings: # note: each iterand: partner TLS
+                outstring += ('\n   Partner: TLS (' + str(self.TLSs.index(partner)) + ')')
+                for coupling in TLS.couplings[partner]: # note: each iterand now (strength, [(op_here, op_there), ...](
+                    strength, op_pairs = coupling
+                    outstring += ('\n      ' + str(strength) + ':')
+                    for op_pair in op_pairs:
+                        outstring += ('\n         (' + str(op_pair[0]) + ', ' + str(op_pair[1]) + ')')
+            outstring += ('\nLindblad processes:')
+            for L in TLS.Ls: # note: each iterand: Lindblad process        
+                outstring += ('\n   ' + L + ': ' + str(TLS.Ls[L]))
         outstring += '\n__________________'
         return outstring
     # !!! need to redo couplings here with new form
