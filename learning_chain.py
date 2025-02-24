@@ -75,15 +75,15 @@ class LearningChain:
            }
 
         qubit_couplings_library = { # will draw from uniform distribution from specified range)
-            'sigmax': (-0.05, 0.05)
-           ,'sigmay': (-0.05, 0.05)
-           ,'sigmaz': (-0.05, 0.05)
+            ('sigmax', 'sigmax'): (-0.05, 0.05)
+           ,('sigmay', 'sigmay'): (-0.05, 0.05)
+           ,('sigmaz', 'sigmaz'): (-0.05, 0.05)
            }
         
         defect_couplings_library = { # will draw from uniform distribution from specified range)
-            'sigmax': (-0.05, 0.05)
-           ,'sigmay': (-0.05, 0.05)
-           ,'sigmaz': (-0.05, 0.05)
+            ('sigmax', 'sigmay'): (-0.05, 0.05)
+           ,('sigmay', 'sigmay'): (-0.05, 0.05)
+           ,('sigmaz', 'sigmay'): (-0.05, 0.05)
            }
 
     
@@ -575,7 +575,7 @@ class LearningChain:
         
 
         
-""" to do:
+""" !!! to do:
 
 likelihood(temperature, total_deviation)
 

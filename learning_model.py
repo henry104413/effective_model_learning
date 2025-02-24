@@ -20,7 +20,6 @@ class LearningModel(basic_model.BasicModel):
     able to generate full operators and dynamics accodring to Lindblad Master Equation).
     Additionally implements method to shift all parameters by randomly sampled amount,
     with width for each type of parameter set for instance as jump lengths hyperparameter.
-    !!! To do: Probably scrap this class and move this into parameters handler?
     """    
     
     def __init__(self, *args, initial_guess = False, jump_lengths = False, **kwargs):

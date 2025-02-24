@@ -22,16 +22,25 @@ ops = definitions.ops
 
 class BasicModel():
     
+    """
+    Instance is a model made up of TwoLevelSystem instances (TLSs).
+    
+    Holds information about constituent TLSs, couplings between them, and Lindblad processes.
+    Has methods to generate full system operators and dynamics as per Lindblad Master Equation.
+    Also to output model description as a JSON dictionary or string.
+    
+    Predominantly created by dynamically adding TLSs via add_TLS method.
+    Limited random setup also possible.
+    """
+    
     # container for references to all existing Model instances:
     existing_models = []
 
     
     
-    # constructs a new Model instance:
     def __init__(self):
         
-        # add: input check for qubit and defects dictionaries
-        # add: initial state specification - so far assume qubit excited, all else ground
+        # !!! to do: initial state specification - so far assume qubit excited, all else ground
         
         # model subsystems container (instances of TwoLevelSystem):
         self.TLSs = []
@@ -70,16 +79,40 @@ class BasicModel():
         additionally saves reference to labels dictionary if label defined.
         """
         
-        # process input dictionary (replace any entries with labels by entries with references):
+        # process arguments: 
+            
+        # replace any entries with labels by entries with references):
         # note: TLS objects should only ever have instance references as keys,
         # whereas model instances can handle TLS identifying strings as a user interface
         # note: cannot modify dictionary keys while looping over it with .items()
-                
         for key in list(couplings):
             if type(key) == str:
                 couplings[self.TLS_labels[key]] = couplings[key]
                 del couplings[key]
-            
+                
+        # encase in list if any partner's coupling information passed as single tuple not in list      :
+        # (ie. input against argument specifications)
+        for partner in couplings:
+            if type(couplings[partner]) == tuple:
+                # assuming otherwise correct input (strength, [(op_here, op_there), ...])
+                # alternatively (strength, (op_here, op_there)) would be fixed below
+                print('correction...')
+                couplings[partner] = [couplings[partner]]    
+        
+        # encase in list if any coupling's operator-pair passed as single tuple not in list:
+        # (ie. input against argument specifications)
+        for partner in couplings:
+            for i, coupling in enumerate(couplings[partner]):
+                if len(coupling) != 2:
+                    # note: here coupling assumed a tuple (strength, (op_here, op_there))
+                    # false if eg. (strength, op_here, op_there)
+                    raise RuntimeError('Incorrect coupling specification:\n'
+                                       +'Use {partner: [(rate, [(op_self, op_partner), ...]]}')
+                # assuming single operator-pair tuple passed for given strength - encase in list
+                if type(coupling[1]) == tuple:
+                    couplings[partner][i] = (coupling[0], [coupling[1]])
+                    
+    
         # make new TLS instance:
         new_TLS = two_level_system.TwoLevelSystem(self, TLS_label, is_qubit, energy, couplings, Ls)        
         
