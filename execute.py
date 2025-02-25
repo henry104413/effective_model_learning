@@ -48,7 +48,7 @@ ts = np.linspace(0, 1e1, int(1000))
 measurement_observables = ['sigmaz']
 measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
 
-raise SystemExit()
+
 
 #%% parallelised runs:
 
@@ -86,7 +86,15 @@ quest = learning_chain.LearningChain(target_times = ts,
                       initial = (5, 2), # (qubit energy, number of defects)
                       
                       max_chain_steps = 50,
-                      chain_step_options = False,
+                      chain_step_options = {
+                          'tweak all parameters': 0.1,
+                          'add L': 0.1,
+                          'remove L': 0.1,
+                          'add qubit coupling': 0.05, 
+                          'remove qubit coupling': 0.05,
+                          'add defect-defect coupling': 0.025, 
+                          'remove defect-defect coupling': 0.025
+                          },
                       
                       temperature_proposal_shape = 0.01, # aka k
                       temperature_proposal_scale = 0.01, # aka theta

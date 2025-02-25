@@ -82,7 +82,7 @@ class ProcessHandler():
             TLS, operator = possible_additions[np.random.choice(len(possible_additions))]
             
             # sample rate from distribution of type specified here and properties in library
-            new_rate = np.random.uniform(*Ls_library[operator])
+            new_rate = np.random.gamma(*Ls_library[operator])
             
             # update model:
             TLS.Ls[operator] = new_rate
@@ -115,6 +115,11 @@ class ProcessHandler():
         Presently coupling information only stored on one participant TLS to avoid duplication.
         Storage format: 
         {partner : [(strength, op_this, op_partner)]} # partner is object reference and ops label strings
+        
+        UPDATE no more...
+        
+        
+        
         """
         
         # check library available:
@@ -162,7 +167,7 @@ class ProcessHandler():
             # ie coupling via this operator between the two not yet existing:
                 
             # draw strenght:
-            strength = np.random.uniform(*qubit_couplings_library[operator])
+            strength = np.random.gamma(*qubit_couplings_library[operator])
             
             # initialise list if no coupling between the two exists yet:
             if not some_coupling:
@@ -214,7 +219,7 @@ class ProcessHandler():
         for i in range(10):
         
             # select first random defect:
-            defect1 = np.random.choice(defects)
+            defect1 = np.random.gamma(defects)
             
             # select random partner defect:
             remaining_defects = [x for x in model.TLSs if ((not x.is_qubit) and x != defect1)]

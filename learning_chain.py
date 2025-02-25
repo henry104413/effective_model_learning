@@ -68,22 +68,22 @@ class LearningChain:
                                      }
             }
         
-        Ls_library = { # will draw from uniform distribution from specified range)
-            'sigmax': (0.001, 0.2)
-           ,'sigmay': (0.001, 0.2)
-           ,'sigmaz': (0.001, 0.2)
+        Ls_library = { # sampled from gamma distribution with given (shape, scale)
+            'sigmax': (0.1, 0.5)
+           ,'sigmay': (0.1, 0.5)
+           ,'sigmaz': (0.1, 0.5)
            }
 
-        qubit_couplings_library = { # will draw from uniform distribution from specified range)
-            (('sigmax', 'sigmax')): (-0.05, 0.05)
-           ,(('sigmay', 'sigmay')): (-0.05, 0.05)
-           ,(('sigmaz', 'sigmaz')): (-0.05, 0.05)
+        qubit_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+            (('sigmax', 'sigmax')): (0.2, 0.5)
+           ,(('sigmay', 'sigmay')): (0.2, 0.5)
+           ,(('sigmaz', 'sigmaz')): (0.2, 0.5)
            }
         
-        defect_couplings_library = { # will draw from uniform distribution from specified range)
-            (('sigmax', 'sigmay')): (-0.05, 0.05)
-           ,(('sigmay', 'sigmay')): (-0.05, 0.05)
-           ,(('sigmaz', 'sigmay')): (-0.05, 0.05)
+        defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+            (('sigmax', 'sigmay')): (0.2, 0.5)
+           ,(('sigmay', 'sigmay')): (0.2, 0.5)
+           ,(('sigmaz', 'sigmay')): (0.2, 0.5)
            }
 
     

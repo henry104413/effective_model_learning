@@ -27,7 +27,7 @@ class ParamsHandler():
 
     Currently initialised for specific chain whose target data and loss-related methods
     are accessed by the full optimisation method.
-    !!! To do: Remove that mandatory dependence and move this inside optimisation method.
+    To do: Potentially remove that mandatory dependence and move this inside optimisation method.
     """
 
     def __init__(self,
@@ -76,10 +76,8 @@ class ParamsHandler():
         self.hyperparams_init_output = {}
         for key in default_optimisation_config:
             if key in hyperparams: # ie. attribute provided
-            ## !!! to do: make deep copies of mutable types here or else will modify argument
                 setattr(self, key, hyperparams[key])
             else: # else assign default
-            ## !!! to do: also here
                 setattr(self, key, default_optimisation_config[key])
             self.hyperparams_init_output[key] = getattr(self, key)
         self.jump_lengths = copy.deepcopy(self.initial_jump_lengths)
