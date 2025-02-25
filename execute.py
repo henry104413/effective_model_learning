@@ -39,15 +39,7 @@ GT.add_TLS(is_qubit = False,
                   'sigmay' : 0.02
                   }
             )
-# GT.add_TLS(is_qubit = False,
-#             energy = 4.5,
-#             couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
-#                         },
-#             Ls = {
-#                   'sigmaz' : 0.03,
-#                   'sigmax' : 0.06
-#                   }
-#             )
+
 GT.build_operators()
 
 # simulate measurements:
