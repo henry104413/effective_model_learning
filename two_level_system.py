@@ -9,10 +9,6 @@ import typing
 if typing.TYPE_CHECKING:
     from basic_model import BasicModel
     from learning_model import LearningModel
-# note: terrible business... cyclical imports when type checking...
-# fix: import only when typing.TYPE_CHECKING AND a) replace dependent types by strings ("forward reference")
-# ... OR b) at start of file: from __future__ import annotations (to not have to wrap types into strings for runtime unimported stuff)
-# also within TYPE_CHEKCING maybe don't do the full import but only from ... import ... - should be cheaper
 
 class TwoLevelSystem():
     

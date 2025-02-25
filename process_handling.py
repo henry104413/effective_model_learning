@@ -5,11 +5,16 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
+from __future__ import annotations
+import typing
 import copy
 import numpy as np
 
 import basic_model
 import learning_model
+
+if typing.TYPE_CHECKING:
+    from learning_chain import LearningChain
 
 
 class ProcessHandler():
@@ -21,15 +26,19 @@ class ProcessHandler():
     Holds libraries of available processes and corresponding distributions their parameters are sampled from.
     """    
     
-    def __init__(self, chain = False, model = False,
-                 Ls_library = False,
-                 qubit_couplings_library = False,
-                 defect_couplings_library = False):
+    def __init__(self,
+                 chain: type(LearningChain) = False,
+                 model: type(basic_model) | type(learning_model) = False,
+                 Ls_library: dict[str, tuple | list] = False, # {'op label': (shape, scale)}
+                 qubit_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False,
+                 defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                 # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
+                 ):
 
-        self.Ls_library = Ls_library   # dictionary: {'op label': (lower_bound, upper_bound)}
+        self.Ls_library = Ls_library
         self.initial_Ls_library = copy.deepcopy(Ls_library)
-        self.qubit_couplings_library = qubit_couplings_library # also {'op label': (lower_bound, upper_bound)}
-        self.defect_couplings_library = defect_couplings_library # also {'op label': (lower_bound, upper_bound)}
+        self.qubit_couplings_library = qubit_couplings_library
+        self.defect_couplings_library = defect_couplings_library
         self.initial_qubit_couplings_library = copy.deepcopy(qubit_couplings_library)
         self.model = model # only for future methods tied to specific model
         self.chain = chain # only for future methods tied to chain (eg using its cost function)
@@ -38,7 +47,7 @@ class ProcessHandler():
 
     def add_random_L(self,
                      model: type(basic_model.BasicModel) | type(learning_model.LearningModel),
-                     Ls_library: dict[str, tuple | list] = False,
+                     Ls_library: dict[str, tuple | list] = False, # {'op label': (shape, scale)}
                      update: bool = True
                      ) -> (type(basic_model.BasicModel) | type(learning_model.LearningModel), int):
         
@@ -86,7 +95,11 @@ class ProcessHandler():
     
     
     
-    def add_random_qubit_coupling(self, model, qubit_couplings_library = False):
+    def add_random_qubit_coupling(self,
+                                  model: type(basic_model) | type(learning_model),
+                                  qubit_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                                  # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
+                                  ) -> type(basic_model) | type(learning_model):
         
         """
         Adds random coupling between first qubit and random defect.
@@ -165,7 +178,11 @@ class ProcessHandler():
             
         
         
-    def add_random_defect2defect_coupling(self, model, defect_couplings_library = False):
+    def add_random_defect2defect_coupling(self,
+                                          model: type(basic_model) | type(learning_model),
+                                          defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                                          # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
+                                          ) -> type(basic_model) | type(learning_model):
         
         """
         Adds random coupling between two random defects.
@@ -180,7 +197,7 @@ class ProcessHandler():
         
         Presently coupling information only stored on one participant TLS to avoid duplication.
         Storage format: 
-        {partner : [(strength, op_this, op_partner)]} # partner is object reference and ops label strings
+        !!! CHANGE {partner : [(strength, op_this, op_partner)]} # partner is object reference and ops label strings
         """
         
         # check library available:
@@ -276,7 +293,7 @@ class ProcessHandler():
      
     
         
-    def define_Ls_library(self, Ls_library):
+    def define_Ls_library(self, Ls_library: dict[str, tuple | list]) -> None:
         
         """
         Sets process library post-initialisation.
@@ -286,7 +303,7 @@ class ProcessHandler():
         
         
         
-    def reset_Ls_library(self):
+    def reset_Ls_library(self) -> None:
         
         """
         Resets Ls library to initial one.   
@@ -296,7 +313,7 @@ class ProcessHandler():
         
     
     
-    def rescale_Ls_library_range(self, factor):
+    def rescale_Ls_library_range(self, factor: int | float) -> None:
     
         """
         Rescales bound distance from middle of range by half of given factor for all process library rates.
@@ -322,7 +339,9 @@ class ProcessHandler():
             
             
             
-    def remove_random_qubit_coupling(self, model):
+    def remove_random_qubit_coupling(self, 
+                                     model: type(basic_model.BasicModel) | type(learning_model.LearningModel)
+                                     ) -> type(basic_model.BasicModel) | type(learning_model.LearningModel):
         """
         Removes random coupling process between qubit and defect.
         """        
@@ -356,7 +375,9 @@ class ProcessHandler():
         
         
             
-    def remove_random_defect2defect_coupling(self, model):
+    def remove_random_defect2defect_coupling(self, 
+                                             model: type(basic_model.BasicModel) | type(learning_model.LearningModel)
+                                             ) -> type(basic_model.BasicModel) | type(learning_model.LearningModel):
         
         """
         Removes random coupling process between two different defects.    
