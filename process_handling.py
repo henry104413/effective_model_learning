@@ -12,12 +12,15 @@ import numpy as np
 
 import basic_model
 import learning_model
+import two_level_system
 
 if typing.TYPE_CHECKING:
     from learning_chain import LearningChain
 
 
-class ProcessHandler():
+COUPLING_LIB_TYPE = dict[tuple[tuple[str] | str], tuple[int | float]] 
+
+class ProcessHandler:
     
     """
     Instance provides access to methods adding and removing model processes,
@@ -30,7 +33,7 @@ class ProcessHandler():
                  chain: type(LearningChain) = False,
                  model: type(basic_model) | type(learning_model) = False,
                  Ls_library: dict[str, tuple | list] = False, # {'op label': (shape, scale)}
-                 qubit_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False,
+                 qubit_couplings_library: COUPLING_LIB_TYPE = False,
                  defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
                  # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
                  ):
@@ -129,6 +132,59 @@ class ProcessHandler():
             else:
                 raise RuntimeError('Cannot add qubit-random defect coupling as library not specified')
         
+        # gather all qubit-defect pairs [(qubit, defect)]:
+        pairs = [] 
+        for TLS1 in model.TLSs:
+            for TLS2 in model.TLSs:
+                if TLS1.is_qubit and not TLS2.is_qubit:
+                    pairs.append([TLS1, TLS2])
+        
+        # gather all existing couplings:
+        # ie. list of sets each containing {qubit, defect, (op_one, op_other), ...}
+        # !!! order in tuples shouldn't matter if the whole thing is hermitian, right?
+        existing = []
+        for pair in pairs:
+            for coupling in pair[0].couplings[pair[1]]: # iterate through list of all couplings on TLS1 to TLS2
+                existing.append(set(pair+coupling[1])) # append set([TLS1, TLS2] + [(op_one, op_other),...])
+                
+        # all available couplings from library (even if already present):
+        # ie. list of sets each containing {qubit, defect, (op_one, op_other), ..., (strength_shape, strength_scale)}
+        available = []
+        for pair in pairs:
+            for coupling, strength_distribution in qubit_couplings_library.items():
+                
+                if type(coupling[0]) != tuple: coupling = (coupling,) # make sure it's tuple of tuples
+                # note: if library specified as (('op', 'op')) instead of (('op','op'),)
+                available.append(set(list(coupling)+pair+[strength_distribution]))
+        
+        # choose coupling to add (represented as set):
+        possible_additions = [x for x in available if x not in existing]
+        chosen_addition = np.random.choice(possible_additions)
+        
+        # unpack chosen coupling (set) into TLS identifiers, op label tuples, strength properties tuple:
+        new_ops = []
+        new_pair = []
+        for element, element_type in [(x, list(map(type, x))) for x in chosen_addition]:
+            if element_type == [str, str]:
+                new_ops.append(element)
+            if element_type in [[int, int], [int, float], [float, int], [float, float]]:
+                new_strength_properties = element
+            if element_type == two_level_system.TwoLevelSystem:
+                new_pair.append(element)
+        
+        # format and incorporate new coupling:
+        # note: put on 1st TLS in list with 2nd one as partner
+        new_strength = np.random.gamma(*new_strength_properties)
+        if new_pair[1] not in new_pair[0].couplings:
+            new_pair[0].couplings[new_pair[1]] = [] 
+        new_pair[0].couplings[new_pair[1]].append((new_strength, new_ops))
+        #{partner: [(rate, [(op_self, op_partner), (op_self, op_partner)]]}        
+                
+        model.build_operators()
+        
+        return model, len(possible_additions)
+        
+        
         # first qubit:
         qubit = [x for x in model.TLSs if x.is_qubit][0]
             
@@ -192,8 +248,11 @@ class ProcessHandler():
         """
         Adds random coupling between two random defects.
         
-        Currently only supports same operator acting on both participants to ensure Hermiticity.
+        Currently cannot recognise equivalent couplings if specified using different operators.
+        (Possibly to introduce: Could do matrix product comparison,
+         would need to run over all couplings instead of succint sets comparison.)
         
+        Currently only supports same operator acting on both participants to ensure Hermiticity.
         !!! To do: Extend to multiple operators (eg. sigmap on one sigmam on other plus conjugate).
         Will entail either rewriting how coupling information is stor in model
         so that multiple operators are grouped under single parameter (another layer of list),
@@ -211,6 +270,21 @@ class ProcessHandler():
                 defect_couplings_library = self.defect_couplings_library
             else:
                 raise RuntimeError('Cannot add random defects coupling as library not specified')
+                
+        """     
+        1) list of pairs
+        2) list of present coupling sets
+        3) list of available coupling sets
+        4) list of new possibilities
+        5) choice one
+        6) convert into structured coupling information
+        7) update model
+        8) return model and count (length of possibilities)
+        """
+        
+        # care below is for qubit-defect
+        
+            
                 
         # all defects:
         defects = [x for x in model.TLSs if not x.is_qubit]

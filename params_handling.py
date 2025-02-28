@@ -16,7 +16,7 @@ if typing.TYPE_CHECKING:
     from learning_chain import LearningChain
 
 
-class ParamsHandler():
+class ParamsHandler:
     
     """
     Instance provides access to methods handling existing model parameters. 

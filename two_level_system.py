@@ -10,7 +10,7 @@ if typing.TYPE_CHECKING:
     from basic_model import BasicModel
     from learning_model import LearningModel
 
-class TwoLevelSystem():
+class TwoLevelSystem:
     
     """
     Instance is a single two-level system, always belonging to some model. 

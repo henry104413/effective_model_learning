@@ -21,7 +21,7 @@ t_to_sec = definitions.Constants.K_to_eV
 
 
 
-class Output():
+class Output:
     
     # to do: set font here for all plots
     # each chain can call this and pass it its own things to save...

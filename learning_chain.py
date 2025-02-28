@@ -75,15 +75,15 @@ class LearningChain:
            }
 
         qubit_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-            (('sigmax', 'sigmax')): (0.2, 0.5)
-           ,(('sigmay', 'sigmay')): (0.2, 0.5)
-           ,(('sigmaz', 'sigmaz')): (0.2, 0.5)
+            (('sigmax', 'sigmax'),): (0.2, 0.5)
+           ,(('sigmay', 'sigmay'),): (0.2, 0.5)
+           ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
            }
         
         defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-            (('sigmax', 'sigmay')): (0.2, 0.5)
-           ,(('sigmay', 'sigmay')): (0.2, 0.5)
-           ,(('sigmaz', 'sigmay')): (0.2, 0.5)
+            (('sigmax', 'sigmay'),): (0.2, 0.5)
+           ,(('sigmay', 'sigmay'),): (0.2, 0.5)
+           ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
            }
 
     
