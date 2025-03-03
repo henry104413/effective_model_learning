@@ -132,6 +132,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       )
 
 quest.add_random_qubit_coupling(GT)
+raise SystemExit()
 
 #%%
 best = quest.run()

@@ -61,8 +61,7 @@ class ProcessHandler:
         Update flag true means addition performed; false avoids changing model,
         to only get count of addable Ls for prior/marginal probabilities calculation.
         
-        Currently rate sampled from uniform distribution, bounds given by tuple for each library entry.
-        !!! To do: Change this to another distribution with unbounded tails, possibly mirrored gamma.
+        Currently rate sampled gamma distribution of given (shape, size).
         """
         
         # check library available:
@@ -163,7 +162,7 @@ class ProcessHandler:
                 # ie. set of just partners and operator terms
                 # sets in same order in list
         
-        # choose coupling to add (represented as set):
+        # gather allowed additions (represented as set) and choose one:
         possible_additions = [x for (x, y) in zip(available, available_comp) if y not in existing]    
         chosen_addition = np.random.choice(possible_additions)
         
@@ -185,65 +184,12 @@ class ProcessHandler:
         if new_pair[1] not in new_pair[0].couplings:
             new_pair[0].couplings[new_pair[1]] = [] 
         new_pair[0].couplings[new_pair[1]].append((new_strength, new_ops))
-        #{partner: [(rate, [(op_self, op_partner), (op_self, op_partner)]]}        
+        #{partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}        
                 
         model.build_operators()
         
         return model, len(possible_additions)
         
-        
-        # first qubit:
-        qubit = [x for x in model.TLSs if x.is_qubit][0]
-            
-        # all defects:
-        defects = [x for x in model.TLSs if not x.is_qubit]
-        
-        
-        # reapeat up to iterations limit in case randomly chosen coupling already exists
-        for i in range(10):
-        
-            # select random defect:
-            defect = np.random.choice(defects)
-            
-            # select random coupling operator and rate bounds from the library:
-            operator = np.random.choice([x for x in qubit_couplings_library])
-            
-            # tracker for if any coupling between the two exists
-            # note: used to decide whether to append or create new entry in couplings dictionary
-            some_coupling = False
-            
-            # check if this coupling already exists on defect - if so try again random choice up to iterations limit:
-            if qubit in [x for x in defect.couplings]:
-                
-                if operator in [y[1] for y in defect.couplings[qubit]]: 
-                # note: checking this against operator on defect but both should be same so far until mixed operators implemented
-                    continue
-                    
-            # likewise check on qubit:
-            if defect in [x for x in qubit.couplings]:
-                some_coupling = True
-                if operator in [y[1] for y in qubit.couplings[defect]]:
-                # note: checking this against operator on qubit but both should be same so far until mixed operators implemented
-                    continue
-            
-            
-            # ie coupling via this operator between the two not yet existing:
-                
-            # draw strenght:
-            strength = np.random.gamma(*qubit_couplings_library[operator])
-            
-            # initialise list if no coupling between the two exists yet:
-            if not some_coupling:
-                qubit.couplings[defect] = []
-            
-            # add new coupling:
-            qubit.couplings[defect].append((strength, operator, operator))
-            model.build_operators()
-            
-            return model
-        
-            break # safety break
-            
         
         
     def add_random_defect2defect_coupling(self,
