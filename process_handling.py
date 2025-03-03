@@ -155,14 +155,16 @@ class ProcessHandler:
                     coupling = (coupling,)
                 available.append(set(list(coupling)+pair+[strength_distribution]))
                 
-        # complementary list to available with strength distribution stripped for set comparison with existing:
+        # complementary list to "available" without strength distribution to enable set comparison with "existing":
         available_comp = []
         for coupling_set in available:
             available_comp.append(
                 {x for x in coupling_set if not (type(x) == tuple and set(map(type,x)) <= {int, float})})
-            
+                # ie. set of just partners and operator terms
+                # sets in same order in list
+        
         # choose coupling to add (represented as set):
-        possible_additions = [x for x in available if x not in existing]
+        possible_additions = [x for (x, y) in zip(available, available_comp) if y not in existing]    
         chosen_addition = np.random.choice(possible_additions)
         
         # unpack chosen coupling (set) into TLS identifiers, op label tuples, strength properties tuple:
