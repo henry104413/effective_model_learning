@@ -23,8 +23,8 @@ class TwoLevelSystem:
     Coherent couplings specification:
     
     old: {partner: [(rate, op on self, op on partner)]}
-    new: {partner: [(rate, [(op_self, op_partner), (op_self, op_partner)]]}
-    where the two tuples of ops should be Hermitian-conjugate
+    new: {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+    where the the sum of total ops should be Hermitian
     
     NB:
     Currently coupling information only stored on one partner.

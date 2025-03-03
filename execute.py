@@ -85,7 +85,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 50,
+                      max_chain_steps = 0,
                       chain_step_options = {
                           'tweak all parameters': 0.1,
                           'add L': 0.1,
@@ -112,26 +112,26 @@ quest = learning_chain.LearningChain(target_times = ts,
                                                    },
                           },
                       
-                      Ls_library = { # will draw from uniform distribution from specified range)
+                      Ls_library = { # sampled from mirrored gamma distribution with given (shape, scale)
                          'sigmax': (0.01, 0.1)
                          ,'sigmay': (0.01, 0.1)
                          ,'sigmaz': (0.01, 0.1)
                          },
                    
-                      qubit_couplings_library = { # will draw from uniform distribution from specified range)
-                          'sigmax': (-1, 1)
-                         ,'sigmay': (-1, 1)
-                         ,'sigmaz': (-1, 1)
+                      qubit_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+                         (('sigmax', 'sigmax'),): (0.2, 0.5)
+                        ,(('sigmay', 'sigmay'),): (0.2, 0.5)
+                        ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
                          },
                       
-                      defect_couplings_library = { # will draw from uniform distribution from specified range)
-                          'sigmax': (-1, 1)
-                         ,'sigmay': (-1, 1)
-                         ,'sigmaz': (-1, 1)
-                         }
-
-                      
+                      defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+                         (('sigmax', 'sigmax'),): (0.2, 0.5)
+                        ,(('sigmay', 'sigmay'),): (0.2, 0.5)
+                        ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
+                        }
                       )
+
+quest.add_random_qubit_coupling(GT)
 
 #%%
 best = quest.run()
