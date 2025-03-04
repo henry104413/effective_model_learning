@@ -33,16 +33,15 @@ class ProcessHandler:
                  chain: type(LearningChain) = False,
                  model: type(basic_model) | type(learning_model) = False,
                  Ls_library: dict[str, tuple | list] = False, # {'op label': (shape, scale)}
-                 qubit_couplings_library: COUPLING_LIB_TYPE = False,
-                 defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                 qubit2defect_couplings_library: COUPLING_LIB_TYPE = False,
+                 defect2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
                  # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
                  ):
 
         self.Ls_library = Ls_library
         self.initial_Ls_library = copy.deepcopy(Ls_library)
-        self.qubit_couplings_library = qubit_couplings_library
-        self.defect_couplings_library = defect_couplings_library
-        self.initial_qubit_couplings_library = copy.deepcopy(qubit_couplings_library)
+        self.qubit2defect_couplings_library = qubit2defect_couplings_library
+        self.defect2defect_couplings_library = defect2defect_couplings_library
         self.model = model # only for future methods tied to specific model
         self.chain = chain # only for future methods tied to chain (eg using its cost function)
 
@@ -99,7 +98,7 @@ class ProcessHandler:
     
     def add_random_qubit2defect_coupling(self,
                                   model: type(basic_model) | type(learning_model),
-                                  qubit_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                                  qubit2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
                                   # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
                                   ) -> tuple[type(basic_model) | type(learning_model), int]:
         
@@ -121,9 +120,9 @@ class ProcessHandler:
         """
         
         # check library available:
-        if not qubit_couplings_library:
-            if isinstance(self.qubit_couplings_library, dict):
-                qubit_couplings_library = self.qubit_couplings_library
+        if not qubit2defect_couplings_library:
+            if isinstance(self.qubit2defect_couplings_library, dict):
+                qubit2defect_couplings_library = self.qubit2defect_couplings_library
             else:
                 raise RuntimeError('Cannot add qubit-random defect coupling as library not specified')
         
@@ -150,7 +149,7 @@ class ProcessHandler:
         # ie. list of sets each containing {qubit, defect, (op_one, op_other), ..., (strength_shape, strength_scale)}
         available = []
         for pair in pairs:
-            for coupling, strength_distribution in qubit_couplings_library.items():
+            for coupling, strength_distribution in qubit2defect_couplings_library.items():
                 
                 # make into tuple of tuples if passed as ('x','y') or (('x','y')) instead of (('x','y'),)
                 if type(coupling) == tuple and list(map(type, coupling)) == [str, str]:
@@ -197,7 +196,7 @@ class ProcessHandler:
         
     def add_random_defect2defect_coupling(self,
                                           model: type(basic_model) | type(learning_model),
-                                          defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                                          defect2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
                                           # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
                                           ) -> type(basic_model) | type(learning_model):
         
@@ -219,9 +218,9 @@ class ProcessHandler:
         """
         
         # check library available:
-        if not defect_couplings_library:
-            if isinstance(self.defect_couplings_library, dict):
-                defect_couplings_library = self.defect_couplings_library
+        if not defect2defect_couplings_library:
+            if isinstance(self.defect2defect_couplings_library, dict):
+                defect2defect_couplings_library = self.defect2defect_couplings_library
             else:
                 raise RuntimeError('Cannot add random defects coupling as library not specified')
                 
@@ -250,7 +249,7 @@ class ProcessHandler:
         # ie. list of sets each containing {defect1, defect2, (op_one, op_other), ..., (strength_shape, strength_scale)}
         available = []
         for pair in pairs:
-            for coupling, strength_distribution in defect_couplings_library.items():
+            for coupling, strength_distribution in defect2defect_couplings_library.items():
                 
                 # make into tuple of tuples if passed as ('x','y') or (('x','y')) instead of (('x','y'),)
                 if type(coupling) == tuple and list(map(type, coupling)) == [str, str]:
@@ -374,7 +373,7 @@ class ProcessHandler:
             
             
             
-    def remove_random_qubit_coupling(self, 
+    def remove_random_qubit2defect_coupling(self, 
                                      model: type(basic_model.BasicModel) | type(learning_model.LearningModel)
                                      ) -> type(basic_model.BasicModel) | type(learning_model.LearningModel):
         """
