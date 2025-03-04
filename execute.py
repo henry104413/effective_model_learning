@@ -15,11 +15,11 @@ import output
 
 
 
-#%% generate target data:
+#%% generate simulated target data:
 
     
 # set up ground truth model:  
-GT = basic_model.Model()
+GT = basic_model.BasicModel()
 GT.add_TLS(TLS_label = 'qubit',
            is_qubit = True,
            energy = 5,
@@ -31,8 +31,9 @@ GT.add_TLS(TLS_label = 'qubit',
                  }
            )
 GT.add_TLS(is_qubit = False,
+            TLS_label = 'defect1',
             energy = 5.8,
-            couplings = {'qubit': [(0.6, 'sigmax', 'sigmax')]
+            couplings = {'qubit': [(0.6, [('sigmay', 'sigmay')])]
                         },
             Ls = {
                   'sigmaz' : 0.05,
@@ -40,14 +41,17 @@ GT.add_TLS(is_qubit = False,
                   }
             )
 GT.add_TLS(is_qubit = False,
-            energy = 4.5,
-            couplings = {'qubit': [(0.3, 'sigmax', 'sigmax')]
+            energy = 5.8,
+            couplings = {'defect1': [(0.6, [('sigmaz', 'sigmaz')]), 
+                                     (0.7, [('sigmax', 'sigmax')]),
+                                     (0.8, [('sigmay', 'sigmay')])]
                         },
             Ls = {
-                  'sigmaz' : 0.03,
-                  'sigmax' : 0.06
+                  'sigmaz' : 0.05,
+                  'sigmay' : 0.02
                   }
             )
+
 GT.build_operators()
 
 # simulate measurements:
@@ -56,7 +60,7 @@ ts = np.linspace(0, 1e1, int(1000))
 measurement_observables = ['sigmaz']
 measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
 
-
+GT.disp()
 
 #%% parallelised runs:
 
@@ -93,8 +97,16 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 50,
-                      chain_step_options = False,
+                      max_chain_steps = 0,
+                      chain_step_options = {
+                          'tweak all parameters': 0.1,
+                          'add L': 0.1,
+                          'remove L': 0.1,
+                          'add qubit coupling': 0.05, 
+                          'remove qubit coupling': 0.05,
+                          'add defect-defect coupling': 0.025, 
+                          'remove defect-defect coupling': 0.025
+                          },
                       
                       temperature_proposal_shape = 0.01, # aka k
                       temperature_proposal_scale = 0.01, # aka theta
@@ -112,26 +124,27 @@ quest = learning_chain.LearningChain(target_times = ts,
                                                    },
                           },
                       
-                      Ls_library = { # will draw from uniform distribution from specified range)
+                      Ls_library = { # sampled from mirrored gamma distribution with given (shape, scale)
                          'sigmax': (0.01, 0.1)
                          ,'sigmay': (0.01, 0.1)
                          ,'sigmaz': (0.01, 0.1)
                          },
                    
-                      qubit_couplings_library = { # will draw from uniform distribution from specified range)
-                          'sigmax': (-1, 1)
-                         ,'sigmay': (-1, 1)
-                         ,'sigmaz': (-1, 1)
+                      qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+                         (('sigmax', 'sigmax'),): (0.2, 0.5)
+                        ,(('sigmay', 'sigmay'),): (0.2, 0.5)
+                        ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
                          },
                       
-                      defect_couplings_library = { # will draw from uniform distribution from specified range)
-                          'sigmax': (-1, 1)
-                         ,'sigmay': (-1, 1)
-                         ,'sigmaz': (-1, 1)
-                         }
-
-                      
+                      defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+                         (('sigmax', 'sigmax'),): (0.2, 0.5)
+                        ,(('sigmay', 'sigmay'),): (0.2, 0.5)
+                        ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
+                        }
                       )
+
+quest.add_random_defect2defect_coupling(GT)
+raise SystemExit()
 
 #%%
 best = quest.run()

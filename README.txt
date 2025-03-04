@@ -1,2 +1,3 @@
-Implements a Lindblad model of a qubit and a number of coherently coupled two-level defects with an available set of Lindblad operators to act on each subsystem.
-Contains methods to generate dynamics and learn model parameters based on imported dynamics data.
+Implements quantum system models made up of two-level subsystems (TLSs) representing qubits and defects. Allows single-site Lindblad processes and coherent couplings between any pairs of TLSs. Includes methods to generate dynamics with respect to specified observables.
+
+Performs model learning given target data (times, observables, and measurements with respect to those). The algorithm is based on a reversible-jump Monte Carlo Markov chain. Based on user-specified hyperparameters, random moves are carried out and accepted or rejected. These include adding or removing Lindblad processes or couplings from a predefined library as well as tweaking existing parameters.

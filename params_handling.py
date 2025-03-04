@@ -5,28 +5,35 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
-import time
+from __future__ import annotations
 import copy
 import numpy as np
+import typing
 
 import learning_model
 
+if typing.TYPE_CHECKING:
+    from learning_chain import LearningChain
 
-class ParamsHandler():
+
+class ParamsHandler:
     
     """
     Instance provides access to methods handling existing model parameters. 
 
     Includes tweak method to simultaneously change all existing parameters except qubit energies,
-    each by amount from normal distribution around zero
+    each by amount from normal distribution around zero,
     with variance given by instance-level jump length for that class of parameters.
 
     Currently initialised for specific chain whose target data and loss-related methods
     are accessed by the full optimisation method.
-    !!! To do: Remove that mandatory dependence and move this inside optimisation method.
+    To do: Potentially remove that mandatory dependence and move this inside optimisation method.
     """
 
-    def __init__(self, chain, hyperparams = False):
+    def __init__(self,
+                 chain: type(LearningChain),
+                 hyperparams: dict = False
+                 ) -> None:
         
         # configuration flag for optimisation method:
         self.config_done = False
@@ -42,10 +49,7 @@ class ParamsHandler():
     
     
     
-    # sets parameter handler configuration according to argument dictionary;
-    # if an attribute has no corresponding entry, sets it to default value specified here:
-    
-    def set_hyperparams(self, hyperparams):
+    def set_hyperparams(self, hyperparams: dict) -> None:
         
         """
         Sets parameter handler hyperparameters according to argument dictionary.
@@ -72,10 +76,8 @@ class ParamsHandler():
         self.hyperparams_init_output = {}
         for key in default_optimisation_config:
             if key in hyperparams: # ie. attribute provided
-            ## !!! to do: make deep copies of mutable types here or else will modify argument
                 setattr(self, key, hyperparams[key])
             else: # else assign default
-            ## !!! to do: also here
                 setattr(self, key, default_optimisation_config[key])
             self.hyperparams_init_output[key] = getattr(self, key)
         self.jump_lengths = copy.deepcopy(self.initial_jump_lengths)
@@ -85,7 +87,7 @@ class ParamsHandler():
         
     
     
-    def output_hyperparams_init(self):
+    def output_hyperparams_init(self) -> dict:
         
         """
         Returns dictionary of initial hyperparameters.
@@ -95,7 +97,7 @@ class ParamsHandler():
         
     
         
-    def output_hyperparams_curr(self):
+    def output_hyperparams_curr(self) -> dict:
         
         """
         Returns dictionary of instance-level current hyperparameters.
@@ -108,7 +110,7 @@ class ParamsHandler():
     
     
     
-    def tweak_all_parameters(self, model):
+    def tweak_all_parameters(self, model: type(learning_model.LearningModel)) -> None:
         
         """
         Tweaks all existing parameters of argument model according instance-level jump lengths.
@@ -129,7 +131,8 @@ class ParamsHandler():
     
     
     def do_optimisation(self,
-                        initial_model: type(learning_model.LearningModel)) -> type(learning_model.LearningModel):
+                        initial_model: type(learning_model.LearningModel)
+                        ) -> type(learning_model.LearningModel):
         
         """
         Note: Method currently not used or maintained.
@@ -159,7 +162,6 @@ class ParamsHandler():
         best = copy.deepcopy(current)
         acceptance_tracker = np.empty(self.acceptance_window, dtype = bool)
         j = 0 # acceptance rate checker auxiliary index
-        k = 0 # ad hoc plotter auxiliary index
         
         for i in range(self.max_optimisation_steps): # now fixed steps - could add plateau condition
             
@@ -214,7 +216,7 @@ class ParamsHandler():
     
         
     
-    def rescale_jump_lengths(self, factor):
+    def rescale_jump_lengths(self, factor:int | float) -> None:
         
         """
         Rescales instance-level current jump lengths for all parameters by argument factor.

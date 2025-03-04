@@ -15,7 +15,6 @@ import params_handling
 import process_handling
 
 
-# single instance executes a learning chain; own hyperparameters including initial model (inc. D): 
 
 class LearningChain:
     
@@ -68,22 +67,22 @@ class LearningChain:
                                      }
             }
         
-        Ls_library = { # will draw from uniform distribution from specified range)
-            'sigmax': (0.001, 0.2)
-           ,'sigmay': (0.001, 0.2)
-           ,'sigmaz': (0.001, 0.2)
+        Ls_library = { # sampled from gamma distribution with given (shape, scale)
+            'sigmax': (0.1, 0.5)
+           ,'sigmay': (0.1, 0.5)
+           ,'sigmaz': (0.1, 0.5)
            }
 
-        qubit_couplings_library = { # will draw from uniform distribution from specified range)
-            'sigmax': (-0.05, 0.05)
-           ,'sigmay': (-0.05, 0.05)
-           ,'sigmaz': (-0.05, 0.05)
+        qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+            (('sigmax', 'sigmax'),): (0.2, 0.5)
+           ,(('sigmay', 'sigmay'),): (0.2, 0.5)
+           ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
            }
         
-        defect_couplings_library = { # will draw from uniform distribution from specified range)
-            'sigmax': (-0.05, 0.05)
-           ,'sigmay': (-0.05, 0.05)
-           ,'sigmaz': (-0.05, 0.05)
+        defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+            (('sigmax', 'sigmay'),): (0.2, 0.5)
+           ,(('sigmay', 'sigmay'),): (0.2, 0.5)
+           ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
            }
 
     
@@ -117,9 +116,9 @@ class LearningChain:
                  
                  Ls_library: dict[str, list | tuple] = False,
       
-                 qubit_couplings_library: dict[str, list | tuple] = False,
+                 qubit2defect_couplings_library: dict[str, list | tuple] = False,
                  
-                 defect_couplings_library: dict[str, list | tuple] = False
+                 defect2defect_couplings_library: dict[str, list | tuple] = False
                  ):
         
         
@@ -127,7 +126,7 @@ class LearningChain:
         args = copy.deepcopy(locals())
         
         # container for initial hyperparameters:
-        self.init_hyperparams = {} 
+        self.init_hyperparams = dict() 
         
         # if passed as false or not passed (False by default),
         # set instance variables to defaults defined for class,
@@ -235,9 +234,9 @@ class LearningChain:
             elif next_step == 'remove L':
                 self.remove_random_L(proposal)
             elif next_step == 'add qubit coupling':
-                self.add_random_qubit_coupling(proposal)
+                self.add_random_qubit2defect_coupling(proposal)
             elif next_step == 'remove qubit coupling':
-                self.remove_random_qubit_coupling(proposal)
+                self.remove_random_qubit2defect_coupling(proposal)
             elif next_step == 'add defect-defect coupling':
                 self.add_random_defect2defect_coupling(proposal)
             elif next_step == 'remove defect-defect coupling':
@@ -290,7 +289,10 @@ class LearningChain:
     
     
     
-    def make_initial_model(self, qubit_energy, defects_number):
+    def make_initial_model(self,
+                           qubit_energy: int|float,
+                           defects_number: int
+                           ) -> type(learning_model.LearningModel):
     
         """
         Returns empty model with qubit of specified energy,
@@ -320,7 +322,7 @@ class LearningChain:
     def total_deviation(self, model: type(learning_model.LearningModel)) -> float:
 
         """
-        Calculates total deviation of argument model from set target data over set observables. 
+        Calculates total deviation of , any realistic amount of net charge on the Moon meansargument model from set target data over set observables. 
         
         Returns equal sum over all instance-level target ovservables
         of mean squared error between instance-level target data
@@ -346,7 +348,11 @@ class LearningChain:
     
     
     
-    def acceptance_probability(self, current, proposal, step_type):
+    def acceptance_probability(self, 
+                               current: type(learning_model.LearningModel), 
+                               proposal: type(learning_model.LearningModel), 
+                               step_type: str
+                               ) -> float:
         
         # maybe sample new temperature?
         
@@ -371,9 +377,13 @@ class LearningChain:
     
     
     
-    def optimise_params(self, model_to_optimise):
+    def optimise_params(self,
+                        model_to_optimise: type(learning_model.LearningModel)
+                        ) -> float:
     
         """
+        Currently not maintained.
+        
         Performs full paramter optimisation on argument model. 
         
         Uses hyperparameters set for chain instance.
@@ -398,7 +408,9 @@ class LearningChain:
         
     
     
-    def tweak_params(self, model_to_tweak):
+    def tweak_params(self, 
+                     model_to_tweak: type(learning_model.LearningModel)
+                     ) -> None:
     
         """
         Performs a single step in existing process parameters landscape.
@@ -449,11 +461,14 @@ class LearningChain:
     
     
         
-    def add_random_L(self, model_to_modify, Ls_library = False):
+    def add_random_L(self,
+                     model_to_modify: type(learning_model.LearningModel), 
+                     Ls_library: dict[str, tuple | list] = False
+                     ) -> (type(learning_model.LearningModel), int):
     
         """
         Performs addition of random Linblad process to random subsystem.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible additions).
         """
         
         # ensure process handler exists (created at first run):
@@ -464,30 +479,35 @@ class LearningChain:
         if not Ls_library:
             Ls_library = self.Ls_library
             
-        self.process_handler.add_random_L(model_to_modify)
+        return self.process_handler.add_random_L(model_to_modify)
     
     
     
-    def remove_random_L(self, model_to_modify):
+    def remove_random_L(self, 
+                        model_to_modify: type(learning_model.LearningModel)
+                        ) -> (type(learning_model.LearningModel), int):
     
         """
         Performs removal of random Lindblad process from random subsystem.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible additions).
         """    
         
         # ensure process handler exists (created at first run):
         if not self.process_handler: # ie. first run
             self.initialise_process_handler()
             
-        self.process_handler.remove_random_L(model_to_modify)
+        return self.process_handler.remove_random_L(model_to_modify)
     
     
         
-    def add_random_qubit_coupling(self, model_to_modify, qubit_couplings_library = False):
+    def add_random_qubit2defect_coupling(self,
+                                         model_to_modify: type(learning_model.LearningModel),
+                                         qubit2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                                         ) -> (type(learning_model.LearningModel), int):
          
         """
         Performs addition of random symmetric single-operator coupling between random defect and qubit.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible additions).
         """
     
         # ensure process handler exists (created at first run):
@@ -495,18 +515,21 @@ class LearningChain:
             self.initialise_process_handler()
             
         # unless specified in call, use process library set for chain:
-        if not qubit_couplings_library:
-            qubit_couplings_library = self.qubit_couplings_library
+        if not qubit2defect_couplings_library:
+            qubit2defect_couplings_library = self.qubit2defect_couplings_library
             
-        self.process_handler.add_random_qubit_coupling(model_to_modify)
+        return self.process_handler.add_random_qubit2defect_coupling(model_to_modify)
         
         
     
-    def add_random_defect2defect_coupling(self, model_to_modify, defect_couplings_library = False):
+    def add_random_defect2defect_coupling(self, 
+                                          model_to_modify: type(learning_model.LearningModel),
+                                          defect2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                                          ) -> (type(learning_model.LearningModel), int):
     
         """
         Performs addition of random symmetric single-operator coupling between twp random defects.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible additions).
         """    
         
         # ensure process handler exists (created at first run):
@@ -514,10 +537,10 @@ class LearningChain:
             self.initialise_process_handler()
             
         # unless specified in call, use process library set for chain:
-        if not defect_couplings_library:
-            defect_couplings_library = self.defect_couplings_library
+        if not defect2defect_couplings_library:
+            defect2defect_couplings_library = self.defect2defect_couplings_library
             
-        self.process_handler.add_random_defect2defect_coupling(model_to_modify)
+        return self.process_handler.add_random_defect2defect_coupling(model_to_modify)
     
     
     
@@ -538,44 +561,50 @@ class LearningChain:
         """    
     
         self.process_handler = process_handling.ProcessHandler(self,
-                                              qubit_couplings_library = self.qubit_couplings_library,
-                                              defect_couplings_library = self.defect_couplings_library,
+                                              qubit2defect_couplings_library = self.qubit2defect_couplings_library,
+                                              defect2defect_couplings_library = self.defect2defect_couplings_library,
                                               Ls_library = self.Ls_library)
         
         
     
-    def remove_random_qubit_coupling(self, model_to_modify):
+    def remove_random_qubit2defect_coupling(self, 
+                                            model_to_modify: type(learning_model.LearningModel)
+                                            ) -> (type(learning_model.LearningModel), int):
         
         """
         Performs removal of random existing coupling between qubit and defect.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible removals).
         """    
         
         # ensure process handler exists (created at first run):
         if not self.process_handler:
             self.initialise_process_handler()
             
-        self.process_handler.remove_random_qubit_coupling(model_to_modify)
+        return self.process_handler.remove_random_qubit2defect_coupling(model_to_modify)
     
     
 
-    def remove_random_defect2defect_coupling(self, model_to_modify):
+    def remove_random_defect2defect_coupling(self, 
+                                            model_to_modify: type(learning_model.LearningModel)
+                                            ) -> (type(learning_model.LearningModel), int):
         
         """
         Performs removal of random existing coupling between two defects.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible removals).
         """    
         
         # ensure process handler exists (created at first run):
         if not self.process_handler:
             self.initialise_process_handler()
             
-        self.process_handler.remove_random_defect2defect_coupling(model_to_modify)
+        return self.process_handler.remove_random_defect2defect_coupling(model_to_modify)
         
         
 
         
-""" to do:
+""" !!! to do:
+    
+test addition
 
 likelihood(temperature, total_deviation)
 
@@ -583,5 +612,8 @@ account for probability of moves - reversibility
 
 temperature sampling
 
+punish complexity
+
+overall expression for this
 """        
 pass                                      

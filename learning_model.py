@@ -13,14 +13,13 @@ import numpy as np
 # enhanced model with ability to modify itself
 # methods to change parameters, methods to add/remove processes, and methods to add/remove subsystems
 
-class LearningModel(basic_model.Model):
+class LearningModel(basic_model.BasicModel):
     
     """
     Instances based on BasicModel (hold information about systems, couplings, processes;
     able to generate full operators and dynamics accodring to Lindblad Master Equation).
     Additionally implements method to shift all parameters by randomly sampled amount,
     with width for each type of parameter set for instance as jump lengths hyperparameter.
-    !!! To do: Probably scrap this class and move this into parameters handler?
     """    
     
     def __init__(self, *args, initial_guess = False, jump_lengths = False, **kwargs):
@@ -35,7 +34,7 @@ class LearningModel(basic_model.Model):
         
         
     
-    def set_jump_lengths(self, passed_jump_lengths):
+    def set_jump_lengths(self, passed_jump_lengths: dict[str, float|int] = False) -> None:
         
         """
         Sets jump lengths according to argument dictionary.
@@ -45,7 +44,7 @@ class LearningModel(basic_model.Model):
         
     
     
-    def change_params(self, passed_jump_lengths: dict[str, float|int] = False):
+    def change_params(self, passed_jump_lengths: dict[str, float|int] = False) -> None:
         
         """
         Changes all existing parameters of this model except qubit energies,
@@ -69,15 +68,15 @@ class LearningModel(basic_model.Model):
                 TLS.energy += np.random.normal(0, self.jump_lengths['energy'])
             
             # modify all its couplings to each partner:
+            # {partner: [(rate, [(op_on_self, op_on_partner)])]}
             for partner in TLS.couplings: # partner is key and value is list of tuples
-                current_list = TLS.couplings[partner] # list of couplings to current partner
-                for i in range(len(current_list)):
-                    current_list[i] = (current_list[i][0] + np.random.normal(0, self.jump_lengths['couplings']),
-                                       current_list[i][1], current_list[i][2])
+                this_partner_couplings = TLS.couplings[partner] # list of couplings to current partner
+                for i, coupling in enumerate(TLS.couplings[partner]): # coupling now (rate, [(op_on_self, op_on_partner), ...])
+                    strength, op_pairs = coupling
+                    TLS.couplings[partner][i] = (strength + np.random.normal(0, self.jump_lengths['couplings']), op_pairs)
             
             # modify all its Lindblad ops:
             for L in TLS.Ls:
-                
                 # make up to specified number of proposals ensuring result positive
                 max_attempts = 10
                 for _ in range(max_attempts):    
@@ -88,6 +87,7 @@ class LearningModel(basic_model.Model):
                  
         # remake operators (to update with new parameters):
         self.build_operators()
+        
         
                 
                         
