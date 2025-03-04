@@ -118,20 +118,20 @@ quest = learning_chain.LearningChain(target_times = ts,
                          ,'sigmaz': (0.01, 0.1)
                          },
                    
-                      qubit_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+                      qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
                          (('sigmax', 'sigmax'),): (0.2, 0.5)
                         ,(('sigmay', 'sigmay'),): (0.2, 0.5)
                         ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
                          },
                       
-                      defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+                      defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
                          (('sigmax', 'sigmax'),): (0.2, 0.5)
                         ,(('sigmay', 'sigmay'),): (0.2, 0.5)
                         ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
                         }
                       )
 
-quest.add_random_qubit_coupling(GT)
+quest.add_random_qubit2defect_coupling(GT)
 raise SystemExit()
 
 #%%

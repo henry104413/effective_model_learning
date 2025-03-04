@@ -97,7 +97,7 @@ class ProcessHandler:
     
     
     
-    def add_random_qubit_coupling(self,
+    def add_random_qubit2defect_coupling(self,
                                   model: type(basic_model) | type(learning_model),
                                   qubit_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
                                   # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}

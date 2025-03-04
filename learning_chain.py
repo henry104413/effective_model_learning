@@ -74,13 +74,13 @@ class LearningChain:
            ,'sigmaz': (0.1, 0.5)
            }
 
-        qubit_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+        qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
             (('sigmax', 'sigmax'),): (0.2, 0.5)
            ,(('sigmay', 'sigmay'),): (0.2, 0.5)
            ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
            }
         
-        defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+        defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
             (('sigmax', 'sigmay'),): (0.2, 0.5)
            ,(('sigmay', 'sigmay'),): (0.2, 0.5)
            ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
@@ -117,9 +117,9 @@ class LearningChain:
                  
                  Ls_library: dict[str, list | tuple] = False,
       
-                 qubit_couplings_library: dict[str, list | tuple] = False,
+                 qubit2defect_couplings_library: dict[str, list | tuple] = False,
                  
-                 defect_couplings_library: dict[str, list | tuple] = False
+                 defect2defect_couplings_library: dict[str, list | tuple] = False
                  ):
         
         
@@ -235,7 +235,7 @@ class LearningChain:
             elif next_step == 'remove L':
                 self.remove_random_L(proposal)
             elif next_step == 'add qubit coupling':
-                self.add_random_qubit_coupling(proposal)
+                self.add_random_qubit2defect_coupling(proposal)
             elif next_step == 'remove qubit coupling':
                 self.remove_random_qubit_coupling(proposal)
             elif next_step == 'add defect-defect coupling':
@@ -483,7 +483,7 @@ class LearningChain:
     
     
         
-    def add_random_qubit_coupling(self, model_to_modify, qubit_couplings_library = False):
+    def add_random_qubit2defect_coupling(self, model_to_modify, qubit2defect_couplings_library = False):
          
         """
         Performs addition of random symmetric single-operator coupling between random defect and qubit.
@@ -495,14 +495,14 @@ class LearningChain:
             self.initialise_process_handler()
             
         # unless specified in call, use process library set for chain:
-        if not qubit_couplings_library:
-            qubit_couplings_library = self.qubit_couplings_library
+        if not qubit2defect_couplings_library:
+            qubit2defect_couplings_library = self.qubit2defect_couplings_library
             
-        self.process_handler.add_random_qubit_coupling(model_to_modify)
+        self.process_handler.add_random_qubit2defect_coupling(model_to_modify)
         
         
     
-    def add_random_defect2defect_coupling(self, model_to_modify, defect_couplings_library = False):
+    def add_random_defect2defect_coupling(self, model_to_modify, defect2defect_couplings_library = False):
     
         """
         Performs addition of random symmetric single-operator coupling between twp random defects.
@@ -514,8 +514,8 @@ class LearningChain:
             self.initialise_process_handler()
             
         # unless specified in call, use process library set for chain:
-        if not defect_couplings_library:
-            defect_couplings_library = self.defect_couplings_library
+        if not defect2defect_couplings_library:
+            defect2defect_couplings_library = self.defect2defect_couplings_library
             
         self.process_handler.add_random_defect2defect_coupling(model_to_modify)
     
@@ -538,8 +538,8 @@ class LearningChain:
         """    
     
         self.process_handler = process_handling.ProcessHandler(self,
-                                              qubit_couplings_library = self.qubit_couplings_library,
-                                              defect_couplings_library = self.defect_couplings_library,
+                                              qubit2defect_couplings_library = self.qubit2defect_couplings_library,
+                                              defect2defect_couplings_library = self.defect2defect_couplings_library,
                                               Ls_library = self.Ls_library)
         
         
