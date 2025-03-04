@@ -31,8 +31,18 @@ GT.add_TLS(TLS_label = 'qubit',
                  }
            )
 GT.add_TLS(is_qubit = False,
+            TLS_label = 'defect1',
             energy = 5.8,
             couplings = {'qubit': [(0.6, [('sigmay', 'sigmay')])]
+                        },
+            Ls = {
+                  'sigmaz' : 0.05,
+                  'sigmay' : 0.02
+                  }
+            )
+GT.add_TLS(is_qubit = False,
+            energy = 5.8,
+            couplings = {'defect1': [(0.6, [('sigmaz', 'sigmaz'), ('sigmax', 'sigmax')])]
                         },
             Ls = {
                   'sigmaz' : 0.05,

@@ -15,7 +15,6 @@ import params_handling
 import process_handling
 
 
-# single instance executes a learning chain; own hyperparameters including initial model (inc. D): 
 
 class LearningChain:
     
@@ -127,7 +126,7 @@ class LearningChain:
         args = copy.deepcopy(locals())
         
         # container for initial hyperparameters:
-        self.init_hyperparams = {} 
+        self.init_hyperparams = dict() 
         
         # if passed as false or not passed (False by default),
         # set instance variables to defaults defined for class,
@@ -604,6 +603,8 @@ class LearningChain:
 
         
 """ !!! to do:
+    
+test addition
 
 likelihood(temperature, total_deviation)
 
@@ -611,5 +612,8 @@ account for probability of moves - reversibility
 
 temperature sampling
 
+punish complexity
+
+overall expression for this
 """        
 pass                                      

@@ -230,9 +230,10 @@ class ProcessHandler:
         pairs = [] 
         for TLS1 in model.TLSs:
             for TLS2 in model.TLSs:
-                if not TLS1.is_qubit and not TLS2.is_qubit and ([TLS2, TLS1] not in pairs):
+                if (not TLS1.is_qubit and not TLS2.is_qubit 
+                    and ([TLS2, TLS1] not in pairs) and not (TLS1 == TLS2)):
                     pairs.append([TLS1, TLS2])
-        
+        print(pairs)
         # gather all existing couplings:
         # ie. list of sets each containing {defect1, defect2, (op_one, op_other), ...}
         existing = []
