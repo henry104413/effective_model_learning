@@ -42,7 +42,9 @@ GT.add_TLS(is_qubit = False,
             )
 GT.add_TLS(is_qubit = False,
             energy = 5.8,
-            couplings = {'defect1': [(0.6, [('sigmaz', 'sigmaz'), ('sigmax', 'sigmax')])]
+            couplings = {'defect1': [(0.6, [('sigmaz', 'sigmaz')]), 
+                                     (0.7, [('sigmax', 'sigmax')]),
+                                     (0.8, [('sigmay', 'sigmay')])]
                         },
             Ls = {
                   'sigmaz' : 0.05,
@@ -58,7 +60,7 @@ ts = np.linspace(0, 1e1, int(1000))
 measurement_observables = ['sigmaz']
 measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
 
-
+GT.disp()
 
 #%% parallelised runs:
 

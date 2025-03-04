@@ -164,32 +164,34 @@ class ProcessHandler:
                 # ie. set of just partners and operator terms
                 # sets in same order in list
         
-        # gather allowed additions (represented as set) and choose one:
+        # gather allowed additions (represented as set):
         possible_additions = [x for (x, y) in zip(available, available_comp) if y not in existing]    
-        chosen_addition = np.random.choice(possible_additions)
         
-        # unpack chosen coupling (set) into TLS identifiers, op label tuples, strength properties tuple:
-        new_ops = []
-        new_pair = []
-        for element in chosen_addition:
-            if isinstance(element, tuple):
-                if list(map(type, element)) == [str, str]:
-                    new_ops.append(element)
-                if set(map(type, element)) <= {int, float} and len(element) == 2:
-                    new_strength_properties = element
-            if isinstance(element, two_level_system.TwoLevelSystem):
-                new_pair.append(element) # assumed there will be two matches in set
-        
-        # format and incorporate new coupling:
-        # note: put on 1st TLS in list with 2nd one as partner
-        new_strength = np.random.gamma(*new_strength_properties)
-        if new_pair[1] not in new_pair[0].couplings:
-            new_pair[0].couplings[new_pair[1]] = [] 
-        new_pair[0].couplings[new_pair[1]].append((new_strength, new_ops))
-        #{partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}        
-                
-        model.build_operators()
-        
+        # if new coupling available:
+        if possible_additions:
+            
+            # choose and unpack into TLS identifiers, op label tuples, strength properties tuple:
+            chosen_addition = np.random.choice(possible_additions)
+            new_ops = []
+            new_pair = []
+            for element in chosen_addition:
+                if isinstance(element, tuple):
+                    if list(map(type, element)) == [str, str]:
+                        new_ops.append(element)
+                    if set(map(type, element)) <= {int, float} and len(element) == 2:
+                        new_strength_properties = element
+                if isinstance(element, two_level_system.TwoLevelSystem):
+                    new_pair.append(element) # assumed there will be two matches in set
+            
+            # format and incorporate into model:
+            # note: put on 1st TLS in list with 2nd one as partner
+            new_strength = np.random.gamma(*new_strength_properties)
+            if new_pair[1] not in new_pair[0].couplings:
+                new_pair[0].couplings[new_pair[1]] = [] 
+            new_pair[0].couplings[new_pair[1]].append((new_strength, new_ops))
+            #{partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}        
+            model.build_operators()
+            
         return model, len(possible_additions)
         
         
@@ -233,7 +235,7 @@ class ProcessHandler:
                 if (not TLS1.is_qubit and not TLS2.is_qubit 
                     and ([TLS2, TLS1] not in pairs) and not (TLS1 == TLS2)):
                     pairs.append([TLS1, TLS2])
-        print(pairs)
+        
         # gather all existing couplings:
         # ie. list of sets each containing {defect1, defect2, (op_one, op_other), ...}
         existing = []
@@ -267,30 +269,33 @@ class ProcessHandler:
         
         # gather allowed additions (represented as set) and choose one:
         possible_additions = [x for (x, y) in zip(available, available_comp) if y not in existing]    
-        chosen_addition = np.random.choice(possible_additions)
         
-        # unpack chosen coupling (set) into TLS identifiers, op label tuples, strength properties tuple:
-        new_ops = []
-        new_pair = []
-        for element in chosen_addition:
-            if isinstance(element, tuple):
-                if list(map(type, element)) == [str, str]:
-                    new_ops.append(element)
-                if set(map(type, element)) <= {int, float} and len(element) == 2:
-                    new_strength_properties = element
-            if isinstance(element, two_level_system.TwoLevelSystem):
-                new_pair.append(element) # assumed there will be two matches in set
-        
-        # format and incorporate new coupling:
-        # note: put on 1st TLS in list with 2nd one as partner
-        new_strength = np.random.gamma(*new_strength_properties)
-        if new_pair[1] not in new_pair[0].couplings:
-            new_pair[0].couplings[new_pair[1]] = [] 
-        new_pair[0].couplings[new_pair[1]].append((new_strength, new_ops))
-        #{partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}        
-                
-        model.build_operators()
-        
+        # if new coupling available:
+        if possible_additions:
+            
+            # choose and unpack into TLS identifiers, op label tuples, strength properties tuple:
+            chosen_addition = np.random.choice(possible_additions)
+            new_ops = []
+            new_pair = []
+            for element in chosen_addition:
+                if isinstance(element, tuple):
+                    if list(map(type, element)) == [str, str]:
+                        new_ops.append(element)
+                    if set(map(type, element)) <= {int, float} and len(element) == 2:
+                        new_strength_properties = element
+                if isinstance(element, two_level_system.TwoLevelSystem):
+                    new_pair.append(element) # assumed there will be two matches in set
+            
+            # format and incorporate into model:
+            # note: put on 1st TLS in list with 2nd one as partner
+            new_strength = np.random.gamma(*new_strength_properties)
+            if new_pair[1] not in new_pair[0].couplings:
+                new_pair[0].couplings[new_pair[1]] = [] 
+            new_pair[0].couplings[new_pair[1]].append((new_strength, new_ops))
+            #{partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}        
+                    
+            model.build_operators()
+            
         return model, len(possible_additions)
         
         
