@@ -136,7 +136,6 @@ class ProcessHandler:
         
         # gather all existing couplings:
         # ie. list of sets each containing {qubit, defect, (op_one, op_other), ...}
-        # !!! order in tuples shouldn't matter if the whole thing is hermitian, right?
         existing = []
         for pair in pairs:
             if pair[1] in pair[0].couplings:
@@ -226,71 +225,73 @@ class ProcessHandler:
             else:
                 raise RuntimeError('Cannot add random defects coupling as library not specified')
                 
-        """     
-        1) list of pairs
-        2) list of present coupling sets
-        3) list of available coupling sets
-        4) list of new possibilities
-        5) choice one
-        6) convert into structured coupling information
-        7) update model
-        8) return model and count (length of possibilities)
-        """
         
-        # care below is for qubit-defect
         
-            
+        # gather all pairs [defect1, defect2] without double counting:
+        pairs = [] 
+        for TLS1 in model.TLSs:
+            for TLS2 in model.TLSs:
+                if not TLS1.is_qubit and not TLS2.is_qubit and ([TLS2, TLS1] not in pairs):
+                    pairs.append([TLS1, TLS2])
+        
+        # gather all existing couplings:
+        # ie. list of sets each containing {defect1, defect2, (op_one, op_other), ...}
+        existing = []
+        for pair in pairs:
+            if pair[1] in pair[0].couplings:
+                for coupling in pair[0].couplings[pair[1]]:
+                    existing.append(set(pair + coupling[1]))
+            if pair[0] in pair[1].couplings:
+                for coupling in pair[1].couplings[pair[0]]:
+                    existing.append(set(pair + coupling[1]))
+                    #{partner: [(rate, [(op_self, op_partner), (op_self, op_partner)]]}
                 
-        # all defects:
-        defects = [x for x in model.TLSs if not x.is_qubit]
-            
-        # reapeat up to iterations limit in case randomly chosen coupling already exists
-        for i in range(10):
-        
-            # select first random defect:
-            defect1 = np.random.gamma(defects)
-            
-            # select random partner defect:
-            remaining_defects = [x for x in model.TLSs if ((not x.is_qubit) and x != defect1)]
-            defect2 = np.random.choice(remaining_defects)
-            
-            # select random coupling operator and rate bounds from the library:
-            operator = np.random.choice([x for x in defect_couplings_library])
-            
-            # tracker for if any coupling between the two exists
-            # note: used to decide whether to append or create new entry in couplings dictionary
-            some_coupling = False
-            
-            # check if this coupling already exists on defect1 - if so try again random choice up to iterations limit:
-            if defect2 in [x for x in defect1.couplings]:
-                some_coupling = True
-                if operator in [y[1] for y in defect1.couplings[defect2]]: 
-                # note: checking this against operator on defect but both should be same so far until mixed operators implemented
-                    continue
-                    
-            # likewise check on defect2:
-            if defect1 in [x for x in defect2.couplings]:
+        # all available couplings from library (even if already present):
+        # ie. list of sets each containing {defect1, defect2, (op_one, op_other), ..., (strength_shape, strength_scale)}
+        available = []
+        for pair in pairs:
+            for coupling, strength_distribution in defect_couplings_library.items():
                 
-                if operator in [y[1] for y in defect2.couplings[defect1]]:
-                # note: checking this against operator on qubit but both should be same so far until mixed operators implemented
-                    continue
-            
-            # ie coupling via this operator between the two not yet existing:
+                # make into tuple of tuples if passed as ('x','y') or (('x','y')) instead of (('x','y'),)
+                if type(coupling) == tuple and list(map(type, coupling)) == [str, str]:
+                    coupling = (coupling,)
+                available.append(set(list(coupling)+pair+[strength_distribution]))
                 
-            # draw strenght:
-            strength = np.random.uniform(*defect_couplings_library[operator])
-            
-            # initialise list if no coupling between the two exists yet:
-            if not some_coupling:
-                defect1.couplings[defect2] = []
-            
-            # add new coupling:
-            defect1.couplings[defect2].append((strength, operator, operator))
-            model.build_operators()
-            
-            return model
+        # complementary list to "available" without strength distribution to enable set comparison with "existing":
+        available_comp = []
+        for coupling_set in available:
+            available_comp.append(
+                {x for x in coupling_set if not (type(x) == tuple and set(map(type,x)) <= {int, float})})
+                # ie. set of just partners and operator terms
+                # sets in same order in list
         
-            break # safety break
+        # gather allowed additions (represented as set) and choose one:
+        possible_additions = [x for (x, y) in zip(available, available_comp) if y not in existing]    
+        chosen_addition = np.random.choice(possible_additions)
+        
+        # unpack chosen coupling (set) into TLS identifiers, op label tuples, strength properties tuple:
+        new_ops = []
+        new_pair = []
+        for element in chosen_addition:
+            if isinstance(element, tuple):
+                if list(map(type, element)) == [str, str]:
+                    new_ops.append(element)
+                if set(map(type, element)) <= {int, float} and len(element) == 2:
+                    new_strength_properties = element
+            if isinstance(element, two_level_system.TwoLevelSystem):
+                new_pair.append(element) # assumed there will be two matches in set
+        
+        # format and incorporate new coupling:
+        # note: put on 1st TLS in list with 2nd one as partner
+        new_strength = np.random.gamma(*new_strength_properties)
+        if new_pair[1] not in new_pair[0].couplings:
+            new_pair[0].couplings[new_pair[1]] = [] 
+        new_pair[0].couplings[new_pair[1]].append((new_strength, new_ops))
+        #{partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}        
+                
+        model.build_operators()
+        
+        return model, len(possible_additions)
         
         
         
