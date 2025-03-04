@@ -237,7 +237,7 @@ class LearningChain:
             elif next_step == 'add qubit coupling':
                 self.add_random_qubit2defect_coupling(proposal)
             elif next_step == 'remove qubit coupling':
-                self.remove_random_qubit_coupling(proposal)
+                self.remove_random_qubit2defect_coupling(proposal)
             elif next_step == 'add defect-defect coupling':
                 self.add_random_defect2defect_coupling(proposal)
             elif next_step == 'remove defect-defect coupling':
@@ -462,11 +462,14 @@ class LearningChain:
     
     
         
-    def add_random_L(self, model_to_modify, Ls_library = False):
+    def add_random_L(self,
+                     model_to_modify: type(learning_model.LearningModel), 
+                     Ls_library: dict[str, tuple | list] = False
+                     ) -> (type(learning_model.LearningModel), int):
     
         """
         Performs addition of random Linblad process to random subsystem.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible additions).
         """
         
         # ensure process handler exists (created at first run):
@@ -477,30 +480,35 @@ class LearningChain:
         if not Ls_library:
             Ls_library = self.Ls_library
             
-        self.process_handler.add_random_L(model_to_modify)
+        return self.process_handler.add_random_L(model_to_modify)
     
     
     
-    def remove_random_L(self, model_to_modify):
+    def remove_random_L(self, 
+                        model_to_modify: type(learning_model.LearningModel)
+                        ) -> (type(learning_model.LearningModel), int):
     
         """
         Performs removal of random Lindblad process from random subsystem.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible additions).
         """    
         
         # ensure process handler exists (created at first run):
         if not self.process_handler: # ie. first run
             self.initialise_process_handler()
             
-        self.process_handler.remove_random_L(model_to_modify)
+        return self.process_handler.remove_random_L(model_to_modify)
     
     
         
-    def add_random_qubit2defect_coupling(self, model_to_modify, qubit2defect_couplings_library = False):
+    def add_random_qubit2defect_coupling(self,
+                                         model_to_modify: type(learning_model.LearningModel),
+                                         qubit2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                                         ) -> (type(learning_model.LearningModel), int):
          
         """
         Performs addition of random symmetric single-operator coupling between random defect and qubit.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible additions).
         """
     
         # ensure process handler exists (created at first run):
@@ -511,15 +519,18 @@ class LearningChain:
         if not qubit2defect_couplings_library:
             qubit2defect_couplings_library = self.qubit2defect_couplings_library
             
-        self.process_handler.add_random_qubit2defect_coupling(model_to_modify)
+        return self.process_handler.add_random_qubit2defect_coupling(model_to_modify)
         
         
     
-    def add_random_defect2defect_coupling(self, model_to_modify, defect2defect_couplings_library = False):
+    def add_random_defect2defect_coupling(self, 
+                                          model_to_modify: type(learning_model.LearningModel),
+                                          defect2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                                          ) -> (type(learning_model.LearningModel), int):
     
         """
         Performs addition of random symmetric single-operator coupling between twp random defects.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible additions).
         """    
         
         # ensure process handler exists (created at first run):
@@ -530,7 +541,7 @@ class LearningChain:
         if not defect2defect_couplings_library:
             defect2defect_couplings_library = self.defect2defect_couplings_library
             
-        self.process_handler.add_random_defect2defect_coupling(model_to_modify)
+        return self.process_handler.add_random_defect2defect_coupling(model_to_modify)
     
     
     
@@ -557,33 +568,37 @@ class LearningChain:
         
         
     
-    def remove_random_qubit_coupling(self, model_to_modify):
+    def remove_random_qubit2defect_coupling(self, 
+                                            model_to_modify: type(learning_model.LearningModel)
+                                            ) -> (type(learning_model.LearningModel), int):
         
         """
         Performs removal of random existing coupling between qubit and defect.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible removals).
         """    
         
         # ensure process handler exists (created at first run):
         if not self.process_handler:
             self.initialise_process_handler()
             
-        self.process_handler.remove_random_qubit_coupling(model_to_modify)
+        return self.process_handler.remove_random_qubit2defect_coupling(model_to_modify)
     
     
 
-    def remove_random_defect2defect_coupling(self, model_to_modify):
+    def remove_random_defect2defect_coupling(self, 
+                                            model_to_modify: type(learning_model.LearningModel)
+                                            ) -> (type(learning_model.LearningModel), int):
         
         """
         Performs removal of random existing coupling between two defects.
-        Modifies argument model, also returns it.
+        Modifies argument model, also returns it as (model, # possible removals).
         """    
         
         # ensure process handler exists (created at first run):
         if not self.process_handler:
             self.initialise_process_handler()
             
-        self.process_handler.remove_random_defect2defect_coupling(model_to_modify)
+        return self.process_handler.remove_random_defect2defect_coupling(model_to_modify)
         
         
 
