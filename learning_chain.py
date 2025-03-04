@@ -290,7 +290,10 @@ class LearningChain:
     
     
     
-    def make_initial_model(self, qubit_energy, defects_number):
+    def make_initial_model(self,
+                           qubit_energy: int|float,
+                           defects_number: int
+                           ) -> type(learning_model.LearningModel):
     
         """
         Returns empty model with qubit of specified energy,
@@ -320,7 +323,7 @@ class LearningChain:
     def total_deviation(self, model: type(learning_model.LearningModel)) -> float:
 
         """
-        Calculates total deviation of argument model from set target data over set observables. 
+        Calculates total deviation of , any realistic amount of net charge on the Moon meansargument model from set target data over set observables. 
         
         Returns equal sum over all instance-level target ovservables
         of mean squared error between instance-level target data
@@ -346,7 +349,11 @@ class LearningChain:
     
     
     
-    def acceptance_probability(self, current, proposal, step_type):
+    def acceptance_probability(self, 
+                               current: type(learning_model.LearningModel), 
+                               proposal: type(learning_model.LearningModel), 
+                               step_type: str
+                               ) -> float:
         
         # maybe sample new temperature?
         
@@ -371,9 +378,13 @@ class LearningChain:
     
     
     
-    def optimise_params(self, model_to_optimise):
+    def optimise_params(self,
+                        model_to_optimise: type(learning_model.LearningModel)
+                        ) -> float:
     
         """
+        Currently not maintained.
+        
         Performs full paramter optimisation on argument model. 
         
         Uses hyperparameters set for chain instance.
@@ -398,7 +409,9 @@ class LearningChain:
         
     
     
-    def tweak_params(self, model_to_tweak):
+    def tweak_params(self, 
+                     model_to_tweak: type(learning_model.LearningModel)
+                     ) -> None:
     
         """
         Performs a single step in existing process parameters landscape.

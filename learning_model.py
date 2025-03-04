@@ -34,7 +34,7 @@ class LearningModel(basic_model.BasicModel):
         
         
     
-    def set_jump_lengths(self, passed_jump_lengths):
+    def set_jump_lengths(self, passed_jump_lengths: dict[str, float|int] = False) -> None:
         
         """
         Sets jump lengths according to argument dictionary.
@@ -44,7 +44,7 @@ class LearningModel(basic_model.BasicModel):
         
     
     
-    def change_params(self, passed_jump_lengths: dict[str, float|int] = False):
+    def change_params(self, passed_jump_lengths: dict[str, float|int] = False) -> None:
         
         """
         Changes all existing parameters of this model except qubit energies,

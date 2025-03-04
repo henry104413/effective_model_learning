@@ -104,7 +104,7 @@ class ProcessHandler:
                                   ) -> tuple[type(basic_model) | type(learning_model), int]:
         
         """
-        Adds random coupling between any qubit and random defect.
+        Adds random coupling between random qubit and random defect.
         
         Qubit couplings library argument should be dictionary. Keys are:
         tuple of length 2 tuples of labels for operator on one and operator on other subsystem.
@@ -114,6 +114,10 @@ class ProcessHandler:
         Presently coupling information only stored on one participant TLS to avoid duplication.
         Storage format: 
         {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+                    
+        Currently cannot recognise equivalent couplings if specified using different operators.
+        (Possibly to introduce: Could do matrix product comparison,
+         would need to run over all couplings instead of succint sets comparison.)
         """
         
         # check library available:
@@ -201,20 +205,18 @@ class ProcessHandler:
         """
         Adds random coupling between two random defects.
         
-        Currently cannot recognise equivalent couplings if specified using different operators.
-        (Possibly to introduce: Could do matrix product comparison,
-         would need to run over all couplings instead of succint sets comparison.)
-        
-        Currently only supports same operator acting on both participants to ensure Hermiticity.
-        !!! To do: Extend to multiple operators (eg. sigmap on one sigmam on other plus conjugate).
-        Will entail either rewriting how coupling information is stor in model
-        so that multiple operators are grouped under single parameter (another layer of list),
-        or params handling tweak method to check for related couplings (Hermitian conjugates)
-        and only vary their parameter together to preserve Hermiticity.
+        Couplings library argument should be dictionary. Keys are:
+        tuple of length 2 tuples of labels for operator on one and operator on other subsystem.
+        Order shouldn't matter under Hermiticity condition.
+        Values are tuples of (shape, scale) of mirrored gamma distribution to sample coupling strength from.
         
         Presently coupling information only stored on one participant TLS to avoid duplication.
         Storage format: 
-        !!! CHANGE {partner : [(strength, op_this, op_partner)]} # partner is object reference and ops label strings
+        {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+                    
+        Currently cannot recognise equivalent couplings if specified using different operators.
+        (Possibly to introduce: Could do matrix product comparison,
+         would need to run over all couplings instead of succint sets comparison.)
         """
         
         # check library available:
