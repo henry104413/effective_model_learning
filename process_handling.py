@@ -58,7 +58,8 @@ class ProcessHandler:
         
         """
         Can add random new single-site Linblad process from process library to random subsystem.
-        Modifies argument model and returns: updated model, number of addable Ls.
+        Modifies argument model, also returns it as (updated model, # possible additions).
+                                                     
         Argument library used if passed, instance-level one otherwise, error if neither available.  
         Update flag true means addition performed; false avoids changing model,
         to only get count of addable Ls for prior/marginal probabilities calculation.
@@ -81,7 +82,7 @@ class ProcessHandler:
             possible_additions.extend([(TLS, x) for x in addable_Ls])
         
         # update model if required and additions possible, otherwise leave unchanged:
-        if possible_additions:
+        if possible_additions and update:
             # pick one pair of TLS and L operator:
             TLS, operator = possible_additions[np.random.choice(len(possible_additions))]
             
@@ -101,13 +102,16 @@ class ProcessHandler:
     
     def add_random_qubit2defect_coupling(self,
                                   model: TYPE_MODEL,
-                                  qubit2defect_couplings_library: TYPE_COUPLING_LIBRARY = False
+                                  qubit2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,
                                   # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
+                                  update: bool = True
                                   ) -> tuple[TYPE_MODEL, int]:
         
         """
         Adds random coupling between random qubit and random defect.
-        
+        Modifies argument model, also returns it as (updated model, # possible additions).
+        Update flag true means addition performed; false avoids changing model.                                             
+                                                     
         Qubit couplings library argument should be dictionary. Keys are:
         tuple of length 2 tuples of labels for operator on one and operator on other subsystem.
         Order shouldn't matter under Hermiticity condition.
@@ -170,8 +174,8 @@ class ProcessHandler:
         # gather allowed additions (represented as set):
         possible_additions = [x for (x, y) in zip(available, available_comp) if y not in existing]    
         
-        # if new coupling available:
-        if possible_additions:
+        # if new coupling available and update flag on:
+        if possible_additions and update:
             
             # choose and unpack into TLS identifiers, op label tuples, strength properties tuple:
             chosen_addition = np.random.choice(possible_additions)
@@ -201,13 +205,16 @@ class ProcessHandler:
         
     def add_random_defect2defect_coupling(self,
                                           model: TYPE_MODEL,
-                                          defect2defect_couplings_library: TYPE_COUPLING_LIBRARY = False
+                                          defect2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,
                                           # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
+                                          update: bool = True
                                           ) -> tuple[TYPE_MODEL, int]:
         
         """
         Adds random coupling between two random defects.
-        
+        Modifies argument model, also returns it as (updated model, # possible additions).
+        Update flag true means addition performed; false avoids changing model.
+                                                     
         Couplings library argument should be dictionary. Keys are:
         tuple of length 2 tuples of labels for operator on one and operator on other subsystem.
         Order shouldn't matter under Hermiticity condition.
@@ -273,8 +280,8 @@ class ProcessHandler:
         # gather allowed additions (represented as set) and choose one:
         possible_additions = [x for (x, y) in zip(available, available_comp) if y not in existing]    
         
-        # if new coupling available:
-        if possible_additions:
+        # if new coupling available and update flag on:
+        if possible_additions and update:
             
             # choose and unpack into TLS identifiers, op label tuples, strength properties tuple:
             chosen_addition = np.random.choice(possible_additions)
@@ -310,7 +317,7 @@ class ProcessHandler:
     
         """
         Can remove random existing single-site Linblad process from random subsystem.
-        Modifies argument model and returns: updated model, number of removable Ls.
+        Modifies argument model, also returns it as (updated model, # possible removals).
         Update flag true means removal performed; false avoids changing model,
         to only get count of removable Ls for prior/marginal probabilities calculation.
         """
@@ -321,8 +328,8 @@ class ProcessHandler:
         for TLS in model.TLSs:
             possible_removals.extend([(TLS, x) for x in TLS.Ls])
         
-        # pick one pair of TLS and L operator:
-        if possible_removals:
+        # pick one pair of TLS and L operator if removals possible and update flag on:
+        if possible_removals and update:
             TLS, operator = possible_removals[np.random.choice(len(possible_removals))]
             
             # update model:
@@ -383,10 +390,12 @@ class ProcessHandler:
             
             
     def remove_random_qubit2defect_coupling(self, 
-                                     model: TYPE_MODEL
+                                     model: TYPE_MODEL,
+                                     update: bool = True
                                      ) -> TYPE_MODEL:
         """
         Removes random coupling process between qubit and defect.
+        Modifies argument model, also returns it as (updated model, # possible removals).
         """        
             
         # make list of all model's individual couplings provided they are qubit-defect:
@@ -419,11 +428,13 @@ class ProcessHandler:
         
             
     def remove_random_defect2defect_coupling(self, 
-                                             model: TYPE_MODEL
+                                             model: TYPE_MODEL,
+                                             update: bool = True
                                              ) -> TYPE_MODEL:
         
         """
         Removes random coupling process between two different defects.    
+        Modifies argument model, also returns it as (updated model, # possible removals).
         """
     
         # make list of all model's individual couplings provided they are defect-defect:
