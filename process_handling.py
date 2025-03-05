@@ -18,7 +18,10 @@ if typing.TYPE_CHECKING:
     from learning_chain import LearningChain
 
 
-COUPLING_LIB_TYPE = dict[tuple[tuple[str] | str], tuple[int | float]] 
+# common types:
+TYPE_COUPLING_LIBRARY = dict[tuple[tuple[str] | str], tuple[int | float]]
+TYPE_LS_LIBRARY = dict[str, tuple[int | float]]
+TYPE_MODEL = type(basic_model.BasicModel) | type(learning_model.LearningModel)
 
 class ProcessHandler:
     
@@ -31,10 +34,10 @@ class ProcessHandler:
     
     def __init__(self,
                  chain: type(LearningChain) = False,
-                 model: type(basic_model) | type(learning_model) = False,
-                 Ls_library: dict[str, tuple | list] = False, # {'op label': (shape, scale)}
-                 qubit2defect_couplings_library: COUPLING_LIB_TYPE = False,
-                 defect2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                 model: TYPE_MODEL = False,
+                 Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
+                 qubit2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,
+                 defect2defect_couplings_library: TYPE_COUPLING_LIBRARY = False
                  # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
                  ):
 
@@ -48,10 +51,10 @@ class ProcessHandler:
         
 
     def add_random_L(self,
-                     model: type(basic_model.BasicModel) | type(learning_model.LearningModel),
-                     Ls_library: dict[str, tuple | list] = False, # {'op label': (shape, scale)}
+                     model: TYPE_MODEL,
+                     Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
                      update: bool = True
-                     ) -> (type(basic_model.BasicModel) | type(learning_model.LearningModel), int):
+                     ) -> tuple[TYPE_MODEL, int]:
         
         """
         Can add random new single-site Linblad process from process library to random subsystem.
@@ -97,10 +100,10 @@ class ProcessHandler:
     
     
     def add_random_qubit2defect_coupling(self,
-                                  model: type(basic_model) | type(learning_model),
-                                  qubit2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                                  model: TYPE_MODEL,
+                                  qubit2defect_couplings_library: TYPE_COUPLING_LIBRARY = False
                                   # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
-                                  ) -> tuple[type(basic_model) | type(learning_model), int]:
+                                  ) -> tuple[TYPE_MODEL, int]:
         
         """
         Adds random coupling between random qubit and random defect.
@@ -197,10 +200,10 @@ class ProcessHandler:
         
         
     def add_random_defect2defect_coupling(self,
-                                          model: type(basic_model) | type(learning_model),
-                                          defect2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
+                                          model: TYPE_MODEL,
+                                          defect2defect_couplings_library: TYPE_COUPLING_LIBRARY = False
                                           # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
-                                          ) -> type(basic_model) | type(learning_model):
+                                          ) -> tuple[TYPE_MODEL, int]:
         
         """
         Adds random coupling between two random defects.
@@ -301,9 +304,9 @@ class ProcessHandler:
         
         
     def remove_random_L(self,
-                        model: type(basic_model.BasicModel) | type(learning_model.LearningModel),
+                        model: TYPE_MODEL,
                         update: bool = True
-                        ) -> (type(basic_model.BasicModel) | type(learning_model.LearningModel), int):
+                        ) -> tuple[TYPE_MODEL, int]:
     
         """
         Can remove random existing single-site Linblad process from random subsystem.
@@ -333,7 +336,7 @@ class ProcessHandler:
      
     
         
-    def define_Ls_library(self, Ls_library: dict[str, tuple | list]) -> None:
+    def define_Ls_library(self, Ls_library: TYPE_LS_LIBRARY) -> None:
         
         """
         Sets process library post-initialisation.
@@ -380,8 +383,8 @@ class ProcessHandler:
             
             
     def remove_random_qubit2defect_coupling(self, 
-                                     model: type(basic_model.BasicModel) | type(learning_model.LearningModel)
-                                     ) -> type(basic_model.BasicModel) | type(learning_model.LearningModel):
+                                     model: TYPE_MODEL
+                                     ) -> TYPE_MODEL:
         """
         Removes random coupling process between qubit and defect.
         """        
@@ -416,8 +419,8 @@ class ProcessHandler:
         
             
     def remove_random_defect2defect_coupling(self, 
-                                             model: type(basic_model.BasicModel) | type(learning_model.LearningModel)
-                                             ) -> type(basic_model.BasicModel) | type(learning_model.LearningModel):
+                                             model: TYPE_MODEL
+                                             ) -> TYPE_MODEL:
         
         """
         Removes random coupling process between two different defects.    
