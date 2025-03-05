@@ -92,8 +92,6 @@ class ProcessHandler:
             # update model:
             TLS.Ls[operator] = new_rate
             model.build_operators()
-        else:
-            pass
         
         # return model and number of possible additions:
         return model, len(possible_additions)
@@ -235,8 +233,6 @@ class ProcessHandler:
                 defect2defect_couplings_library = self.defect2defect_couplings_library
             else:
                 raise RuntimeError('Cannot add random defects coupling as library not specified')
-                
-        
         
         # gather all pairs [defect1, defect2] without double counting:
         pairs = [] 
