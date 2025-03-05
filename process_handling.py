@@ -108,8 +108,9 @@ class ProcessHandler:
         """
         Adds random coupling between random qubit and random defect.
         Modifies argument model, also returns it as (updated model, # possible additions).
-        Update flag true means addition performed; false avoids changing model.                                             
-                                                     
+        Update flag true means addition performed; false avoids changing model,                                             
+        to only get count of addable couplings for prior/marginal probabilities calculation.                                             
+        
         Qubit couplings library argument should be dictionary. Keys are:
         tuple of length 2 tuples of labels for operator on one and operator on other subsystem.
         Order shouldn't matter under Hermiticity condition.
@@ -211,8 +212,9 @@ class ProcessHandler:
         """
         Adds random coupling between two random defects.
         Modifies argument model, also returns it as (updated model, # possible additions).
-        Update flag true means addition performed; false avoids changing model.
-                                                     
+        Update flag true means addition performed; false avoids changing model,
+        to only get count of addable couplings for prior/marginal probabilities calculation.
+                                             
         Couplings library argument should be dictionary. Keys are:
         tuple of length 2 tuples of labels for operator on one and operator on other subsystem.
         Order shouldn't matter under Hermiticity condition.
@@ -384,80 +386,83 @@ class ProcessHandler:
             self.Ls_library[operator] = new_bounds
             
             
-            
+    
     def remove_random_qubit2defect_coupling(self, 
-                                     model: TYPE_MODEL,
-                                     update: bool = True
-                                     ) -> TYPE_MODEL:
+                                             model: TYPE_MODEL,
+                                             update: bool = True
+                                             ) -> tuple[TYPE_MODEL, int]:
+        
         """
-        Removes random coupling process between qubit and defect.
+        Removes one random qubit-defect coupling.    
         Modifies argument model, also returns it as (updated model, # possible removals).
-        """        
-            
-        # make list of all model's individual couplings provided they are qubit-defect:
-        couplings = [] # now tuples of (holding_TLS, partner, index in list)
+        Update flag true means removal performed; false avoids changing model,
+        to only get count of removable couplings for prior/marginal probabilities calculation.
+        """
+    
+        # gather all possible removals (any qubit-defect couplings in model)
+        possible_removals = [] # each (holding_TLS, partner, index in pair's couplings)
         for TLS in model.TLSs:
             for partner in TLS.couplings:
                 if (TLS.is_qubit and not partner.is_qubit) or (not TLS.is_qubit and partner.is_qubit):
                     for index, coupling in enumerate(TLS.couplings[partner]):
-                        couplings.append((TLS, partner, index))
-                        
-        if (temp := len(couplings) > 0):
+                        possible_removals.append((TLS, partner, index))
+        
+        
+        # if removable coupling available and update flag on:
+        if possible_removals and update:
             
-            # choose coupling to remove if any:
-            # note: np.random.choice does not like choosing from list of tuples,
-            # ...hence need to choose by list element index 
-            selection_index = np.random.choice(temp)
-            selection = couplings[selection_index]
+            # choose and perform removal: 
+            # note: np.random.choice does not support choosing from list of tuples
+            chosen_removal = possible_removals[np.random.choice(len(possible_removals))]
+            chosen_removal[0].couplings[chosen_removal[1]].pop(chosen_removal[2])
             
-            # remove coupling:
-            selection[0].couplings[selection[1]].pop(selection[2])
-            # note: empty list remains if last coupling for given partner
+            # note: empty list remains if last coupling removed for given partner
             # hence remove partner from TLS's couplings dictionary:
-            if not selection[0].couplings[selection[1]]:
-                selection[0].couplings.pop(selection[1])
+            if not chosen_removal[0].couplings[chosen_removal[1]]:
+                chosen_removal[0].couplings.pop(chosen_removal[1])
                 
             model.build_operators()  
         
-        return model
-        
-        
+        return model, len(possible_removals)
+            
+    
             
     def remove_random_defect2defect_coupling(self, 
                                              model: TYPE_MODEL,
                                              update: bool = True
-                                             ) -> TYPE_MODEL:
+                                             ) -> tuple[TYPE_MODEL, int]:
         
         """
-        Removes random coupling process between two different defects.    
+        Removes one random defect-defect coupling.    
         Modifies argument model, also returns it as (updated model, # possible removals).
+        Update flag true means removal performed; false avoids changing model,
+        to only get count of removable couplings for prior/marginal probabilities calculation.
         """
     
-        # make list of all model's individual couplings provided they are defect-defect:
-        couplings = [] # now tuples of (holding_TLS, partner, index in list)
+        # gather all possible removals (any defect-defect couplings in model)
+        possible_removals = [] # each (holding_TLS, partner, index in pair's couplings)
         for TLS in model.TLSs:
             for partner in TLS.couplings:
                 if (not TLS.is_qubit and not partner.is_qubit):
                     for index, coupling in enumerate(TLS.couplings[partner]):
-                        couplings.append((TLS, partner, index))
+                        possible_removals.append((TLS, partner, index))
         
-        if (temp := len(couplings) > 0):
+        
+        # if removable coupling available and update flag on:
+        if possible_removals and update:
             
-            # choose coupling to remove if any:
-            # note: np.random.choice does not like choosing from list of tuples,
-            # ...hence need to choose by list element index 
-            selection_index = np.random.choice(temp)
-            selection = couplings[selection_index]
+            # choose and perform removal: 
+            # note: np.random.choice does not support choosing from list of tuples
+            chosen_removal = possible_removals[np.random.choice(len(possible_removals))]
+            chosen_removal[0].couplings[chosen_removal[1]].pop(chosen_removal[2])
             
-            # remove coupling:
-            selection[0].couplings[selection[1]].pop(selection[2])
-            # note: empty list remains if last coupling for given partner
+            # note: empty list remains if last coupling removed for given partner
             # hence remove partner from TLS's couplings dictionary:
-            if not selection[0].couplings[selection[1]]:
-                selection[0].couplings.pop(selection[1])
+            if not chosen_removal[0].couplings[chosen_removal[1]]:
+                chosen_removal[0].couplings.pop(chosen_removal[1])
                 
             model.build_operators()  
         
-        return model
+        return model, len(possible_removals)
             
             
