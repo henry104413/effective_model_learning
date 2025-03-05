@@ -31,6 +31,8 @@ class BasicModel():
     
     Predominantly created by dynamically adding TLSs via add_TLS method.
     Limited random setup also possible.
+    
+    !!! To add: Initial state specification - now qubits assumed excited and defects ground.
     """
     
     # container for references to all existing Model instances:
@@ -40,30 +42,28 @@ class BasicModel():
     
     def __init__(self):
         
-        # !!! to do: initial state specification - so far assume qubit excited, all else ground
-        
-        # model subsystems container (instances of TwoLevelSystem):
+        # constituent TLSs (instances of TwoLevelSystem):
         self.TLSs = []
         
-        # TLS manual labels container - populated if label defined on TLS creation
-        self.TLS_labels = {}
+        # TLSs manual labels - populated if label defined upon TLS creation:
+        self.TLS_labels = dict()
         
-        # model full Lindblad operators:
+        # full system Lindblad operators:
         self.Ls = []
         
-        # model full Hamiltonian:
+        # full system Hamiltonian:
         self.H = None
         
         # default full system initial state:
         self.initial_DM = None
         
+        # full Liouvillian:
+        self.Liouvillian = None
+        
         # save instance:
         BasicModel.existing_models.append(self)
         
     
-    
-    
-    # adds a TLS to this model with given specifications
     
     def add_TLS(self,
                 TLS_label: str = '',
@@ -129,7 +129,8 @@ class BasicModel():
       
     def build_operators(self):
         """
-        Builds all full system operators - to be called after any changes to model.    
+        Builds all full system operators - to be called after any changes to model.
+        NB: Liouvillian not updated to save costs - call manually if required.
         """
         
         self.build_Ls()
@@ -260,9 +261,38 @@ class BasicModel():
                 temp = T(temp, ops['gnd'])
         self.initial_DM = temp
         return temp
-        
-        
     
+    
+    
+    def build_Liouvillian(self) -> np.ndarray:
+        """
+        Builds full system Liouvillian as a numpy array.
+        Saves to this model's container, also returns it.
+        """
+        
+        # check H available:
+        if not self.H:
+            raise RuntimeError('Liouvillian cannot be calculated due to missing TLSs or H')
+        
+        # H and list of Ls as numpy arrays:
+        H = np.array(self.H)
+        Ls = [np.array(L) for L in self.Ls]
+        
+        # Hilbert space dimension and corresponding identity as numpy array:
+        n = len(H)
+        I = np.eye(n)
+        
+        # Liouvillian:
+        temp = -1j*(np.kron(I, H) - np.kron(H.transpose(), I))
+        for L in Ls:
+            temp += (np.kron(L.conjugate(), L) 
+                            - 1/2*(np.kron(I, L.conjugate().transpose()@L) + np.kron(L.transpose()@L, I)))
+        
+        self.Liouvillian = temp
+        return temp
+    
+        
+        
     def calculate_dynamics(self, 
                           evaluation_times: np.ndarray,
                           observable_ops: list[str] = False,
@@ -342,21 +372,13 @@ class BasicModel():
             # first of full observables taken - not tested!
             observable_op = np.array(observable_ops_full[0])
                 
-            # H and list of Ls as numpy arrays:
-            Ls = [np.array(L) for L in self.Ls]
-            H = np.array(self.H)
             
             # vectorised initial DM as numpy array:
             initial_DM_mat = np.array(self.initial_DM)            
             n = len(initial_DM_mat)
             DM_vect = np.reshape(initial_DM_mat, (int(n**2), 1))
             
-            # Liouvillian:
-            I = np.eye(n)
-            LLN = -1j*(np.kron(I, H) - np.kron(H.transpose(), I))
-            for L in Ls:
-                LLN += (np.kron(L.conjugate(), L) - 1/2*(np.kron(I, L.conjugate().transpose()@L) + np.kron(L.transpose()@L, I)))
-            self.LLN = LLN # save to instance for testing
+            LLN = self.build_Liouvillian()
             
             # propagator by time interval:
             # note: assumes evaluation_times evenly spaced!

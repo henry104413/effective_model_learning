@@ -599,21 +599,3 @@ class LearningChain:
             
         return self.process_handler.remove_random_defect2defect_coupling(model_to_modify)
         
-        
-
-        
-""" !!! to do:
-    
-test addition
-
-likelihood(temperature, total_deviation)
-
-account for probability of moves - reversibility
-
-temperature sampling
-
-punish complexity
-
-overall expression for this
-"""        
-pass                                      

@@ -143,7 +143,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                         }
                       )
 
-quest.add_random_defect2defect_coupling(GT)
+quest.remove_random_defect2defect_coupling(GT)
 raise SystemExit()
 
 #%%
