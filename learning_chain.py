@@ -245,9 +245,9 @@ class LearningChain:
                 
         # step labels, normalised dictionary, and list of just probabilities for later use:
         self.next_step_labels = options # next step labels for use in run()
-        self.next_step_options = {option: self.chain_step_options[option]/temp 
+        self.next_step_probabilities_dict = {option: self.chain_step_options[option]/temp 
                                   for option in options}
-        self.next_step_probabilities = [self.chain_step_options[option]/temp
+        self.next_step_probabilities_list = [self.chain_step_options[option]/temp
                                         for option in options]
         
         # process and parameter objects to perform chain steps:
@@ -306,7 +306,7 @@ class LearningChain:
             proposal = copy.deepcopy(self.current)
             
             # choose next step:
-            next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities)
+            next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities_list)
             
             # modify proposal and save number of possible modifications of chosen type:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
@@ -315,10 +315,10 @@ class LearningChain:
             # note: proposal not modified by this
             proposal, possible_modifications_reverse_type = self.step(proposal, self.complementary_step(next_step), update = False)
             
-            NOW FORMULA FOR REVERSAL
-            simple
-            q(x|x*)/q(x*|x)
-            
+            # overall probabilities of making this step and of then reversing it:
+            p_there = self.next_step_probabilities_dict[next_step]/possible_modifications_chosen_type
+            p_back = self.next_step_probabilities_dict[self.complementary_step(next_step)]/possible_modifications_reverse_type
+            # then multiply by back/there
             
             # evaluate new proposal:
             proposal_cost = self.total_deviation(proposal)
@@ -359,7 +359,7 @@ class LearningChain:
             # rejection:
             else:
                 self.acceptance_tracker.append(False)
-                pass
+                
             
         return self.best
     
