@@ -110,10 +110,14 @@ class ParamsHandler:
     
     
     
-    def tweak_all_parameters(self, model: type(learning_model.LearningModel)) -> None:
+    def tweak_all_parameters(self, 
+                             model: type(learning_model.LearningModel)
+                             ) -> (type(learning_model.LearningModel), int):
         
         """
         Tweaks all existing parameters of argument model according instance-level jump lengths.
+        
+        Modifies argument model and returns it.
         
         Calls model method which currently adds to each existing model parameter
         a value sampled from normal distribution around zero
@@ -127,6 +131,8 @@ class ParamsHandler:
             raise RuntimeError('Parameter handler hyperparameters need to be specified!')
         else:
             model.change_params(self.jump_lengths)
+            
+        return model
         
     
     

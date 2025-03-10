@@ -45,8 +45,8 @@ class LearningChain:
             'tweak all parameters': 10,
             'add L': 0.1,
             'remove L': 0.1,
-            'add qubit coupling': 0.05, 
-            'remove qubit coupling': 0.05,
+            'add qubit-defect coupling': 0.05, 
+            'remove qubit-defect coupling': 0.05,
             'add defect-defect coupling': 0.025, 
             'remove defect-defect coupling': 0.025
             }
@@ -84,8 +84,85 @@ class LearningChain:
            ,(('sigmay', 'sigmay'),): (0.2, 0.5)
            ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
            }
-
     
+    
+    
+    def complementary_step(step_type: str) -> str:
+        """
+        Returns step type that reverses argument step type.
+        Note: Used in automatic calculation of reverse step probability.
+        """
+        match step_type:
+            case 'tweak all parameters':
+                return 'tweak all parameters'
+            case 'add L': 
+                return 'remove L'
+            case 'remove L':
+                return 'add L'
+            case 'add qubit-defect coupling':
+                return 'remove qubit-defect coupling' 
+            case 'remove qubit-defect coupling': 
+                return 'add qubit-defect coupling'
+            case 'add defect-defect coupling':
+                return 'remove defect-defect coupling' 
+            case 'remove defect-defect coupling': 
+                return 'add defect-defect coupling'
+            case _:
+                raise RuntimeError('Complementary step type could not be determined'
+                + 'due to step type not recognised')
+            
+       
+        
+    def step(self,
+             model: type(learning_model.LearningModel), 
+             step_type: str, 
+             update: bool = True
+             ) -> tuple[type(learning_model.LearningModel), int]:
+        
+        """
+        Calls methods of process and parameter handlers correspoing step type string.
+        If update flag on: carries out modification on argument model.
+        If update flag off: modification NOT performed but corresponding method called 
+        to evaluate possible proposals - used in reversal probability calculation.
+        In both cases returns:
+        (model, # possible proposals of specified type).
+        
+        Currently proposal hyperameters are set at chain initialisation and passed to 
+        process and parameter handlers initialisers when instantiated for this chain.
+        !!! To do: Integrate methods changing hyperparameters during chain run if required.
+        """
+        
+        # ensure process and parameter handlers instantiated:
+        if not self.process_handler: self.initialise_process_handler()
+        if not self.params_handler: self.initialise_params_handler()
+        
+        # call handler method corresponding to step type:
+        match step_type:
+            case 'tweak all parameters':
+                # now just returns 1 as # possible proposals
+                # this way reversal probability calculation assumes parameter reversal equally likely
+                # !!! updating proposal variance throughout may violate this?
+                if update: 
+                    return (self.params_handler.tweak_all_parameters(model), 1)
+                if not update:
+                    return (model, 1)
+            case 'add L': 
+                return self.process_handler.add_random_L(model, update)
+            case 'remove L':
+                return self.process_handler.remove_random_L(model, update)
+            case 'add qubit-defect coupling':
+                return self.process_handler.add_random_qubit2defect_coupling(model, update)
+            case 'remove qubit-defect coupling': 
+                return self.process_handler.remove_random_qubit2defect_coupling(model, update)
+            case 'add defect-defect coupling':
+                return self.process_handler.add_random_defect2defect_coupling(model, update)
+            case 'remove defect-defect coupling': 
+                return self.process_handler.remove_random_defect2defect_coupling(model, update)
+            case _:
+                raise RuntimeError('Model proposal (chain step) option \'' 
+                                   + step_type + '\' not recognised')
+            
+            
     
     def __init__(self,
                                   
@@ -105,7 +182,7 @@ class LearningChain:
                  temperature_proposal_shape: float = False, # aka k
                  temperature_proposal_scale:float = False, # aka theta
                  
-                 jump_length_rescaling_factor: float = False,
+                 jump_length_rescaling_factor: float = False, 
                  
                  acceptance_window: float = False,
                  acceptance_target: float = False,
@@ -156,7 +233,7 @@ class LearningChain:
                                  + '\nor tuple or list of (qubit energy, number of defects),'
                                  + '\n or integer number of defects, assuming qubit energy = 1')
             
-        # chain step options check and normalisation:
+        # chain step options check and sum for normalisation:
         # note: run() method throws error if option not implemented - not checked here
         temp = 0 # 
         for option in (options := [x for x in self.chain_step_options]):
@@ -165,10 +242,13 @@ class LearningChain:
                                    +'specified by a single number')
             else:
                 temp += self.chain_step_options[option]
+                
+        # step labels, normalised dictionary, and list of just probabilities for later use:
         self.next_step_labels = options # next step labels for use in run()
-        self.next_step_probabilities = [self.chain_step_options[option]/temp for option in options]
-        # ^corresponding normalised propabilities
-        
+        self.next_step_options = {option: self.chain_step_options[option]/temp 
+                                  for option in options}
+        self.next_step_probabilities = [self.chain_step_options[option]/temp
+                                        for option in options]
         
         # process and parameter objects to perform chain steps:
         # note: initialised at first call of methods that use them
@@ -225,24 +305,20 @@ class LearningChain:
             # new proposal container:
             proposal = copy.deepcopy(self.current)
             
-            # choose next step and modify proposal accordingly:
+            # choose next step:
             next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities)
-            if next_step == 'tweak all parameters':
-                self.tweak_params(proposal)
-            elif next_step == 'add L':
-                self.add_random_L(proposal)
-            elif next_step == 'remove L':
-                self.remove_random_L(proposal)
-            elif next_step == 'add qubit coupling':
-                self.add_random_qubit2defect_coupling(proposal)
-            elif next_step == 'remove qubit coupling':
-                self.remove_random_qubit2defect_coupling(proposal)
-            elif next_step == 'add defect-defect coupling':
-                self.add_random_defect2defect_coupling(proposal)
-            elif next_step == 'remove defect-defect coupling':
-                self.remove_random_defect2defect_coupling(proposal)
-            else:
-                raise RuntimeError('Chain step option \'' + next_step + '\' is not implemented') 
+            
+            # modify proposal and save number of possible modifications of chosen type:
+            proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
+            
+            # also save number of possible modifications of reverse type after performing chosen step:
+            # note: proposal not modified by this
+            proposal, possible_modifications_reverse_type = self.step(proposal, self.complementary_step(next_step), update = False)
+            
+            NOW FORMULA FOR REVERSAL
+            simple
+            q(x|x*)/q(x*|x)
+            
             
             # evaluate new proposal:
             proposal_cost = self.total_deviation(proposal)
