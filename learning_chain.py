@@ -16,6 +16,9 @@ import process_handling
 
 
 
+# common types:
+TYPE_MODEL = type(learning_model.LearningModel)
+    
 class LearningChain:
     
     """
@@ -113,56 +116,6 @@ class LearningChain:
             
        
         
-    def step(self,
-             model: type(learning_model.LearningModel), 
-             step_type: str, 
-             update: bool = True
-             ) -> tuple[type(learning_model.LearningModel), int]:
-        
-        """
-        Calls methods of process and parameter handlers correspoing step type string.
-        If update flag on: carries out modification on argument model.
-        If update flag off: modification NOT performed but corresponding method called 
-        to evaluate possible proposals - used in reversal probability calculation.
-        In both cases returns:
-        (model, # possible proposals of specified type).
-        
-        Currently proposal hyperameters are set at chain initialisation and passed to 
-        process and parameter handlers initialisers when instantiated for this chain.
-        !!! To do: Integrate methods changing hyperparameters during chain run if required.
-        """
-        
-        # ensure process and parameter handlers instantiated:
-        if not self.process_handler: self.initialise_process_handler()
-        if not self.params_handler: self.initialise_params_handler()
-        
-        # call handler method corresponding to step type:
-        match step_type:
-            case 'tweak all parameters':
-                # now just returns 1 as # possible proposals
-                # this way reversal probability calculation assumes parameter reversal equally likely
-                # !!! updating proposal variance throughout may violate this?
-                if update: 
-                    return (self.params_handler.tweak_all_parameters(model), 1)
-                if not update:
-                    return (model, 1)
-            case 'add L': 
-                return self.process_handler.add_random_L(model, update)
-            case 'remove L':
-                return self.process_handler.remove_random_L(model, update)
-            case 'add qubit-defect coupling':
-                return self.process_handler.add_random_qubit2defect_coupling(model, update)
-            case 'remove qubit-defect coupling': 
-                return self.process_handler.remove_random_qubit2defect_coupling(model, update)
-            case 'add defect-defect coupling':
-                return self.process_handler.add_random_defect2defect_coupling(model, update)
-            case 'remove defect-defect coupling': 
-                return self.process_handler.remove_random_defect2defect_coupling(model, update)
-            case _:
-                raise RuntimeError('Model proposal (chain step) option \'' 
-                                   + step_type + '\' not recognised')
-            
-            
     
     def __init__(self,
                                   
@@ -171,7 +124,7 @@ class LearningChain:
                  target_observables: str | list[str],
                  *,
                  
-                 initial: type(learning_model.LearningModel) | tuple | list = False,
+                 initial: TYPE_MODEL | tuple | list = False,
                  # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
                  
                  # note: arguments below should have counterpart in class Defaults:
@@ -260,7 +213,7 @@ class LearningChain:
         self.explored_costs = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.initial)
-        self.current_cost = self.total_deviation(self.current)
+        self.current_cost = self.total_dev(self.current)
         self.best_cost = self.current_cost
         self.acceptance_log = []
         
@@ -321,7 +274,7 @@ class LearningChain:
             # then multiply by back/there
             
             # evaluate new proposal:
-            proposal_cost = self.total_deviation(proposal)
+            proposal_cost = self.total_dev(proposal)
             self.explored_costs.append(proposal_cost)
             
             # if improvement:
@@ -365,14 +318,10 @@ class LearningChain:
     
     
     
-    
-    
-    
     def make_initial_model(self,
                            qubit_energy: int|float,
                            defects_number: int
-                           ) -> type(learning_model.LearningModel):
-    
+                           ) -> TYPE_MODEL:
         """
         Returns empty model with qubit of specified energy,
         given number of defects initialised to qubit energy,
@@ -398,8 +347,57 @@ class LearningChain:
     
     
     
-    def total_deviation(self, model: type(learning_model.LearningModel)) -> float:
-
+    def step(self,
+             model: TYPE_MODEL, 
+             step_type: str, 
+             update: bool = True
+             ) -> tuple[TYPE_MODEL, int]:
+        """
+        Calls methods of process and parameter handlers correspoing step type string.
+        If update flag on: carries out modification on argument model.
+        If update flag off: modification NOT performed but corresponding method called 
+        to evaluate possible proposals - used in reversal probability calculation.
+        In both cases returns:
+        (model, # possible proposals of specified type).
+        
+        Currently proposal hyperameters are set at chain initialisation and passed to 
+        process and parameter handlers initialisers when instantiated for this chain.
+        !!! To do: Integrate methods changing hyperparameters during chain run if required.
+        """
+        
+        # ensure process and parameter handlers instantiated:
+        if not self.process_handler: self.initialise_process_handler()
+        if not self.params_handler: self.initialise_params_handler()
+        
+        # call handler method corresponding to step type:
+        match step_type:
+            case 'tweak all parameters':
+                # now just returns 1 as # possible proposals
+                # this way reversal probability calculation assumes parameter reversal equally likely
+                # !!! updating proposal variance throughout may violate this?
+                if update: 
+                    return (self.params_handler.tweak_all_parameters(model), 1)
+                if not update:
+                    return (model, 1)
+            case 'add L': 
+                return self.process_handler.add_random_L(model, update)
+            case 'remove L':
+                return self.process_handler.remove_random_L(model, update)
+            case 'add qubit-defect coupling':
+                return self.process_handler.add_random_qubit2defect_coupling(model, update)
+            case 'remove qubit-defect coupling': 
+                return self.process_handler.remove_random_qubit2defect_coupling(model, update)
+            case 'add defect-defect coupling':
+                return self.process_handler.add_random_defect2defect_coupling(model, update)
+            case 'remove defect-defect coupling': 
+                return self.process_handler.remove_random_defect2defect_coupling(model, update)
+            case _:
+                raise RuntimeError('Model proposal (chain step) option \'' 
+                                   + step_type + '\' not recognised')
+    
+    
+    
+    def total_dev(self, model: TYPE_MODEL) -> float:
         """
         Calculates total deviation of , any realistic amount of net charge on the Moon meansargument model from set target data over set observables. 
         
@@ -428,23 +426,52 @@ class LearningChain:
     
     
     def acceptance_probability(self, 
-                               current: type(learning_model.LearningModel), 
-                               proposal: type(learning_model.LearningModel), 
-                               step_type: str
-                               ) -> float:
+                   current: TYPE_MODEL, 
+                   proposal: TYPE_MODEL, 
+                   there: float | int,
+                   back: float | int,
+                   ) -> float:
+        """
+        Calculates the Metropolis-Hastings acceptance probability, given:
+        current model, proposal model,
+        probability of moving from current to proposal ("there"),
+        probability of reversing that move ("back").
         
-        # maybe sample new temperature?
+        Also  uses instance-level attributes:
+        Metropolis-Hastings temperature - MH_temperature: int|float,
+        prior model probability - prior: callable[model: TYPE_MODEL],
+        model loss wrt to all observables target data - total_dev: callable[model: TYPE_MODEL]
         
-        # another method calculates probability of moving proposal->current
+        Incorporates the likelihoods of both models as well as their priors,
+        and also the Markov chain reversibility correction factor (* back / there).
+        """
+        
+        prior = self.prior
+        T = self.MH_temperature
+        loss = self.total_dev
+            
+        # formula (f stands for prior):
+        #                                 f(prop) * back
+        # exp(-1/T*(MSE(prop)-MSE(curr)))*-------------
+        #                                 f(curr) * there
+        
+        return np.exp(-1/T * (loss(proposal)-loss(current))) * prior(proposal) / prior(current) * back / there
+        
     
-        pass
+    
+    def prior(self,
+              model: TYPE_MODEL
+              ) -> float:
+        """
+        Calculates the prior probability of argument model.
+        The form of this is a heuristic.
+        """
     
     
     
     def optimise_params(self,
-                        model_to_optimise: type(learning_model.LearningModel)
+                        model_to_optimise: TYPE_MODEL
                         ) -> float:
-    
         """
         Currently not maintained.
         
@@ -473,7 +500,6 @@ class LearningChain:
     
     
     def cool_down(self):
-        
         """
         Scale down parameter handler jump length by instance-level rescaling factor.
         """
@@ -485,7 +511,6 @@ class LearningChain:
         
     
     def heat_up(self):
-        
         """
         Scale up parameter handler jump length by instance-level rescaling factor.
         """
@@ -497,7 +522,6 @@ class LearningChain:
     
     
     def get_init_hyperparams(self):
-
         """
         Returns JSON compatible dictionary of initial chain hyperparameters.    
         """
@@ -509,7 +533,6 @@ class LearningChain:
     
     
     def initialise_params_handler(self):
-        
         """
         Constructs parameters handler and sets initial hyperparameters (including jump lenghts).
         """    
@@ -517,9 +540,9 @@ class LearningChain:
         self.params_handler = params_handling.ParamsHandler(self)
         self.params_handler.set_hyperparams(self.params_handler_hyperparams)
 
+
     
     def initialise_process_handler(self):
-    
         """
         Constructs process handler and sets all process libraries.
         """    
