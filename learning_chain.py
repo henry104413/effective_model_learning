@@ -18,6 +18,7 @@ import process_handling
 
 # common types:
 TYPE_MODEL = type(learning_model.LearningModel)
+TYPE_NUMBER = int|float
     
 class LearningChain:
     
@@ -116,7 +117,6 @@ class LearningChain:
             
        
         
-    
     def __init__(self,
                                   
                  target_times: np.ndarray,
@@ -399,7 +399,7 @@ class LearningChain:
     
     def total_dev(self, model: TYPE_MODEL) -> float:
         """
-        Calculates total deviation of , any realistic amount of net charge on the Moon meansargument model from set target data over set observables. 
+        Calculates total deviation of argument model from set target data over set observables. 
         
         Returns equal sum over all instance-level target ovservables
         of mean squared error between instance-level target data
@@ -426,37 +426,73 @@ class LearningChain:
     
     
     def acceptance_probability(self, 
-                   current: TYPE_MODEL, 
-                   proposal: TYPE_MODEL, 
+                   current: TYPE_MODEL | tuple[TYPE_MODEL, int | float], 
+                   proposal: TYPE_MODEL | tuple[TYPE_MODEL, int | float], 
                    there: float | int,
                    back: float | int,
                    ) -> float:
         """
         Calculates the Metropolis-Hastings acceptance probability, given:
-        current model, proposal model,
+        current as model or (model, loss), proposal as model or (model, loss),
         probability of moving from current to proposal ("there"),
         probability of reversing that move ("back").
         
-        Also  uses instance-level attributes:
+        Also  accesses instance-level attributes:
         Metropolis-Hastings temperature - MH_temperature: int|float,
         prior model probability - prior: callable[model: TYPE_MODEL],
-        model loss wrt to all observables target data - total_dev: callable[model: TYPE_MODEL]
+        argument model handler - process_argument_model: callable[arg: TYPE_MODEL|tuple[TYPE_MODEL, int | float]]
         
-        Incorporates the likelihoods of both models as well as their priors,
-        and also the Markov chain reversibility correction factor (* back / there).
+        Incorporates likelihoods of both models as well as their priors,
+        and also Markov chain reversibility correction factor (* back / there).
+        
+        Currently loss is total deviation from chain instance level target data,
+        as equal sum over all specified observables.
+        Loss calculated here if only model references passed, otherwise passed value used.
+        Note: Purpose is to avoid expensive loss recalculation,
+        since loss values commonly used and stored outside this method.
         """
         
-        prior = self.prior
+        # terms for formula:
+        prior = self.prior # evaluates prior probability of argument model
         T = self.MH_temperature
-        loss = self.total_dev
-            
+        current, current_loss = self.process_argument_model(current)
+        proposal, proposal_loss = self.process_argument_model(proposal)
+        
         # formula (f stands for prior):
         #                                 f(prop) * back
         # exp(-1/T*(MSE(prop)-MSE(curr)))*-------------
         #                                 f(curr) * there
         
-        return np.exp(-1/T * (loss(proposal)-loss(current))) * prior(proposal) / prior(current) * back / there
+        return np.exp(-1/T * (proposal_loss-current_loss)) * prior(proposal) / prior(current) * back / there
+    
+
+
+    def process_argument_model(self,
+                               arg: TYPE_MODEL | tuple[TYPE_MODEL, int | float]
+                               ) -> (TYPE_MODEL, float):
+        """
+        Always returns (model, loss of model).
+        Arguments are either just model, or (model, loss of model);
+        note: in latter case just returns arguments as is. 
         
+        Loss calculation uses instance level total_dev: callable[model: TYPE_MODEL]
+        - currently total deviation from chain instance level target data,
+        as equal sum over all specified observables.
+        
+        Note: Purpose is to simplify input handling in other methods,
+        usually where they can be called on just models for generality,
+        but are often called with loss precalculated to avoid repetition
+        of expensive loss calculation.
+        """
+        
+        if type(arg) == TYPE_MODEL:
+            return (arg, self.total_dev(arg))
+        elif (type(arg) == tuple and len(arg) == 2 
+              and type(arg[0]) == TYPE_MODEL and isinstance(arg[1], int|float)):
+            return (arg[0], arg[1]) # ie. return arg as is
+        else:
+            raise RuntimeError('Learning chain\'s process_argument_model method failed: invalid input')
+                  
     
     
     def prior(self,
@@ -466,6 +502,7 @@ class LearningChain:
         Calculates the prior probability of argument model.
         The form of this is a heuristic.
         """
+        return 1
     
     
     
