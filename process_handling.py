@@ -465,4 +465,55 @@ class ProcessHandler:
         
         return model, len(possible_removals)
             
-            
+    
+    
+    def count_Ls(self,
+                 model: TYPE_MODEL
+                 ) -> int:
+        """
+        Returns total number of single-site Linblad processes on argument model.
+        """
+        
+        temp = 0
+        for TLS in model.TLSs:
+            temp += len(TLS.Ls)
+        return temp
+        
+
+
+    def count_defect2defect_couplings(self,
+                                      model: TYPE_MODEL
+                                      ) -> int:
+        """
+        Returns total number of defect-defect couplings in argument model.
+        
+        {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+        
+        """
+        temp = 0
+        for TLS in model.TLSs:
+            for partner in TLS.couplings:
+                for coupling in TLS.couplings[partner]:
+                    if not TLS.is_qubit and not partner.is_qubit:
+                    # ie. defect-defect
+                        temp += 1
+        return temp
+    
+        
+    
+    def count_qubit2defect_couplings(self,
+                                     model: TYPE_MODEL
+                                     ) -> int:
+        """
+        Returns total number of qubit-defect couplings in argument model.
+        """
+        temp = 0
+        for TLS in model.TLSs:
+            for partner in TLS.couplings:
+                for coupling in TLS.couplings[partner]:
+                    if sum([TLS.is_qubit, partner.is_qubit]) == 1:
+                        temp += 1
+        return temp
+        
+        
+                                
