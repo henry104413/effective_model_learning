@@ -210,11 +210,11 @@ class LearningChain:
         
         # chain outcome containers:
         self.explored_models = [] # repository of explored models - currently not saved
-        self.explored_costs = []
+        self.explored_loss = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.initial)
-        self.current_cost = self.total_dev(self.current)
-        self.best_cost = self.current_cost
+        self.current_loss = self.total_dev(self.current)
+        self.best_loss = self.current_loss
         self.acceptance_log = []
         
     
@@ -261,7 +261,7 @@ class LearningChain:
             # choose next step:
             next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities_list)
             
-            # modify proposal and save number of possible modifications of chosen type:
+            # modify proposal accordingly and save number of possible modifications of chosen type:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
             
             # also save number of possible modifications of reverse type after performing chosen step:
@@ -273,44 +273,23 @@ class LearningChain:
             p_back = self.next_step_probabilities_dict[self.complementary_step(next_step)]/possible_modifications_reverse_type
             # then multiply by back/there
             
-            # evaluate new proposal:
-            proposal_cost = self.total_dev(proposal)
-            self.explored_costs.append(proposal_cost)
+            # evaluate new proposal (system evolution calculated here):
+            proposal_loss = self.total_dev(proposal)
+            self.explored_loss.append(proposal_loss)
             
-            # if improvement:
-            if proposal_cost <= self.current_cost:
-                accept = True
             
-            # if detriment:
-            else: 
-                
-                # MH criterion:
-                # note: also covers improvement for non-zero temperature and this likelihood form
-                MH_likelihood = np.exp(-(proposal_cost - self.current_cost)/self.MH_temperature)
-                roll = np.random.uniform()
-                if roll < MH_likelihood:
-                        accept = True
-                        
-                # rejection otherwise:
-                else:
-                    accept = False                
-
-            # acceptance:
-            if accept:
-                
-                # update current:
+            # Metropolis-Hastings acceptance:
+            acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back)
+            if np.random.uniform < acceptance_probability: # ie. accept
+                # accept and update current and best if warranted:
                 self.current = proposal
-                self.current_cost = proposal_cost
-                
-                # update best if warranted:
-                if proposal_cost < self.best_cost:
-                    self.best_cost = proposal_cost
+                self.current_loss = proposal_loss
+                if proposal_loss < self.best_loss:
+                    self.best_loss = proposal_loss
                     self.best = copy.deepcopy(proposal)
-                    
                 self.acceptance_tracker.append(True)
-            
-            # rejection:
-            else:
+            else: 
+                # reject:
                 self.acceptance_tracker.append(False)
                 
             
@@ -513,7 +492,7 @@ class LearningChain:
                         model_to_optimise: TYPE_MODEL
                         ) -> float:
         """
-        Currently not maintained.
+        Currently deprecated.
         
         Performs full paramter optimisation on argument model. 
         
