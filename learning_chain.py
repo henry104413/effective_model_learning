@@ -502,7 +502,10 @@ class LearningChain:
         Calculates the prior probability of argument model.
         The form of this is a heuristic.
         """
-        return 1
+        total_complexity = (self.process_handler.count_Ls(model)
+                            + self.process_handler.count_defect2defect_couplings(model)
+                            + self.process_handler.count_qubit2defect_couplings(model))
+        return np.exp(-1*(total_complexity)) 
     
     
     
