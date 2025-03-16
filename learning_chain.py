@@ -265,6 +265,10 @@ class LearningChain:
             # modify proposal accordingly and save number of possible modifications of chosen type:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
             
+            # if no modifications of chosen type possible, skip straight to next proposal iteration:
+            # note: this uses up an iteration with no real new proposal and no tracker record
+            if not bool(possible_modifications_chosen_type): continue
+            
             # also save number of possible modifications of reverse type after performing chosen step:
             # note: proposal not modified by this
             proposal, possible_modifications_reverse_type = self.step(proposal, self.complementary_step(next_step), update = False)
@@ -571,6 +575,9 @@ class LearningChain:
                                               qubit2defect_couplings_library = self.qubit2defect_couplings_library,
                                               defect2defect_couplings_library = self.defect2defect_couplings_library,
                                               Ls_library = self.Ls_library)
+        
+        
+        
         
         
        
