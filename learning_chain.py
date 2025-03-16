@@ -91,7 +91,7 @@ class LearningChain:
     
     
     
-    def complementary_step(step_type: str) -> str:
+    def complementary_step(self, step_type: str) -> str:
         """
         Returns step type that reverses argument step type.
         Note: Used in automatic calculation of reverse step probability.
@@ -260,6 +260,7 @@ class LearningChain:
             
             # choose next step:
             next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities_list)
+            next_step = str(next_step)
             
             # modify proposal accordingly and save number of possible modifications of chosen type:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)

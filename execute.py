@@ -97,13 +97,13 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 0,
+                      max_chain_steps = 100,
                       chain_step_options = {
                           'tweak all parameters': 0.1,
                           'add L': 0.1,
                           'remove L': 0.1,
-                          'add qubit coupling': 0.05, 
-                          'remove qubit coupling': 0.05,
+                          'add qubit-defect coupling': 0.05, 
+                          'remove qubit-defect coupling': 0.05,
                           'add defect-defect coupling': 0.025, 
                           'remove defect-defect coupling': 0.025
                           },
@@ -143,10 +143,10 @@ quest = learning_chain.LearningChain(target_times = ts,
                         }
                       )
 
-raise SystemExit()
 
 #%%
 best = quest.run()
+raise SystemExit()
 
 
 
