@@ -282,19 +282,17 @@ class LearningChain:
             proposal_loss = self.total_dev(proposal)
             self.explored_loss.append(proposal_loss)
             
-            
             # Metropolis-Hastings acceptance:
             acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back)
-            if np.random.uniform < acceptance_probability: # ie. accept
-                # accept and update current and best if warranted:
+            if np.random.uniform < acceptance_probability: # ie. accept proposal
+                # update current and also best if warranted:
                 self.current = proposal
                 self.current_loss = proposal_loss
                 if proposal_loss < self.best_loss:
                     self.best_loss = proposal_loss
                     self.best = copy.deepcopy(proposal)
                 self.acceptance_tracker.append(True)
-            else: 
-                # reject:
+            else: # ie. reject proposal
                 self.acceptance_tracker.append(False)
                 
             
@@ -364,17 +362,17 @@ class LearningChain:
                 if not update:
                     return (model, 1)
             case 'add L': 
-                return self.process_handler.add_random_L(model, update)
+                return self.process_handler.add_random_L(model, update = update)
             case 'remove L':
-                return self.process_handler.remove_random_L(model, update)
+                return self.process_handler.remove_random_L(model, update = update)
             case 'add qubit-defect coupling':
-                return self.process_handler.add_random_qubit2defect_coupling(model, update)
+                return self.process_handler.add_random_qubit2defect_coupling(model, update = update)
             case 'remove qubit-defect coupling': 
-                return self.process_handler.remove_random_qubit2defect_coupling(model, update)
+                return self.process_handler.remove_random_qubit2defect_coupling(model, update = update)
             case 'add defect-defect coupling':
-                return self.process_handler.add_random_defect2defect_coupling(model, update)
+                return self.process_handler.add_random_defect2defect_coupling(model, update = update)
             case 'remove defect-defect coupling': 
-                return self.process_handler.remove_random_defect2defect_coupling(model, update)
+                return self.process_handler.remove_random_defect2defect_coupling(model, update = update)
             case _:
                 raise RuntimeError('Model proposal (chain step) option \'' 
                                    + step_type + '\' not recognised')
@@ -570,14 +568,9 @@ class LearningChain:
         """
         Constructs process handler and sets all process libraries.
         """    
-    
+        
         self.process_handler = process_handling.ProcessHandler(self,
                                               qubit2defect_couplings_library = self.qubit2defect_couplings_library,
                                               defect2defect_couplings_library = self.defect2defect_couplings_library,
                                               Ls_library = self.Ls_library)
         
-        
-        
-        
-        
-       

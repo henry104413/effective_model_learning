@@ -51,7 +51,7 @@ class ProcessHandler:
         
 
     def add_random_L(self,
-                     model: TYPE_MODEL,
+                     model: TYPE_MODEL, *,
                      Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
                      update: bool = True
                      ) -> tuple[TYPE_MODEL, int]:
@@ -73,7 +73,7 @@ class ProcessHandler:
                 Ls_library = self.Ls_library
             else:
                 raise RuntimeError('Cannot add Lindblad process as process library not specified')
-            
+        
         # gather all possible additions, ie. combinations (TLS, L in library but not on TLS)
         # (all treated as equally probable)
         possible_additions = []
@@ -99,7 +99,7 @@ class ProcessHandler:
     
     
     def add_random_qubit2defect_coupling(self,
-                                  model: TYPE_MODEL,
+                                  model: TYPE_MODEL, *,
                                   qubit2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,
                                   # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
                                   update: bool = True
@@ -203,7 +203,7 @@ class ProcessHandler:
         
         
     def add_random_defect2defect_coupling(self,
-                                          model: TYPE_MODEL,
+                                          model: TYPE_MODEL, *,
                                           defect2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,
                                           # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
                                           update: bool = True

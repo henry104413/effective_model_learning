@@ -100,7 +100,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       max_chain_steps = 100,
                       chain_step_options = {
                           'tweak all parameters': 0.1,
-                          'add L': 0.1,
+                          'add L': 10.1,
                           'remove L': 0.1,
                           'add qubit-defect coupling': 0.05, 
                           'remove qubit-defect coupling': 0.05,
@@ -190,6 +190,8 @@ output.Output(toggles = Toggles, filename = timestamp,
 
 
 #%% 
+
+
 
 
 
