@@ -21,7 +21,7 @@ if typing.TYPE_CHECKING:
 # common types:
 TYPE_COUPLING_LIBRARY = dict[tuple[tuple[str] | str], tuple[int | float]]
 TYPE_LS_LIBRARY = dict[str, tuple[int | float]]
-TYPE_MODEL = type(basic_model.BasicModel) | type(learning_model.LearningModel)
+TYPE_MODEL = basic_model.BasicModel | learning_model.LearningModel
 
 class ProcessHandler:
     
@@ -33,7 +33,7 @@ class ProcessHandler:
     """    
     
     def __init__(self,
-                 chain: type(LearningChain) = False,
+                 chain: LearningChain = False,
                  model: TYPE_MODEL = False,
                  Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
                  qubit2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,

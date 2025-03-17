@@ -17,7 +17,7 @@ import process_handling
 
 
 # common types:
-TYPE_MODEL = type(learning_model.LearningModel)
+TYPE_MODEL = learning_model.LearningModel # !!! if union here then need to replace type() checks with isinstance below! 
 TYPE_NUMBER = int|float
     
 class LearningChain:
@@ -467,10 +467,10 @@ class LearningChain:
         of expensive loss calculation.
         """
         
-        if type(arg) == TYPE_MODEL:
+        if isinstance(arg, TYPE_MODEL):
             return (arg, self.total_dev(arg))
         elif (type(arg) == tuple and len(arg) == 2 
-              and type(arg[0]) == TYPE_MODEL and isinstance(arg[1], int|float)):
+              and isinstance(arg[0], TYPE_MODEL) and isinstance(arg[1], int|float)):
             return (arg[0], arg[1]) # ie. return arg as is
         else:
             raise RuntimeError('Learning chain\'s process_argument_model method failed: invalid input')

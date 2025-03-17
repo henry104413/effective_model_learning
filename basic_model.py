@@ -63,15 +63,15 @@ class BasicModel():
         # save instance:
         BasicModel.existing_models.append(self)
         
-    
+
     
     def add_TLS(self,
                 TLS_label: str = '',
                 is_qubit: bool = False,
                 energy: int|float = None, 
-                couplings: dict[type(two_level_system.TwoLevelSystem), list[tuple[float|int, list[tuple[str, str]]]]] = {},
+                couplings: dict[two_level_system.TwoLevelSystem, list[tuple[float|int, list[tuple[str, str]]]]] = {},
                 Ls: dict[str, int|float] = {}
-                ) -> type(two_level_system.TwoLevelSystem):
+                ) -> two_level_system.TwoLevelSystem:
         
         """
         Initialises new TwoLevelSystem instance with variables set to call arguments.
@@ -139,7 +139,7 @@ class BasicModel():
     
     
     
-    def build_Ls(self) -> list[type(qutip.Qobj)]:
+    def build_Ls(self) -> list[qutip.Qobj]:
         """
         Builds all full system Lindblad operators (dissipators).
         Saves list of all to this model's container, also returns it.
@@ -246,7 +246,7 @@ class BasicModel():
     
     
     
-    def build_initial_DM(self) -> type(qutip.Qobj):
+    def build_initial_DM(self) -> qutip.Qobj:
         """
         Builds default initial state full density matrix.
         Assumes all defects are in ground state and all qubits excited.

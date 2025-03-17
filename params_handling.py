@@ -31,7 +31,7 @@ class ParamsHandler:
     """
 
     def __init__(self,
-                 chain: type(LearningChain),
+                 chain: LearningChain,
                  hyperparams: dict = False
                  ) -> None:
         
@@ -111,8 +111,8 @@ class ParamsHandler:
     
     
     def tweak_all_parameters(self, 
-                             model: type(learning_model.LearningModel)
-                             ) -> (type(learning_model.LearningModel), int):
+                             model: learning_model.LearningModel
+                             ) -> (learning_model.LearningModel, int):
         
         """
         Tweaks all existing parameters of argument model according instance-level jump lengths.
@@ -137,8 +137,8 @@ class ParamsHandler:
     
     
     def do_optimisation(self,
-                        initial_model: type(learning_model.LearningModel)
-                        ) -> type(learning_model.LearningModel):
+                        initial_model: learning_model.LearningModel
+                        ) -> learning_model.LearningModel:
         
         """
         Note: Method currently not used or maintained.

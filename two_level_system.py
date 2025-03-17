@@ -32,7 +32,7 @@ class TwoLevelSystem:
       
     """
     
-    def __init__(self, model: type(BasicModel) | type(LearningModel),
+    def __init__(self, model: BasicModel | LearningModel,
                  TLS_id: str = "",
                  is_qubit: bool = False,
                  energy: int|float = None,
