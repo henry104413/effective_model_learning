@@ -21,7 +21,7 @@ if typing.TYPE_CHECKING:
 # common types:
 TYPE_COUPLING_LIBRARY = dict[tuple[tuple[str] | str], tuple[int | float]]
 TYPE_LS_LIBRARY = dict[str, tuple[int | float]]
-TYPE_MODEL = type(basic_model.BasicModel) | type(learning_model.LearningModel)
+TYPE_MODEL = basic_model.BasicModel | learning_model.LearningModel
 
 class ProcessHandler:
     
@@ -33,7 +33,7 @@ class ProcessHandler:
     """    
     
     def __init__(self,
-                 chain: type(LearningChain) = False,
+                 chain: LearningChain = False,
                  model: TYPE_MODEL = False,
                  Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
                  qubit2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,
@@ -51,7 +51,7 @@ class ProcessHandler:
         
 
     def add_random_L(self,
-                     model: TYPE_MODEL,
+                     model: TYPE_MODEL, *,
                      Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
                      update: bool = True
                      ) -> tuple[TYPE_MODEL, int]:
@@ -73,7 +73,7 @@ class ProcessHandler:
                 Ls_library = self.Ls_library
             else:
                 raise RuntimeError('Cannot add Lindblad process as process library not specified')
-            
+        
         # gather all possible additions, ie. combinations (TLS, L in library but not on TLS)
         # (all treated as equally probable)
         possible_additions = []
@@ -99,7 +99,7 @@ class ProcessHandler:
     
     
     def add_random_qubit2defect_coupling(self,
-                                  model: TYPE_MODEL,
+                                  model: TYPE_MODEL, *,
                                   qubit2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,
                                   # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
                                   update: bool = True
@@ -203,7 +203,7 @@ class ProcessHandler:
         
         
     def add_random_defect2defect_coupling(self,
-                                          model: TYPE_MODEL,
+                                          model: TYPE_MODEL, *,
                                           defect2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,
                                           # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
                                           update: bool = True
@@ -465,4 +465,55 @@ class ProcessHandler:
         
         return model, len(possible_removals)
             
-            
+    
+    
+    def count_Ls(self,
+                 model: TYPE_MODEL
+                 ) -> int:
+        """
+        Returns total number of single-site Linblad processes on argument model.
+        """
+        
+        temp = 0
+        for TLS in model.TLSs:
+            temp += len(TLS.Ls)
+        return temp
+        
+
+
+    def count_defect2defect_couplings(self,
+                                      model: TYPE_MODEL
+                                      ) -> int:
+        """
+        Returns total number of defect-defect couplings in argument model.
+        
+        {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+        
+        """
+        temp = 0
+        for TLS in model.TLSs:
+            for partner in TLS.couplings:
+                for coupling in TLS.couplings[partner]:
+                    if not TLS.is_qubit and not partner.is_qubit:
+                    # ie. defect-defect
+                        temp += 1
+        return temp
+    
+        
+    
+    def count_qubit2defect_couplings(self,
+                                     model: TYPE_MODEL
+                                     ) -> int:
+        """
+        Returns total number of qubit-defect couplings in argument model.
+        """
+        temp = 0
+        for TLS in model.TLSs:
+            for partner in TLS.couplings:
+                for coupling in TLS.couplings[partner]:
+                    if sum([TLS.is_qubit, partner.is_qubit]) == 1:
+                        temp += 1
+        return temp
+        
+        
+                                

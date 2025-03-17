@@ -31,7 +31,7 @@ class ParamsHandler:
     """
 
     def __init__(self,
-                 chain: type(LearningChain),
+                 chain: LearningChain,
                  hyperparams: dict = False
                  ) -> None:
         
@@ -110,10 +110,14 @@ class ParamsHandler:
     
     
     
-    def tweak_all_parameters(self, model: type(learning_model.LearningModel)) -> None:
+    def tweak_all_parameters(self, 
+                             model: learning_model.LearningModel
+                             ) -> (learning_model.LearningModel, int):
         
         """
         Tweaks all existing parameters of argument model according instance-level jump lengths.
+        
+        Modifies argument model and returns it.
         
         Calls model method which currently adds to each existing model parameter
         a value sampled from normal distribution around zero
@@ -127,12 +131,14 @@ class ParamsHandler:
             raise RuntimeError('Parameter handler hyperparameters need to be specified!')
         else:
             model.change_params(self.jump_lengths)
+            
+        return model
         
     
     
     def do_optimisation(self,
-                        initial_model: type(learning_model.LearningModel)
-                        ) -> type(learning_model.LearningModel):
+                        initial_model: learning_model.LearningModel
+                        ) -> learning_model.LearningModel:
         
         """
         Note: Method currently not used or maintained.

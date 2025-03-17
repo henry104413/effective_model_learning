@@ -16,6 +16,9 @@ import process_handling
 
 
 
+# common types:
+TYPE_MODEL = learning_model.LearningModel # !!! if union here then need to replace type() checks with isinstance below! 
+    
 class LearningChain:
     
     """
@@ -45,8 +48,8 @@ class LearningChain:
             'tweak all parameters': 10,
             'add L': 0.1,
             'remove L': 0.1,
-            'add qubit coupling': 0.05, 
-            'remove qubit coupling': 0.05,
+            'add qubit-defect coupling': 0.05, 
+            'remove qubit-defect coupling': 0.05,
             'add defect-defect coupling': 0.025, 
             'remove defect-defect coupling': 0.025
             }
@@ -84,9 +87,35 @@ class LearningChain:
            ,(('sigmay', 'sigmay'),): (0.2, 0.5)
            ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
            }
-
     
     
+    
+    def complementary_step(self, step_type: str) -> str:
+        """
+        Returns step type that reverses argument step type.
+        Note: Used in automatic calculation of reverse step probability.
+        """
+        match step_type:
+            case 'tweak all parameters':
+                return 'tweak all parameters'
+            case 'add L': 
+                return 'remove L'
+            case 'remove L':
+                return 'add L'
+            case 'add qubit-defect coupling':
+                return 'remove qubit-defect coupling' 
+            case 'remove qubit-defect coupling': 
+                return 'add qubit-defect coupling'
+            case 'add defect-defect coupling':
+                return 'remove defect-defect coupling' 
+            case 'remove defect-defect coupling': 
+                return 'add defect-defect coupling'
+            case _:
+                raise RuntimeError('Complementary step type could not be determined'
+                + 'due to step type not recognised')
+            
+       
+        
     def __init__(self,
                                   
                  target_times: np.ndarray,
@@ -94,7 +123,7 @@ class LearningChain:
                  target_observables: str | list[str],
                  *,
                  
-                 initial: type(learning_model.LearningModel) | tuple | list = False,
+                 initial: TYPE_MODEL | tuple | list = False,
                  # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
                  
                  # note: arguments below should have counterpart in class Defaults:
@@ -105,7 +134,7 @@ class LearningChain:
                  temperature_proposal_shape: float = False, # aka k
                  temperature_proposal_scale:float = False, # aka theta
                  
-                 jump_length_rescaling_factor: float = False,
+                 jump_length_rescaling_factor: float = False, 
                  
                  acceptance_window: float = False,
                  acceptance_target: float = False,
@@ -156,7 +185,7 @@ class LearningChain:
                                  + '\nor tuple or list of (qubit energy, number of defects),'
                                  + '\n or integer number of defects, assuming qubit energy = 1')
             
-        # chain step options check and normalisation:
+        # chain step options check and sum for normalisation:
         # note: run() method throws error if option not implemented - not checked here
         temp = 0 # 
         for option in (options := [x for x in self.chain_step_options]):
@@ -165,10 +194,13 @@ class LearningChain:
                                    +'specified by a single number')
             else:
                 temp += self.chain_step_options[option]
+                
+        # step labels, normalised dictionary, and list of just probabilities for later use:
         self.next_step_labels = options # next step labels for use in run()
-        self.next_step_probabilities = [self.chain_step_options[option]/temp for option in options]
-        # ^corresponding normalised propabilities
-        
+        self.next_step_probabilities_dict = {option: self.chain_step_options[option]/temp 
+                                  for option in options}
+        self.next_step_probabilities_list = [self.chain_step_options[option]/temp
+                                        for option in options]
         
         # process and parameter objects to perform chain steps:
         # note: initialised at first call of methods that use them
@@ -177,11 +209,11 @@ class LearningChain:
         
         # chain outcome containers:
         self.explored_models = [] # repository of explored models - currently not saved
-        self.explored_costs = []
+        self.explored_loss = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.initial)
-        self.current_cost = self.total_deviation(self.current)
-        self.best_cost = self.current_cost
+        self.current_loss = self.total_dev(self.current)
+        self.best_loss = self.current_loss
         self.acceptance_log = []
         
     
@@ -225,65 +257,43 @@ class LearningChain:
             # new proposal container:
             proposal = copy.deepcopy(self.current)
             
-            # choose next step and modify proposal accordingly:
-            next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities)
-            if next_step == 'tweak all parameters':
-                self.tweak_params(proposal)
-            elif next_step == 'add L':
-                self.add_random_L(proposal)
-            elif next_step == 'remove L':
-                self.remove_random_L(proposal)
-            elif next_step == 'add qubit coupling':
-                self.add_random_qubit2defect_coupling(proposal)
-            elif next_step == 'remove qubit coupling':
-                self.remove_random_qubit2defect_coupling(proposal)
-            elif next_step == 'add defect-defect coupling':
-                self.add_random_defect2defect_coupling(proposal)
-            elif next_step == 'remove defect-defect coupling':
-                self.remove_random_defect2defect_coupling(proposal)
-            else:
-                raise RuntimeError('Chain step option \'' + next_step + '\' is not implemented') 
+            # choose next step:
+            next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities_list)
+            next_step = str(next_step)
             
-            # evaluate new proposal:
-            proposal_cost = self.total_deviation(proposal)
-            self.explored_costs.append(proposal_cost)
+            # modify proposal accordingly and save number of possible modifications of chosen type:
+            proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
             
-            # if improvement:
-            if proposal_cost <= self.current_cost:
-                accept = True
+            # if no modifications of chosen type possible, skip straight to next proposal iteration:
+            # note: this uses up an iteration with no real new proposal and no tracker record
+            if not bool(possible_modifications_chosen_type): continue
             
-            # if detriment:
-            else: 
-                
-                # MH criterion:
-                # note: also covers improvement for non-zero temperature and this likelihood form
-                MH_likelihood = np.exp(-(proposal_cost - self.current_cost)/self.MH_temperature)
-                roll = np.random.uniform()
-                if roll < MH_likelihood:
-                        accept = True
-                        
-                # rejection otherwise:
-                else:
-                    accept = False                
-
-            # acceptance:
-            if accept:
-                
-                # update current:
+            # also save number of possible modifications of reverse type after performing chosen step:
+            # note: proposal not modified by this
+            proposal, possible_modifications_reverse_type = self.step(proposal, self.complementary_step(next_step), update = False)
+            
+            # overall probabilities of making this step and of then reversing it:
+            p_there = self.next_step_probabilities_dict[next_step]/possible_modifications_chosen_type
+            p_back = self.next_step_probabilities_dict[self.complementary_step(next_step)]/possible_modifications_reverse_type
+            # then multiply by back/there
+            
+            # evaluate new proposal (system evolution calculated here):
+            proposal_loss = self.total_dev(proposal)
+            self.explored_loss.append(proposal_loss)
+            
+            # Metropolis-Hastings acceptance:
+            acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back)
+            if np.random.uniform() < acceptance_probability: # ie. accept proposal
+                # update current and also best if warranted:
                 self.current = proposal
-                self.current_cost = proposal_cost
-                
-                # update best if warranted:
-                if proposal_cost < self.best_cost:
-                    self.best_cost = proposal_cost
+                self.current_loss = proposal_loss
+                if proposal_loss < self.best_loss:
+                    self.best_loss = proposal_loss
                     self.best = copy.deepcopy(proposal)
-                    
                 self.acceptance_tracker.append(True)
-            
-            # rejection:
-            else:
+            else: # ie. reject proposal
                 self.acceptance_tracker.append(False)
-                pass
+                
             
         return self.best
     
@@ -292,8 +302,7 @@ class LearningChain:
     def make_initial_model(self,
                            qubit_energy: int|float,
                            defects_number: int
-                           ) -> type(learning_model.LearningModel):
-    
+                           ) -> TYPE_MODEL:
         """
         Returns empty model with qubit of specified energy,
         given number of defects initialised to qubit energy,
@@ -319,10 +328,59 @@ class LearningChain:
     
     
     
-    def total_deviation(self, model: type(learning_model.LearningModel)) -> float:
-
+    def step(self,
+             model: TYPE_MODEL, 
+             step_type: str, 
+             update: bool = True
+             ) -> tuple[TYPE_MODEL, int]:
         """
-        Calculates total deviation of , any realistic amount of net charge on the Moon meansargument model from set target data over set observables. 
+        Calls methods of process and parameter handlers correspoing step type string.
+        If update flag on: carries out modification on argument model.
+        If update flag off: modification NOT performed but corresponding method called 
+        to evaluate possible proposals - used in reversal probability calculation.
+        In both cases returns:
+        (model, # possible proposals of specified type).
+        
+        Currently proposal hyperameters are set at chain initialisation and passed to 
+        process and parameter handlers initialisers when instantiated for this chain.
+        !!! To do: Integrate methods changing hyperparameters during chain run if required.
+        """
+        
+        # ensure process and parameter handlers instantiated:
+        if not self.process_handler: self.initialise_process_handler()
+        if not self.params_handler: self.initialise_params_handler()
+        
+        # call handler method corresponding to step type:
+        match step_type:
+            case 'tweak all parameters':
+                # now just returns 1 as # possible proposals
+                # this way reversal probability calculation assumes parameter reversal equally likely
+                # !!! updating proposal variance throughout may violate this?
+                if update: 
+                    return (self.params_handler.tweak_all_parameters(model), 1)
+                if not update:
+                    return (model, 1)
+            case 'add L': 
+                return self.process_handler.add_random_L(model, update = update)
+            case 'remove L':
+                return self.process_handler.remove_random_L(model, update = update)
+            case 'add qubit-defect coupling':
+                return self.process_handler.add_random_qubit2defect_coupling(model, update = update)
+            case 'remove qubit-defect coupling': 
+                return self.process_handler.remove_random_qubit2defect_coupling(model, update = update)
+            case 'add defect-defect coupling':
+                return self.process_handler.add_random_defect2defect_coupling(model, update = update)
+            case 'remove defect-defect coupling': 
+                return self.process_handler.remove_random_defect2defect_coupling(model, update = update)
+            case _:
+                raise RuntimeError('Model proposal (chain step) option \'' 
+                                   + step_type + '\' not recognised')
+    
+    
+    
+    def total_dev(self, model: TYPE_MODEL) -> float:
+        """
+        Calculates total deviation of argument model from set target data over set observables. 
         
         Returns equal sum over all instance-level target ovservables
         of mean squared error between instance-level target data
@@ -349,40 +407,94 @@ class LearningChain:
     
     
     def acceptance_probability(self, 
-                               current: type(learning_model.LearningModel), 
-                               proposal: type(learning_model.LearningModel), 
-                               step_type: str
-                               ) -> float:
+                   current: TYPE_MODEL | tuple[TYPE_MODEL, int | float], 
+                   proposal: TYPE_MODEL | tuple[TYPE_MODEL, int | float], 
+                   there: float | int,
+                   back: float | int,
+                   ) -> float:
+        """
+        Calculates the Metropolis-Hastings acceptance probability, given:
+        current as model or (model, loss), proposal as model or (model, loss),
+        probability of moving from current to proposal ("there"),
+        probability of reversing that move ("back").
         
-        # maybe sample new temperature?
+        Also  accesses instance-level attributes:
+        Metropolis-Hastings temperature - MH_temperature: int|float,
+        prior model probability - prior: callable[model: TYPE_MODEL],
+        argument model handler - process_argument_model: callable[arg: TYPE_MODEL|tuple[TYPE_MODEL, int | float]]
         
-        # another method calculates probability of moving proposal->current
-    
-        pass
-    
-    
-    
-    # def reversibility_factor(self, next_step):
-    #     pass
-    #     """
-    #     Calculates and returns ratio of prior to marginal,
-    #     ie. probability of proposal given current divided by
-    #     probability of current given prior (= step reversal).
+        Incorporates likelihoods of both models as well as their priors,
+        and also Markov chain reversibility correction factor (* back / there).
         
-    #     Note: Only processes not present can be added and those present removed,
-    #     hence this depends on current model as well as possibilities allowed by process library.
-    #     """
+        Currently loss is total deviation from chain instance level target data,
+        as equal sum over all specified observables.
+        Loss calculated here if only model references passed, otherwise passed value used.
+        Note: Purpose is to avoid expensive loss recalculation,
+        since loss values commonly used and stored outside this method.
+        """
+        
+        # terms for formula:
+        prior = self.prior # evaluates prior probability of argument model
+        T = self.MH_temperature
+        current, current_loss = self.process_argument_model(current)
+        proposal, proposal_loss = self.process_argument_model(proposal)
+        
+        # formula (f stands for prior):
+        #                                 f(prop) * back
+        # exp(-1/T*(MSE(prop)-MSE(curr)))*-------------
+        #                                 f(curr) * there
+        
+        return np.exp(-1/T * (proposal_loss-current_loss)) * prior(proposal) / prior(current) * back / there
     
-    #    
+
+
+    def process_argument_model(self,
+                               arg: TYPE_MODEL | tuple[TYPE_MODEL, int | float]
+                               ) -> (TYPE_MODEL, float):
+        """
+        Always returns (model, loss of model).
+        Arguments are either just model, or (model, loss of model);
+        note: in latter case just returns arguments as is. 
+        
+        Loss calculation uses instance level total_dev: callable[model: TYPE_MODEL]
+        - currently total deviation from chain instance level target data,
+        as equal sum over all specified observables.
+        
+        Note: Purpose is to simplify input handling in other methods,
+        usually where they can be called on just models for generality,
+        but are often called with loss precalculated to avoid repetition
+        of expensive loss calculation.
+        """
+        
+        if isinstance(arg, TYPE_MODEL):
+            return (arg, self.total_dev(arg))
+        elif (type(arg) == tuple and len(arg) == 2 
+              and isinstance(arg[0], TYPE_MODEL) and isinstance(arg[1], int|float)):
+            return (arg[0], arg[1]) # ie. return arg as is
+        else:
+            raise RuntimeError('Learning chain\'s process_argument_model method failed: invalid input')
+                  
+    
+    
+    def prior(self,
+              model: TYPE_MODEL
+              ) -> float:
+        """
+        Calculates the prior probability of argument model.
+        The form of this is a heuristic.
+        """
+        total_complexity = (self.process_handler.count_Ls(model)
+                            + self.process_handler.count_defect2defect_couplings(model)
+                            + self.process_handler.count_qubit2defect_couplings(model))
+        return np.exp(-1*(total_complexity)) 
     
     
     
     def optimise_params(self,
-                        model_to_optimise: type(learning_model.LearningModel)
+                        model_to_optimise: TYPE_MODEL
                         ) -> float:
-    
         """
-        Currently not maintained.
+        Currently deprecated.
         
         Performs full paramter optimisation on argument model. 
         
@@ -408,25 +520,7 @@ class LearningChain:
         
     
     
-    def tweak_params(self, 
-                     model_to_tweak: type(learning_model.LearningModel)
-                     ) -> None:
-    
-        """
-        Performs a single step in existing process parameters landscape.
-        Modifies argument model, also returns it
-        """
-        
-        # initialise parameters handler if not yet done and set to default hyperparameters
-        # note: most hyperparameters only relevant to full optimisation
-        if not self.params_handler: # ie. first run
-            self.initialise_params_handler()
-        return self.params_handler.tweak_all_parameters(model_to_tweak)
-    
-    
-    
     def cool_down(self):
-        
         """
         Scale down parameter handler jump length by instance-level rescaling factor.
         """
@@ -438,7 +532,6 @@ class LearningChain:
         
     
     def heat_up(self):
-        
         """
         Scale up parameter handler jump length by instance-level rescaling factor.
         """
@@ -450,7 +543,6 @@ class LearningChain:
     
     
     def get_init_hyperparams(self):
-
         """
         Returns JSON compatible dictionary of initial chain hyperparameters.    
         """
@@ -460,92 +552,8 @@ class LearningChain:
         return output
     
     
-        
-    def add_random_L(self,
-                     model_to_modify: type(learning_model.LearningModel), 
-                     Ls_library: dict[str, tuple | list] = False
-                     ) -> (type(learning_model.LearningModel), int):
-    
-        """
-        Performs addition of random Linblad process to random subsystem.
-        Modifies argument model, also returns it as (model, # possible additions).
-        """
-        
-        # ensure process handler exists (created at first run):
-        if not self.process_handler:
-            self.initialise_process_handler()
-            
-        # unless specified in call, use process library set for chain:
-        if not Ls_library:
-            Ls_library = self.Ls_library
-            
-        return self.process_handler.add_random_L(model_to_modify)
-    
-    
-    
-    def remove_random_L(self, 
-                        model_to_modify: type(learning_model.LearningModel)
-                        ) -> (type(learning_model.LearningModel), int):
-    
-        """
-        Performs removal of random Lindblad process from random subsystem.
-        Modifies argument model, also returns it as (model, # possible additions).
-        """    
-        
-        # ensure process handler exists (created at first run):
-        if not self.process_handler: # ie. first run
-            self.initialise_process_handler()
-            
-        return self.process_handler.remove_random_L(model_to_modify)
-    
-    
-        
-    def add_random_qubit2defect_coupling(self,
-                                         model_to_modify: type(learning_model.LearningModel),
-                                         qubit2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
-                                         ) -> (type(learning_model.LearningModel), int):
-         
-        """
-        Performs addition of random symmetric single-operator coupling between random defect and qubit.
-        Modifies argument model, also returns it as (model, # possible additions).
-        """
-    
-        # ensure process handler exists (created at first run):
-        if not self.process_handler:
-            self.initialise_process_handler()
-            
-        # unless specified in call, use process library set for chain:
-        if not qubit2defect_couplings_library:
-            qubit2defect_couplings_library = self.qubit2defect_couplings_library
-            
-        return self.process_handler.add_random_qubit2defect_coupling(model_to_modify)
-        
-        
-    
-    def add_random_defect2defect_coupling(self, 
-                                          model_to_modify: type(learning_model.LearningModel),
-                                          defect2defect_couplings_library: dict[tuple[tuple[str] | str], tuple[int | float]] = False
-                                          ) -> (type(learning_model.LearningModel), int):
-    
-        """
-        Performs addition of random symmetric single-operator coupling between twp random defects.
-        Modifies argument model, also returns it as (model, # possible additions).
-        """    
-        
-        # ensure process handler exists (created at first run):
-        if not self.process_handler:
-            self.initialise_process_handler()
-            
-        # unless specified in call, use process library set for chain:
-        if not defect2defect_couplings_library:
-            defect2defect_couplings_library = self.defect2defect_couplings_library
-            
-        return self.process_handler.add_random_defect2defect_coupling(model_to_modify)
-    
-    
     
     def initialise_params_handler(self):
-        
         """
         Constructs parameters handler and sets initial hyperparameters (including jump lenghts).
         """    
@@ -553,49 +561,15 @@ class LearningChain:
         self.params_handler = params_handling.ParamsHandler(self)
         self.params_handler.set_hyperparams(self.params_handler_hyperparams)
 
+
     
     def initialise_process_handler(self):
-    
         """
         Constructs process handler and sets all process libraries.
         """    
-    
+        
         self.process_handler = process_handling.ProcessHandler(self,
                                               qubit2defect_couplings_library = self.qubit2defect_couplings_library,
                                               defect2defect_couplings_library = self.defect2defect_couplings_library,
                                               Ls_library = self.Ls_library)
-        
-        
-    
-    def remove_random_qubit2defect_coupling(self, 
-                                            model_to_modify: type(learning_model.LearningModel)
-                                            ) -> (type(learning_model.LearningModel), int):
-        
-        """
-        Performs removal of random existing coupling between qubit and defect.
-        Modifies argument model, also returns it as (model, # possible removals).
-        """    
-        
-        # ensure process handler exists (created at first run):
-        if not self.process_handler:
-            self.initialise_process_handler()
-            
-        return self.process_handler.remove_random_qubit2defect_coupling(model_to_modify)
-    
-    
-
-    def remove_random_defect2defect_coupling(self, 
-                                            model_to_modify: type(learning_model.LearningModel)
-                                            ) -> (type(learning_model.LearningModel), int):
-        
-        """
-        Performs removal of random existing coupling between two defects.
-        Modifies argument model, also returns it as (model, # possible removals).
-        """    
-        
-        # ensure process handler exists (created at first run):
-        if not self.process_handler:
-            self.initialise_process_handler()
-            
-        return self.process_handler.remove_random_defect2defect_coupling(model_to_modify)
         
