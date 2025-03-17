@@ -18,7 +18,6 @@ import process_handling
 
 # common types:
 TYPE_MODEL = learning_model.LearningModel # !!! if union here then need to replace type() checks with isinstance below! 
-TYPE_NUMBER = int|float
     
 class LearningChain:
     
@@ -284,7 +283,7 @@ class LearningChain:
             
             # Metropolis-Hastings acceptance:
             acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back)
-            if np.random.uniform < acceptance_probability: # ie. accept proposal
+            if np.random.uniform() < acceptance_probability: # ie. accept proposal
                 # update current and also best if warranted:
                 self.current = proposal
                 self.current_loss = proposal_loss
