@@ -144,13 +144,13 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 
 #%%
-best = quest.run(20)
+best = quest.run(5000)
 
 #%%
 best = quest.best
 
 costs = quest.explored_loss
-acceptance_ratios = quest.acceptance_ratios_log
+acceptance_ratios = quest.chain_windows_acceptance_log
 best_data = best.calculate_dynamics(ts, observable_ops = measurement_observables)
 
 
