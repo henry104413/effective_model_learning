@@ -214,36 +214,40 @@ class LearningChain:
         self.best = copy.deepcopy(self.initial)
         self.current_loss = self.total_dev(self.current)
         self.best_loss = self.current_loss
-        self.acceptance_log = []
+        self.chain_windows_acceptance_log = []
         
     
     
-    def run(self):
+    def run(self, steps:int = False) -> learning_model.LearningModel:
         
         """
         Carries out the chain using instance-level hyperparameters;
         populates instance-level progression trackers, returns best model found.
         """
         
-        # ADD temperature sampling
+        # !!! ADD temperature sampling
         self.MH_temperature = 0.00001
         
-        # acceptance tracking:
+        if not steps: steps = self.max_chain_steps 
+        
+        # acceptance tracking for this run:
         k = 0 # auxiliary iteration counter    
-        self.acceptance_tracker = [] # all accept/reject events (bool)
-        self.acceptance_ratios_log = [] # acceptance ratios for subsequent windows
+        self.run_acceptance_tracker = [] # all accept/reject events (bool)
+        self.run_windows_acceptance_log = [] # acceptance ratios for subsequent windows
         
         
         # carry out all chain steps:
-        for i in range(self.max_chain_steps):
+        for i in range(steps):
             
             # acceptance tally:
-            if k >= self.acceptance_window: # ie, end of last window reached
+            if k >= self.acceptance_window: # ie, end of latest window reached
+                break#print(i) # optional "progress bar"
                 k = 0
                 window_accepted_total = \
-                    sum(self.acceptance_tracker[len(self.acceptance_tracker)-self.acceptance_window:len(self.acceptance_tracker)])
+                    sum(self.run_acceptance_tracker[len(self.run_acceptance_tracker)-
+                                                    self.acceptance_window : len(self.run_acceptance_tracker)])
                 acceptance_ratio = window_accepted_total/self.acceptance_window
-                self.acceptance_ratios_log.append(acceptance_ratio)
+                self.run_windows_acceptance_log.append(acceptance_ratio)
                 
                 # adaptation:
                 # note: assuming acceptance band is positive = maximum difference either way of ratio and target before adaptation
@@ -290,11 +294,12 @@ class LearningChain:
                 if proposal_loss < self.best_loss:
                     self.best_loss = proposal_loss
                     self.best = copy.deepcopy(proposal)
-                self.acceptance_tracker.append(True)
+                self.run_acceptance_tracker.append(True)
             else: # ie. reject proposal
-                self.acceptance_tracker.append(False)
+                self.run_acceptance_tracker.append(False)
                 
-            
+         
+        self.chain_windows_acceptance_log.extend(self.run_windows_acceptance_log)   
         return self.best
     
     
@@ -380,14 +385,16 @@ class LearningChain:
     
     def total_dev(self, model: TYPE_MODEL) -> float:
         """
-        Calculates total deviation of argument model from set target data over set observables. 
+        Calculates total deviation of argument model from target data. 
         
-        Returns equal sum over all instance-level target ovservables
+        Returns equal sum over all instance-level target observables
         of mean squared error between instance-level target data
         and argument model data evaluated at instance-level target times.
         
-        Assumes target data is list of numpy arrays and target observables is list of operator labels.
-        Changes these to lists if currently single array and single label.
+        Assumes target data is list of numpy arrays,
+        and target observables is same-length list of corresponding observable labels.
+        Also assumes all data arrays and times are same length.
+        Encapsulates data and observable in lists if single array and single label.
         """
         
         if isinstance(self.target_datasets, np.ndarray) and isinstance(self.target_observables, str):

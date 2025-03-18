@@ -41,7 +41,7 @@ GT.add_TLS(is_qubit = False,
                   }
             )
 GT.add_TLS(is_qubit = False,
-            energy = 5.8,
+            energy = 4.5,
             couplings = {'defect1': [(0.6, [('sigmaz', 'sigmaz')]), 
                                      (0.7, [('sigmax', 'sigmax')]),
                                      (0.8, [('sigmay', 'sigmay')])]
@@ -57,10 +57,9 @@ GT.build_operators()
 # simulate measurements:
 # note: now using 1st qubit excited population at times ts
 ts = np.linspace(0, 1e1, int(1000))
-measurement_observables = ['sigmaz']
+measurement_observables = ['sigmaz', 'sigmax']
 measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
 
-GT.disp()
 
 #%% parallelised runs:
 
@@ -97,11 +96,11 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 100,
+                      max_chain_steps = 10000,
                       chain_step_options = {
-                          'tweak all parameters': 0.1,
-                          'add L': 10.1,
-                          'remove L': 0.1,
+                          'tweak all parameters': 0.5,
+                          'add L': 0.05,
+                          'remove L': 0.05,
                           'add qubit-defect coupling': 0.05, 
                           'remove qubit-defect coupling': 0.05,
                           'add defect-defect coupling': 0.025, 
@@ -145,16 +144,31 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 
 #%%
-best = quest.run()
-raise SystemExit()
+best = quest.run(20)
 
+#%%
+best = quest.best
 
-
-costs = quest.explored_costs
+costs = quest.explored_loss
 acceptance_ratios = quest.acceptance_ratios_log
 best_data = best.calculate_dynamics(ts, observable_ops = measurement_observables)
 
 
+# quick plots:
+    
+t_to_sec = 4.136e-15
+ts_sec = t_to_sec*ts
+import matplotlib.pyplot as plt
+for i in range(len(measurement_observables)):
+    plt.figure()    
+    plt.plot(ts_sec, measurement_datasets[i], '-b', label = 'measured') 
+    plt.plot(ts_sec, best_data[i], ':r', label= 'learned')
+    plt.legend()
+    plt.xlabel('t (s)')
+    plt.ylabel(measurement_observables[i])
+    
+
+raise SystemExit()
 
 #%% save single learning run outputs:
 
