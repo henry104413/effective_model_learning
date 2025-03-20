@@ -48,7 +48,7 @@ class Output:
                  chain_name: str = False,
                  fontsize: float = False):
         """
-        Creates outputs specified by arguments during initialisation.
+        Creates outputs as specified by arguments.
         """
         
         self.fontsize = fontsize
@@ -60,61 +60,38 @@ class Output:
             line_formats = ['b-', 'r--', 'k-.', 'g:'] # different data set plot formats
             # note: now supports max 4 data sets
             ts = 1e15*t_to_sec*dynamics_ts # dynamics times in seconds
-        
+            
+            # returns corresponding danamics dataset label including checking label available:
+            def get_dynamics_dataset_label(i):
+                if not dynamics_datasets_labels or len(dynamics_datasets_labels) < len(dynamics_datasets): return None
+                else: return dynamics_datasets_labels[i]
+            
             # plot comparison for each observables:
             for i, observable in enumerate(observable_labels):
                 plt.figure()
                 plt.ylabel(observable)
-                plt.xlabel('time (s)')
+                plt.xlabel('time (fs)')
                 
                 # plot all the datasets in the comparison for this observable:
                 for j, dataset in enumerate(dynamics_datasets):    
-                    plt.plot(ts, dataset[i], line_formats[j], label = dynamics_datasets_labels[j])
+                    plt.plot(ts, dataset[i], line_formats[j], label = get_dynamics_dataset_label(j))
                             
                 plt.legend()
                 plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000)
                  
-   
-        
-        
-        
-        # plot dynamics comparison (up to 4):
-        if False and toggles.comparison:
-            
-            colours = ['r-', 'b--', 'k:', 'g-.']
-            
-            # ensure label selector doesn't go out of bounds
-            def get_label(i):
-                if not dynamics_labels or len(dynamics_labels) < len(dynamics_datasets): return None
-                else: return dynamics_labels[i]
-            
+    
+        # plot loss progression over chain steps:
+        if toggles.loss:     
             plt.figure()
-            
-            for i in range(min(len(dynamics_datasets), 4)):
-                plt.plot(dynamics_ts*t_to_sec*1e15, dynamics_datasets[i], colours[i], label = get_label(i))
-                plt.xlabel('time (fs)')
-                #plt.ylabel('qubit excited population')
-                #plt.ylim([0,1.1])
-                #HERE
-                plt.legend()
-                plt.savefig(filename + '_comparison.png', dpi = 1000)
-    
-    
-    
-        # plot cost function progression:
-        
-        if toggles.cost:     
-        
-            plt.figure()
-            plt.plot(cost, 'm-', linewidth = 0.3, markersize = 0.1)
+            plt.plot(loss, 'm-', linewidth = 0.3, markersize = 0.1)
             plt.yscale('log')
             plt.xlabel('iteration')
-            plt.ylabel('cost')
+            plt.ylabel('loss')
             #plt.xlim([0, 10000])
-            plt.savefig(filename + '_cost.png', dpi = 1000)
+            plt.savefig(filename + '_loss.svg', dpi = 1000)
     
     
-        
+    
         # save specified model instances (as text and/or pickle and/or graph):
             
         # ensure name selector doesn't go out of bounds:
