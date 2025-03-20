@@ -96,7 +96,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 10000,
+                      max_chain_steps = 1000,
                       chain_step_options = {
                           'tweak all parameters': 0.5,
                           'add L': 0.05,
@@ -144,14 +144,14 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 
 #%%
-best = quest.run(5000)
+best = quest.run(1000)
 
 #%%
 best = quest.best
 
 costs = quest.explored_loss
 acceptance_ratios = quest.chain_windows_acceptance_log
-best_data = best.calculate_dynamics(ts, observable_ops = measurement_observables)
+best_datasets = best.calculate_dynamics(ts, observable_ops = measurement_observables)
 
 
 # quick plots:
@@ -162,7 +162,7 @@ import matplotlib.pyplot as plt
 for i in range(len(measurement_observables)):
     plt.figure()    
     plt.plot(ts_sec, measurement_datasets[i], '-b', label = 'measured') 
-    plt.plot(ts_sec, best_data[i], ':r', label= 'learned')
+    plt.plot(ts_sec, best_datasets[i], ':r', label= 'learned')
     plt.legend()
     plt.xlabel('t (s)')
     plt.ylabel(measurement_observables[i])
@@ -177,8 +177,8 @@ raise SystemExit()
     
 class Toggles():    
     comparison = True # plot comparison of dynamics
-    cost = True # plot cost function progression
-    acceptance_ratios = True # plot acceptance ratios over subsequenct windows
+    loss = True # plot cost function progression
+    acceptance = True # plot acceptance ratios over subsequenct windows
     graphs = True # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
     text = True # save selected models as text
@@ -194,9 +194,12 @@ timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
 # create outputs:
 
 output.Output(toggles = Toggles, filename = timestamp,
-       dynamics_ts = ts, dynamics_datasets = [measurement_datasets[-1], best_data[-1]], dynamics_labels = ['ground truth', 'learned model'],
-       cost = costs,
-       acceptance_ratios = acceptance_ratios,
+       dynamics_ts = ts,
+       dynamics_datasets = [measurement_datasets, best_datasets],
+       dynamics_datasets_labels = ['measured', 'learned'],
+       observable_labels = measurement_observables,
+       loss = quest.explored_loss,
+       acceptance = acceptance_ratios,
        models_to_save = [GT, best],
        model_names = ['GT', 'best'],
        chain_hyperparams = quest.get_init_hyperparams()

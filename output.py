@@ -6,47 +6,80 @@ Effective model learning
 
 """
 
+from __future__ import annotations
 import pickle
 import json
 import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
+import typing
 
 import definitions
 
-# aliases:
+if typing.TYPE_CHECKING:
+    from basic_model import BasicModel
+    from learning_model import LearningModel
+
+# shorthands:
 K_to_eV = definitions.Constants.K_to_eV
-t_to_sec = definitions.Constants.K_to_eV
+t_to_sec = definitions.Constants.t_to_sec
 # note: h_bar=1, e=1
 
 
 
 class Output:
     
-    # to do: set font here for all plots
-    # each chain can call this and pass it its own things to save...
-    # maybe this should be a chain method then? maybe not
+    """
+    Instantiation immeadiately creates outputs as specified by initialiser arguments.
+    """
 
-
-    def __init__(self, *, toggles, filename,
-                 dynamics_ts = False, dynamics_datasets = [], dynamics_labels = [],
-                 cost = [],
-                 acceptance_ratios = [],
-                 models_to_save = [],
-                 model_names = [],
-                 chain_hyperparams = False,
-                 chain_name = False,
-                 fontsize = False):
-        
-        
+    def __init__(self, *, 
+                 toggles: type,
+                 filename: str,
+                 dynamics_ts: np.ndarray = False, 
+                 dynamics_datasets: list[list[np.ndarray]] = [], 
+                 dynamics_datasets_labels: list[str] = [],
+                 observable_labels: list[str] = [],
+                 loss: list[float|int] = [],
+                 acceptance: list[float|int] = [],
+                 models_to_save: list[BasicModel|LearningModel] = [],
+                 model_names: list[str] = [],
+                 chain_hyperparams: dict = False,
+                 chain_name: str = False,
+                 fontsize: float = False):
+        """
+        Creates outputs specified by arguments during initialisation.
+        """
         
         self.fontsize = fontsize
         
         
-    
-        # plot dynamics comparison (up to 4):
-            
+        # plot comparison of dynamics datasets (up to 4) wrt all observables:
         if toggles.comparison:
+        
+            line_formats = ['b-', 'r--', 'k-.', 'g:'] # different data set plot formats
+            # note: now supports max 4 data sets
+            ts = 1e15*t_to_sec*dynamics_ts # dynamics times in seconds
+        
+            # plot comparison for each observables:
+            for i, observable in enumerate(observable_labels):
+                plt.figure()
+                plt.ylabel(observable)
+                plt.xlabel('time (s)')
+                
+                # plot all the datasets in the comparison for this observable:
+                for j, dataset in enumerate(dynamics_datasets):    
+                    plt.plot(ts, dataset[i], line_formats[j], label = dynamics_datasets_labels[j])
+                            
+                plt.legend()
+                plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000)
+                 
+   
+        
+        
+        
+        # plot dynamics comparison (up to 4):
+        if False and toggles.comparison:
             
             colours = ['r-', 'b--', 'k:', 'g-.']
             
@@ -57,7 +90,7 @@ class Output:
             
             plt.figure()
             
-            for i in range(min(len(dynamics_datasets), 4)):    
+            for i in range(min(len(dynamics_datasets), 4)):
                 plt.plot(dynamics_ts*t_to_sec*1e15, dynamics_datasets[i], colours[i], label = get_label(i))
                 plt.xlabel('time (fs)')
                 #plt.ylabel('qubit excited population')
