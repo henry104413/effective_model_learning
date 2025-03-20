@@ -33,7 +33,7 @@ GT.add_TLS(TLS_label = 'qubit',
 GT.add_TLS(is_qubit = False,
             TLS_label = 'defect1',
             energy = 5.8,
-            couplings = {'qubit': [(0.6, [('sigmay', 'sigmay')])]
+            couplings = {'qubit': [(0.6, [('sigmap', 'sigmam'), ('sigmam','sigmap')])]
                         },
             Ls = {
                   'sigmaz' : 0.05,
@@ -96,7 +96,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
                       
-                      max_chain_steps = 10000,
+                      max_chain_steps = 1000,
                       chain_step_options = {
                           'tweak all parameters': 0.5,
                           'add L': 0.05,
@@ -144,59 +144,39 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 
 #%%
-best = quest.run(20)
+best = quest.run(500)
 
 #%%
 best = quest.best
 
 costs = quest.explored_loss
-acceptance_ratios = quest.acceptance_ratios_log
-best_data = best.calculate_dynamics(ts, observable_ops = measurement_observables)
+acceptance_ratios = quest.chain_windows_acceptance_log
+best_datasets = best.calculate_dynamics(ts, observable_ops = measurement_observables)
 
 
-# quick plots:
-    
-t_to_sec = 4.136e-15
-ts_sec = t_to_sec*ts
-import matplotlib.pyplot as plt
-for i in range(len(measurement_observables)):
-    plt.figure()    
-    plt.plot(ts_sec, measurement_datasets[i], '-b', label = 'measured') 
-    plt.plot(ts_sec, best_data[i], ':r', label= 'learned')
-    plt.legend()
-    plt.xlabel('t (s)')
-    plt.ylabel(measurement_observables[i])
-    
+#%% chain run outputs:
 
-raise SystemExit()
-
-#%% save single learning run outputs:
-
-    
-# controls bundle:
-    
+# output controls bundle:
 class Toggles():    
     comparison = True # plot comparison of dynamics
-    cost = True # plot cost function progression
-    acceptance_ratios = True # plot acceptance ratios over subsequenct windows
+    loss = True # plot cost function progression
+    acceptance = True # plot acceptance ratios over subsequenct windows
     graphs = True # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
     text = True # save selected models as text
     hyperparams = True # save chain hyperparameters as json
-    
-    
 
 # unique name (date and time stamp):
-
 timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
 
-
 # create outputs:
-
 output.Output(toggles = Toggles, filename = timestamp,
-       dynamics_ts = ts, dynamics_datasets = [measurement_datasets[-1], best_data[-1]], dynamics_labels = ['ground truth', 'learned model'],
-       cost = costs,
-       acceptance_ratios = acceptance_ratios,
+       dynamics_ts = ts,
+       dynamics_datasets = [measurement_datasets, best_datasets],
+       dynamics_datasets_labels = ['measured', 'learned'],
+       observable_labels = measurement_observables,
+       loss = quest.explored_loss,
+       acceptance = acceptance_ratios,
        models_to_save = [GT, best],
        model_names = ['GT', 'best'],
        chain_hyperparams = quest.get_init_hyperparams()

@@ -223,6 +223,8 @@ class LearningChain:
         """
         Carries out the chain using instance-level hyperparameters;
         populates instance-level progression trackers, returns best model found.
+        
+        Performs "steps" new proposals if specified, else instance-level value used. 
         """
         
         # !!! ADD temperature sampling
@@ -241,7 +243,7 @@ class LearningChain:
             
             # acceptance tally:
             if k >= self.acceptance_window: # ie, end of latest window reached
-                break#print(i) # optional "progress bar"
+                print(i) # optional "progress bar"
                 k = 0
                 window_accepted_total = \
                     sum(self.run_acceptance_tracker[len(self.run_acceptance_tracker)-
