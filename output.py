@@ -89,7 +89,19 @@ class Output:
             plt.ylabel('loss')
             #plt.xlim([0, 10000])
             plt.savefig(filename + '_loss.svg', dpi = 1000)
-    
+            
+            
+        # plot acceptance ratio evolution:
+        if toggles.acceptance:
+            plt.figure()
+            plt.plot(acceptance, '-', linewidth = 1, markersize = 0.1, color = 'firebrick')
+            plt.yscale('linear')
+            plt.xlabel('window number')
+            plt.ylabel('acceptance ratio')
+            #plt.xlim([0, 10000])
+            plt.ylim([-0.05,1.05])
+            plt.savefig(filename + '_acceptance.svg', dpi = 1000)
+        
     
     
         # save specified model instances (as text and/or pickle and/or graph):
@@ -129,21 +141,8 @@ class Output:
             with open(filename + get_chain_name() + '_hyperparameters.json', 'w') as filestream:
                 json.dump(chain_hyperparams,  filestream)
                 
-                
         
-        # plot acceptance ratio evolution:
-            
-        if toggles.acceptance_ratios:
-            
-            plt.figure()
-            plt.plot(acceptance_ratios, '-', linewidth = 1, markersize = 0.1, color = 'firebrick')
-            plt.yscale('linear')
-            plt.xlabel('window number')
-            plt.ylabel('acceptance ratio')
-            #plt.xlim([0, 10000])
-            plt.ylim([-0.05,1.05])
-            plt.savefig(filename + '_acceptance_ratios.png', dpi = 1000)
-            
+                
             
             
     def create_model_graph(self, m, filename):
@@ -292,74 +291,4 @@ class Output:
         
         
         plt.savefig(filename + '.svg')#, dpi=300)#, bbox_inches='tight')
-            
-    
-    
-
-            
-def compare_qutip_Liouvillian(model, ts):
-    
-    
-    import numpy as np        
-    import matplotlib.pyplot as plt
-    import matplotlib.colors as colour
-    import matplotlib.colormaps as colormaps
-    
-    
-    pop_qutip = model.calculate_dynamics(ts, dynamics_method = 'qutip')
-    
-    pop_liouvillian = model.calculate_dynamics(ts, dynamics_method = 'liouvillian')
-    
-    
-    #%% 
-    # ad hoc plots:
-        
-    
-    
-    # qutip vs liouvillian dynamics
-    plt.figure()
-    plt.plot(t_to_sec*ts*1e15, pop_qutip, '-y', label = 'qutip')
-    plt.plot(t_to_sec*ts*1e15, pop_liouvillian, ':k', label = 'liouvillian')
-    plt.xlabel('time (fs)')
-    plt.ylabel('qubit excited population')
-    plt.legend()
-    plt.savefig('qutip vs liouvillian comparison.png')
-    
-    
-    # liouvillian colour plot
-    
-    L = model.LLN
-    
-    
-    # # just to test diagonalisability
-    # vals, vecs = np.linalg.eig(L)
-    # X = vecs@(np.diag(vals)@(vecs.conjugate().transpose()))
-    # plt.figure()
-    # plt.matshow(abs(X - np.diag(np.diag(X))), cmap='inferno')
-    # plt.title('$|\mathcal{X}|$')
-    # plt.colorbar()
-    # plt.savefig('X.png', dpi = 1000)
-    # plt.show()
-    
-    
-    
-    plt.figure()
-    plt.matshow(abs(L-np.diag(np.diag(L))), cmap='inferno')
-    plt.title('$|\mathcal{L}|$ off diagonal')
-    plt.colorbar()
-    plt.savefig('off diag.png', dpi = 1000)
-    plt.show()
-    
-    
-    plt.figure()
-    cmap = colormaps['inferno'].copy()
-    cmap.set_bad('k', alpha=1)
-    plt.matshow(abs(L), cmap=cmap, norm=colour.LogNorm(0.005, 100), interpolation = 'none')
-    plt.title('$|\mathcal{L}|$')
-    plt.colorbar()
-    plt.savefig('liouvillian.png', dpi = 1000)
-    plt.show()
-    
-
-
 
