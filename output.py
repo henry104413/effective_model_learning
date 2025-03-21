@@ -106,42 +106,33 @@ class Output:
     
         # save specified model instances (as text and/or pickle and/or graph):
             
-        # ensure name selector doesn't go out of bounds:
+        # returns model name if available or its number otherwise:
         def get_model_name(i):
             if not model_names or len(model_names) < len(models_to_save): return '_' + str(i)
             else: return '_' + model_names[i]
-            
-        for i, model in enumerate(models_to_save):
-            
-            # as pickle:
         
+        # save each model as per toggles:    
+        for i, model in enumerate(models_to_save):
+            # as pickle:
             if toggles.pickle:
                 with open(filename + get_model_name(i) +'.pickle', 'wb') as filestream:
                     pickle.dump(models_to_save[i],  filestream)
-                
             # as text:
-            
             if toggles.text:
                 with open(filename + get_model_name(i) + '.txt', 'w') as filestream:
                     filestream.write(models_to_save[i].model_description_str())
-                    
             # as graphs:
             if toggles.graphs:
-                self.create_model_graph(model,filename + get_model_name(i) + '_graph')
-                    
-                    
+                self.create_model_graph(model, filename + get_model_name(i) + '_graph')
+       
+                
         # save chain hyperparameters dictionary as JSON:      
-                    
         if toggles.hyperparams:
-            
             def get_chain_name():
                 if not chain_name: return ''
                 else: return '_' + chain_name    
-        
             with open(filename + get_chain_name() + '_hyperparameters.json', 'w') as filestream:
-                json.dump(chain_hyperparams,  filestream)
-                
-        
+                json.dump(chain_hyperparams, filestream)
                 
             
             
