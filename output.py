@@ -183,10 +183,8 @@ class Output:
             return temp
 
 
-        G = nx.Graph()
         
-        qubit_index, defect_index = 0, 0
-        
+        # reference values to determine graph line thickness and marker size:
         normal_vals = {
                        'energy': 5,
                        'coupling': 0.5,
@@ -194,10 +192,8 @@ class Output:
                        'L_ondiag': 0.01
                       }
         
-        
-        
-        # plot property containers:
-        
+        # initialise graph and corresponding containers:
+        G = nx.Graph()
         node_colours = []
         node_labels = {}
         edge_colours = []
@@ -205,116 +201,82 @@ class Output:
         edge_labels = {}
         node_sizes = []
         
-        
-        
         # add node for each TLS:
-        
-        for TLS in m.TLSs:
-            
+        qubit_index, defect_index = 0, 0
+        for TLS in model.TLSs:
             label = id(TLS)
-            
-            if TLS.is_qubit: 
-                
+            if TLS.is_qubit: # ie. qubit
                 # label = 'qubit' + str(qubit_index)
-                
                 qubit_index += 1
-                
                 node_colours.append('dodgerblue')
-                        
                 G.add_node(label, subset = 'qubits')
-                
-            else:
-                
+            elif not TLS.is_qubit: # ie. defect
                 # label = 'defect' + str(defect_index)
-                
                 defect_index += 1
-                
                 node_colours.append('violet')
-                
                 G.add_node(label, subset = 'defects')
-                
             node_labels[label] = np.round(TLS.energy, 2)
-            
             node_sizes.append(1000)
-                
             
+        #print(G.nodes(data=True))
+        
         # add edges for each TLS's couplings and Ls:    
+        for TLS in model.TLSs:
             
-        for TLS in m.TLSs:
-            
-            break
             # add couplings - assumed symmetrical here with single label (probably to expand in future):
-            
-            for partner, couplings in TLS.couplings.items():
+            # # this must be reworked
+            # for partner, couplings in TLS.couplings.items():
                 
-                for coupling in couplings: # coupling is the tuple
+            #     for coupling in couplings: # coupling is the tuple
                 
-                    G.add_edge(id(TLS), id(partner),
-                               width = coupling[0]/normal_vals['coupling']*3,
-                               label = ops_labels[coupling[1]],
-                               colour = 'purple'
-                               )
+            #         G.add_edge(id(TLS), id(partner),
+            #                    width = coupling[0]/normal_vals['coupling']*3,
+            #                    label = ops_labels[coupling[1]],
+            #                    colour = 'purple'
+            #                    )
                     
-                    edge_labels[(id(TLS), id(partner))] = str(ops_labels[coupling[1]])
+            #         edge_labels[(id(TLS), id(partner))] = str(op_symbol(coupling[1]))
                     
                     
             # add Ls:
-            
-            if True:    
+            for L, rate in TLS.Ls.items():
+                label = str(id(TLS)) + L
+                G.add_node(label, subset = 'Ls')
+                node_labels[label] = ''#ops_labels[L]
+                node_colours.append('forestgreen')
+                G.add_edge(id(TLS), label,
+                           width = rate/normal_vals['L_offdiag'],
+                           colour = 'forestgreen'
+                           )
+                edge_labels[(id(TLS), label)] = op_symbol(L)
+                node_sizes.append(0)
                 
-                for L, rate in TLS.Ls.items():
-                    
-                    label = str(id(TLS)) + L
-                    
-                    G.add_node(label, subset = 'Ls')
-                    
-                    node_labels[label] = ''#ops_labels[L]
-                    
-                    node_colours.append('forestgreen')
-                    
-                    G.add_edge(id(TLS), label,
-                               width = rate/normal_vals['L_offdiag'],
-                               colour = 'forestgreen'
-                               )
-                    
-                    edge_labels[(id(TLS), label)] = ops_labels[L]
-                    
-                    node_sizes.append(0)
-                    
-        
-        
         edges = G.edges()           
         edge_widths = [G[u][v]['width'] for u, v in edges]
         edge_colours = [G[u][v]['colour'] for u, v in edges]
            
             
-        # different layouts:
-        
+        # layout setup:
         # centre_node = 'qubit'  # Or any other node to be in the center
         # defects_nodes = set(G) - {'qubit'}
         # pos = nx.circular_layout(G.subgraph(defects_nodes))
         # pos = nx.circular_layout(G)
         # pos = nx.spring_layout(G, seed = 0)
         # pos = nx.multipartite_layout(G, subset_key = 'subset')
-        
         graphviz_layout = nx.drawing.nx_pydot.graphviz_layout
         #pos = graphviz_layout(G, prog="twopi")
         #pos = graphviz_layout(G, prog="dot")
         pos = graphviz_layout(G, prog="circo")
         #pos = graphviz_layout(G, prog="sfdp")
         
-        
-        
+        # render and save graph:
         plt.figure()
         plt.title(filename)
-        
         nx.draw(G, pos,
                 width=edge_widths, edge_color = edge_colours,
                 node_color = node_colours, node_size = node_sizes,
                 labels = node_labels, font_size = 12
                 )
         nx.draw_networkx_edge_labels(G, pos, edge_labels = edge_labels, font_size = 12)
-        
-        
         plt.savefig(filename + '.svg')#, dpi=300)#, bbox_inches='tight')
 
