@@ -141,21 +141,51 @@ class Output:
                 
                 
             
-    def create_model_graph(self, m, filename):
+    def create_model_graph(self,
+                           model: BasicModel|LearningModel,
+                           filename: str
+                           ) -> None:
         
+        """
+        Creates and saves in current folder a network graph of argument model.
+        """
         
+        #  auxiliary functions to produce graph labels:
         
+        def op_symbol(op: str) -> str:    
+            """
+            Returns matplotlib friendly string with symbol
+            corresponding to argument operator label.
+            """
+            match op:
+                case 'sigmax': return r'$\sigma_x$'
+                case 'sigmaz': return r'$\sigma_z$'
+                case 'sigmay': return r'$\sigma_y$'
+                case 'sigmam': return r'$\sigma_-$'
+                case 'sigmap': return r'$\sigma_+$'
+                case _: return op
+
+        def make_coupling_edge_label(coupling: tuple[int|float, list[tuple[str]]]) -> str:
+            """
+            Returns string label for argument single coupling given as
+            (strength, [('op_here', 'op_there'), ...]).
+            """
+            temp = ''
+            temp = temp + str(coupling[0]) + r'$\times$' + '('
+            first_iteration = True
+            for op_pair in coupling[1]: 
+                # go over all operator pairs of this coupling, ie. tuples (op1_label, op2_label)
+                if not first_iteration:
+                    temp = temp + ' + '
+                first_iteration = False    
+                temp = temp + op_symbol(op_pair[0]) + r'$\otimes$' + op_symbol(op_pair[1])
+            temp = temp + ')'
+            return temp
+
+
         G = nx.Graph()
         
         qubit_index, defect_index = 0, 0
-        
-        ops_labels = {
-                     'sigmax': '$\sigma_x$',
-                     'sigmaz': '$\sigma_z$',
-                     'sigmay': '$\sigma_y$',
-                     'sigmam': '$\sigma_-$',
-                     'sigmap': '$\sigma_+$',
-                    }
         
         normal_vals = {
                        'energy': 5,
@@ -212,7 +242,7 @@ class Output:
             
         for TLS in m.TLSs:
             
-            
+            break
             # add couplings - assumed symmetrical here with single label (probably to expand in future):
             
             for partner, couplings in TLS.couplings.items():
