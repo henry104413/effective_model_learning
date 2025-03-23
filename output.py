@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import networkx as nx
 import typing
+import copy
+import pprint
 
 import definitions
 
@@ -103,7 +105,6 @@ class Output:
             plt.savefig(filename + '_acceptance.svg', dpi = 1000)
         
     
-    
         # save specified model instances (as text and/or pickle and/or graph):
             
         # returns model name if available or its number otherwise:
@@ -126,15 +127,19 @@ class Output:
                 self.create_model_graph(model, filename + get_model_name(i) + '_graph')
        
                 
-        # save chain hyperparameters dictionary as JSON:      
+        # save chain hyperparameters dictionary as dictionary string and as pickle:
+        # note: unfortunately JSON doesn't support tuples as keys
+        # note: apparently string can be loaded back using ast.literal_eval
         if toggles.hyperparams:
             def get_chain_name():
                 if not chain_name: return ''
                 else: return '_' + chain_name    
-            with open(filename + get_chain_name() + '_hyperparameters.json', 'w') as filestream:
-                json.dump(chain_hyperparams, filestream)
+            with open(filename + get_chain_name() + '_hyperparameters.txt', 'w') as filestream:
+                filestream.write(pprint.pformat(chain_hyperparams))
+            with open(filename + get_chain_name() + '_hyperparameters.pickle', 'wb') as filestream:
+                pickle.dump(chain_hyperparams,  filestream)
                 
-            
+                
             
     def create_model_graph(self, m, filename):
         
