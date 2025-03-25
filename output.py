@@ -171,7 +171,7 @@ class Output:
             (strength, [('op_here', 'op_there'), ...]).
             """
             temp = ''
-            temp = temp + str(coupling[0]) + r'$\times$' + '('
+            temp = temp + str(np.round(coupling[0], 2)) + r'$\times$' + '('
             first_iteration = True
             for op_pair in coupling[1]: 
                 # go over all operator pairs of this coupling, ie. tuples (op1_label, op2_label)
@@ -193,7 +193,8 @@ class Output:
                       }
         
         # initialise graph and corresponding containers:
-        G = nx.Graph()
+        #G = nx.Graph()
+        G = nx.MultiGraph()
         node_colours = []
         node_labels = {}
         edge_colours = []
@@ -223,23 +224,44 @@ class Output:
         # add edges for each TLS's couplings and Ls:    
         for TLS in model.TLSs:
             
-            # add couplings - assumed symmetrical here with single label (probably to expand in future):
+            # add couplings:
+            # storage: {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...])]}
+            # # eg.
+            # {'defect1': [(0.6, [('sigmap', 'sigmam'), ('sigmam', 'sigmap')]), 
+            #                          (0.7, [('sigmax', 'sigmax')])]
             # # this must be reworked
-            # for partner, couplings in TLS.couplings.items():
+            for partner, couplings in TLS.couplings.items(): # couplings is a list of tuples of (str, [(op_here, op_there),...])
                 
-            #     for coupling in couplings: # coupling is the tuple
+                for coupling in couplings: # coupling tuple is (str, [(op_here, op_there),...])
                 
-            #         G.add_edge(id(TLS), id(partner),
-            #                    width = coupling[0]/normal_vals['coupling']*3,
-            #                    label = ops_labels[coupling[1]],
-            #                    colour = 'purple'
-            #                    )
+                    G.add_edge(id(TLS), id(partner),
+                               width = coupling[0]/normal_vals['coupling']*3,
+                               label = make_coupling_edge_label(coupling),
+                               colour = 'purple'
+                               )
                     
-            #         edge_labels[(id(TLS), id(partner))] = str(op_symbol(coupling[1]))
+                    # edge_labels[(id(TLS), id(partner))] = make_coupling_edge_label(coupling)
+                    # this line might be a problem - multiple edges should now exist between the two nodes
                     
-                    
+            #G=nx.MultiGraph ()
+            # G.add_edge(1,2,weight=1)
+            # G.add_edge(1,2,weight=2)
+            # G.add_edge(1,2,weight=3)
+            # G.add_edge(3,1,weight=4)
+            # G.add_edge(3,2,weight=5)
+            # for edge in G.edges(data=True): edge[2]['label'] = edge[2]['weight']
+            # node_label = nx.get_node_attributes(G,'id')
+            # pos = nx.spring_layout(G)
+            # node_label = nx.get_node_attributes(G,'id')
+            # pos = nx.spring_layout(G)
+            # from IPython.display import Image
+            # p=nx.drawing.nx_pydot.to_pydot(G)
+            # p.write_png('multi.png')
+            # Image(filename='multi.png')
+            
             # add Ls:
             for L, rate in TLS.Ls.items():
+                break
                 label = str(id(TLS)) + L
                 G.add_node(label, subset = 'Ls')
                 node_labels[label] = ''#ops_labels[L]
@@ -251,32 +273,87 @@ class Output:
                 edge_labels[(id(TLS), label)] = op_symbol(L)
                 node_sizes.append(0)
                 
-        edges = G.edges()           
-        edge_widths = [G[u][v]['width'] for u, v in edges]
-        edge_colours = [G[u][v]['colour'] for u, v in edges]
+                
+                
+        def draw_labeled_multigraph(G, attr_name, ax=None):
+            """
+            Length of connectionstyle must be at least that of a maximum number of edges
+            between pair of nodes. This number is maximum one-sided connections
+            for directed graph and maximum total connections for undirected graph.
+            """
+            # Works with arc3 and angle3 connectionstyles
+            import itertools as it
+            connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
+            # connectionstyle = [f"angle3,angleA={r}" for r in it.accumulate([30] * 4)]
+        
+            pos = nx.shell_layout(G)
+            nx.draw_networkx_nodes(G, pos, ax=ax)
+            nx.draw_networkx_labels(G, pos, font_size=20, ax=ax)
+            nx.draw_networkx_edges(
+                G, pos, edge_color="grey", connectionstyle=connectionstyle, ax=ax
+            )
+        
+            labels = {
+                tuple(edge): f"{attr_name}={attrs[attr_name]}"
+                for *edge, attrs in G.edges(keys=True, data=True)
+            }
+            nx.draw_networkx_edge_labels(
+                G,
+                pos,
+                labels,
+                connectionstyle=connectionstyle,
+                label_pos=0.3,
+                font_color="blue",
+                bbox={"alpha": 0},
+                ax=ax,
+            )
+                
+        fig, ax = plt.subplots(1, 1)
+        draw_labeled_multigraph(G, "w", ax)
+
+        fig.tight_layout()
+        plt.show()
+        # #edges = G.edges()           
+        # #edge_widths = [G[u][v]['width'] for u, v in edges]
+        # #edge_colours = [G[u][v]['colour'] for u, v in edges]
+        # from IPython.display import Image
+        # p=nx.drawing.nx_pydot.to_pydot(G)
+        # p.write_png('multi.png')
+        # Image(filename='multi.png')
            
             
-        # layout setup:
-        # centre_node = 'qubit'  # Or any other node to be in the center
-        # defects_nodes = set(G) - {'qubit'}
-        # pos = nx.circular_layout(G.subgraph(defects_nodes))
-        # pos = nx.circular_layout(G)
-        # pos = nx.spring_layout(G, seed = 0)
-        # pos = nx.multipartite_layout(G, subset_key = 'subset')
-        graphviz_layout = nx.drawing.nx_pydot.graphviz_layout
-        #pos = graphviz_layout(G, prog="twopi")
-        #pos = graphviz_layout(G, prog="dot")
-        pos = graphviz_layout(G, prog="circo")
-        #pos = graphviz_layout(G, prog="sfdp")
+        # # layout setup:
+        # # centre_node = 'qubit'  # Or any other node to be in the center
+        # # defects_nodes = set(G) - {'qubit'}
+        # # pos = nx.circular_layout(G.subgraph(defects_nodes))
+        # # pos = nx.circular_layout(G)
+        # # pos = nx.spring_layout(G, seed = 0)
+        # # pos = nx.multipartite_layout(G, subset_key = 'subset')
+        # graphviz_layout = nx.drawing.nx_pydot.graphviz_layout
+        # pos = graphviz_layout(G, prog="twopi")
+        # #pos = graphviz_layout(G, prog="dot")
+        # ##pos = graphviz_layout(G, prog="circo")
+        # #pos = graphviz_layout(G, prog="sfdp")
         
-        # render and save graph:
-        plt.figure()
-        plt.title(filename)
-        nx.draw(G, pos,
-                width=edge_widths, edge_color = edge_colours,
-                node_color = node_colours, node_size = node_sizes,
-                labels = node_labels, font_size = 12
-                )
-        nx.draw_networkx_edge_labels(G, pos, edge_labels = edge_labels, font_size = 12)
-        plt.savefig(filename + '.svg')#, dpi=300)#, bbox_inches='tight')
+        # # render and save graph:
+        # plt.figure()
+        # plt.title(filename)
+        # nx.draw(G,
+        #         pos,
+        #         #width=edge_widths, 
+        #         #edge_color = edge_colours,
+        #         node_color = node_colours,
+        #         node_size = node_sizes,
+        #         labels = node_labels, 
+        #         font_size = 12
+        #         )
+        # import itertools as it
+        # connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
+        
+        # nx.draw_networkx_edge_labels(G,
+        #                              pos = pos, 
+        #                              edge_labels = edge_labels, 
+        #                              font_size = 12)
+        # plt.savefig(filename + '.svg')#, dpi=300)#, bbox_inches='tight')
 
+        

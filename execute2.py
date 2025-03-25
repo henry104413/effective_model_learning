@@ -15,50 +15,39 @@ import output
 
 
 
-#%% generate simulated target data:
-
+#%% import target data:
     
-# set up ground truth model:  
-GT = basic_model.BasicModel()
-GT.add_TLS(TLS_label = 'qubit',
-           is_qubit = True,
-           energy = 5,
-           couplings = {
-               
-                        },
-           Ls = {
-                 'sigmaz' : 0.01
-                 }
-           )
-GT.add_TLS(is_qubit = False,
-            TLS_label = 'defect1',
-            energy = 5.8,
-            couplings = {#'qubit': [(0.6, [('sigmap', 'sigmam'), ('sigmam','sigmap')])]
-                        },
-            Ls = {
-                  'sigmaz' : 0.05,
-                  'sigmay' : 0.02
-                  }
-            )
-GT.add_TLS(is_qubit = False,
-            energy = 4.5,
-            couplings = {'defect1': [(0.6, [('sigmap', 'sigmam'), ('sigmam', 'sigmap')]), 
-                                     (0.7, [('sigmax', 'sigmax')])]
-                        },
-            Ls = {
-                  'sigmaz' : 0.05,
-                  'sigmay' : 0.02
-                  }
-            )
+# import data from CSV file with possible annotations skipped
+# assuming subsequent pairs of columns are different datasets 
+# and numberical entries on single row are x, y values
 
-GT.build_operators()
+# choose data:
+datafile = 'Witnessing_Fig4a.csv'
+dataset_no = 2 # starting from 0
 
-# simulate measurements:
-# note: now using 1st qubit excited population at times ts
-ts = np.linspace(0, 1e1, int(1000))
-measurement_observables = ['sigmaz', 'sigmax']
-measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
+# extract x and y values@
+contents = np.genfromtxt('Witnessing_Fig4a.csv',delimiter=',')#,dtype=float) 
+dataset = contents[:,[2*dataset_no, 2*dataset_no + 1]]
+xs = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 0]     
+ys = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 1]   
 
+# sort by x:
+order = xs.argsort()
+xs = xs[order]
+ys = ys[order]
+
+ts = np.linspace(min(xs), max(xs), int(100))
+
+ys_interp = np.interp(ts, xs, ys)
+
+measurement_datasets = [ys_interp]
+measurement_observables = ['sigmax']
+
+
+import matplotlib.pyplot as plt
+plt.figure()
+plt.plot(xs, ys, 'bo')
+plt.plot(ts, ys_interp, 'r+')
 
 
 
@@ -70,7 +59,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       target_datasets = measurement_datasets,
                       target_observables = measurement_observables,
                       
-                      initial = (5, 2), # (qubit energy, number of defects)
+                      initial = (5, 1), # (qubit energy, number of defects)
                       
                       max_chain_steps = 1000,
                       chain_step_options = {
@@ -120,7 +109,7 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 
 #%%
-best = quest.run(500)
+best = quest.run(1000)
 
 #%%
 best = quest.best
@@ -137,7 +126,7 @@ class Toggles():
     comparison = True # plot comparison of dynamics
     loss = True # plot cost function progression
     acceptance = True # plot acceptance ratios over subsequenct windows
-    graphs = True # plot model graphs with corresponding labels
+    graphs = False # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
     text = True # save selected models as text
     hyperparams = True # save chain hyperparameters as json
@@ -153,8 +142,8 @@ output.Output(toggles = Toggles, filename = timestamp,
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        acceptance = acceptance_ratios,
-       models_to_save = [GT, best],
-       model_names = ['GT', 'best'],
+       models_to_save = [best],
+       model_names = ['best'],
        chain_hyperparams = quest.get_init_hyperparams()
        )
 

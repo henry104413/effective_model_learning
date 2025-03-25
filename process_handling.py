@@ -222,7 +222,7 @@ class ProcessHandler:
         
         Presently coupling information only stored on one participant TLS to avoid duplication.
         Storage format: 
-        {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+        {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...])]}
                     
         Currently cannot recognise equivalent couplings if specified using different operators.
         (Possibly to introduce: Could do matrix product comparison,

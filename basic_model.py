@@ -359,7 +359,7 @@ class BasicModel():
                                      evaluation_times,
                                      c_ops = self.Ls,
                                      e_ops = observable_ops_full,
-                                     options = qutip.Options(nsteps = 1e9) # store_states = True
+                                     options = qutip.Options(nsteps = 1e9) # store_states = True # old nsteps = 1e9
                                      # note: creates instance of Options which has as variables all the solver options - can be set in constructor
                                      )
             qutip_observables = qutip_dynamics.expect 
