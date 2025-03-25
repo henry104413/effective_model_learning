@@ -70,7 +70,8 @@ class BasicModel():
                 is_qubit: bool = False,
                 energy: int|float = None, 
                 couplings: dict[two_level_system.TwoLevelSystem, list[tuple[float|int, list[tuple[str, str]]]]] = {},
-                Ls: dict[str, int|float] = {}
+                Ls: dict[str, int|float] = {},
+                qubit_initial_state: qutip.Qobj = False
                 ) -> two_level_system.TwoLevelSystem:
         
         """
@@ -249,16 +250,21 @@ class BasicModel():
     def build_initial_DM(self) -> qutip.Qobj:
         """
         Builds default initial state full density matrix.
-        Assumes all defects are in ground state and all qubits excited.
+        Assumes product state with:
+        all defects as defined or ground if not,
+        all qubits as defined or excited if not.
         Saves to this model's container, also returns it.
         """
         temp = 1
         for TLS in self.TLSs:
-            if TLS.is_qubit:
-                temp = T(temp, (ops['exc'] + ops['sigmay']).unit())
-                # note: if changing this make sure this is normalised!
+            if TLS.initial_state:
+                temp = T(temp, (TLS.initial_state).unit())
             else:
-                temp = T(temp, ops['gnd'])
+                if TLS.is_qubit:
+                    temp = T(temp, (ops['exc'] + ops['sigmay']).unit())
+                    # note: if changing this make sure this is normalised!
+                else:
+                    temp = T(temp, ops['gnd'])
         self.initial_DM = temp
         return temp
     

@@ -6,7 +6,8 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
-
+from __future__ import annotations
+import typing
 import copy
 import numpy as np
 
@@ -14,6 +15,8 @@ import learning_model
 import params_handling
 import process_handling
 
+if typing.TYPE_CHECKING:
+    from qutip import Qobj
 
 
 # common types:
@@ -42,6 +45,8 @@ class LearningChain:
     class Defaults:
         
         initial = False # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
+        qubit_initial_state = False # instance of Qobj for single qubit 
+        # note: only makes sense if product state initially 
         
         max_chain_steps = 100
         chain_step_options = {
@@ -124,6 +129,7 @@ class LearningChain:
                  *,
                  
                  initial: TYPE_MODEL | tuple | list = False,
+                 qubit_initial_state: Qobj = False,
                  # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
                  
                  # note: arguments below should have counterpart in class Defaults:
@@ -319,6 +325,7 @@ class LearningChain:
         initial_model = learning_model.LearningModel()
         initial_model.add_TLS(TLS_label = 'qubit',
                              is_qubit = True,
+                             initial_state = self.qubit_initial_state,
                              energy = qubit_energy,
                              couplings = {},
                              Ls = {}

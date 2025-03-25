@@ -52,6 +52,10 @@ plt.plot(ts, ys_interp, 'r+')
 
 
 #%% perform learning:
+    
+# if qubit initial state required:
+import definitions
+qubit_initial_state = definitions.ops['sigmax']
 
 
 # instance of learning (quest for best model):
@@ -60,6 +64,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       target_observables = measurement_observables,
                       
                       initial = (5, 1), # (qubit energy, number of defects)
+                      qubit_initial_state = qubit_initial_state,
                       
                       max_chain_steps = 1000,
                       chain_step_options = {
@@ -109,7 +114,7 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 
 #%%
-best = quest.run(1000)
+best = quest.run(100)
 
 #%%
 best = quest.best

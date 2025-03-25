@@ -61,7 +61,9 @@ class Output:
         
             line_formats = ['b-', 'r--', 'k-.', 'g:'] # different data set plot formats
             # note: now supports max 4 data sets
-            ts = 1e15*t_to_sec*dynamics_ts # dynamics times in seconds
+            #ts = 1e15*t_to_sec*dynamics_ts # dynamics times in fs
+            ts = dynamics_ts
+            
             
             # returns corresponding danamics dataset label including checking label available:
             def get_dynamics_dataset_label(i):
