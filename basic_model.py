@@ -71,7 +71,7 @@ class BasicModel():
                 energy: int|float = None, 
                 couplings: dict[two_level_system.TwoLevelSystem, list[tuple[float|int, list[tuple[str, str]]]]] = {},
                 Ls: dict[str, int|float] = {},
-                qubit_initial_state: qutip.Qobj = False
+                initial_state: qutip.Qobj = False
                 ) -> two_level_system.TwoLevelSystem:
         
         """
@@ -115,7 +115,13 @@ class BasicModel():
                     
     
         # make new TLS instance:
-        new_TLS = two_level_system.TwoLevelSystem(self, TLS_label, is_qubit, energy, couplings, Ls)        
+        new_TLS = two_level_system.TwoLevelSystem(self, 
+                                                  TLS_label, 
+                                                  is_qubit, 
+                                                  energy, 
+                                                  couplings, 
+                                                  Ls,
+                                                  initial_state)        
         
         # add label to reference dictionary if one is specified
         if TLS_label != '':
