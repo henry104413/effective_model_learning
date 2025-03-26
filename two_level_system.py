@@ -53,7 +53,7 @@ class TwoLevelSystem:
         self.energy = energy
         self.couplings = couplings
         self.Ls = Ls
-        self.intial_state = initial_state
+        self.initial_state = initial_state
                  
                  
                  

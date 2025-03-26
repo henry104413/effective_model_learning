@@ -17,48 +17,56 @@ import output
 
 #%% generate simulated target data:
 
+import definitions
+qubit_initial_state = definitions.ops['sigmax']
     
 # set up ground truth model:  
 GT = basic_model.BasicModel()
 GT.add_TLS(TLS_label = 'qubit',
            is_qubit = True,
+           initial_state = qubit_initial_state,
            energy = 5,
            couplings = {
                
                         },
            Ls = {
-                 'sigmaz' : 0.01
+                 'sigmaz' : 0.0001,
+                 'sigmax' : 0.003
+                 
                  }
            )
 GT.add_TLS(is_qubit = False,
             TLS_label = 'defect1',
-            energy = 5.8,
-            couplings = {#'qubit': [(0.6, [('sigmap', 'sigmam'), ('sigmam','sigmap')])]
+            energy = 4,
+            couplings = {'qubit': [(0.08, [('sigmax', 'sigmax')])]
                         },
             Ls = {
-                  'sigmaz' : 0.05,
-                  'sigmay' : 0.02
+                  #'sigmaz' : 0.005,
+                  #'sigmay' : 0.002
                   }
             )
-GT.add_TLS(is_qubit = False,
-            energy = 4.5,
-            couplings = {'defect1': [(0.6, [('sigmap', 'sigmam'), ('sigmam', 'sigmap')]), 
-                                     (0.7, [('sigmax', 'sigmax')])]
-                        },
-            Ls = {
-                  'sigmaz' : 0.05,
-                  'sigmay' : 0.02
-                  }
-            )
+# GT.add_TLS(is_qubit = False,
+#             energy = 4.5,
+#             couplings = {'defect1': [(0.6, [('sigmap', 'sigmam'), ('sigmam', 'sigmap')]), 
+#                                      (0.7, [('sigmax', 'sigmax')])]
+#                         },
+#             Ls = {
+#                   'sigmaz' : 0.05,
+#                   'sigmay' : 0.02
+#                   }
+#             )
 
 GT.build_operators()
 
 # simulate measurements:
 # note: now using 1st qubit excited population at times ts
-ts = np.linspace(0, 1e1, int(1000))
-measurement_observables = ['sigmaz', 'sigmax']
+ts = np.linspace(0, 2500, int(100))
+measurement_observables = ['sigmax']
 measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
 
+import matplotlib.pyplot as plt
+plt.figure()
+plt.plot(ts, measurement_datasets[0])
 
 
 
@@ -120,7 +128,7 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 
 #%%
-best = quest.run(500)
+best = quest.run(3000)
 
 #%%
 best = quest.best

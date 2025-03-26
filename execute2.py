@@ -40,14 +40,16 @@ ts = np.linspace(min(xs), max(xs), int(100))
 
 ys_interp = np.interp(ts, xs, ys)
 
-measurement_datasets = [ys_interp]
+ys_mod = ys_interp*2 - 1
+
+measurement_datasets = [ys_mod]
 measurement_observables = ['sigmax']
 
 
 import matplotlib.pyplot as plt
 plt.figure()
-plt.plot(xs, ys, 'bo')
-plt.plot(ts, ys_interp, 'r+')
+#plt.plot(xs, ys, 'bo')
+plt.plot(ts, ys_mod, 'r+')
 
 
 
@@ -68,7 +70,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       max_chain_steps = 1000,
                       chain_step_options = {
-                          'tweak all parameters': 0.5,
+                          'tweak all parameters': 0.2,
                           'add L': 0.05,
                           'remove L': 0.05,
                           'add qubit-defect coupling': 0.05, 
@@ -114,7 +116,7 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 
 #%%
-best = quest.run(100)
+best = quest.run(1000)
 
 #%%
 best = quest.best
