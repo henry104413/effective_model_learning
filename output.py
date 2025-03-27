@@ -60,16 +60,28 @@ class Output:
         # plot comparison of dynamics datasets (up to 4) wrt all observables:
         if toggles.comparison:
             
-            # format strings for different data sets if specified, else default for up to 4 
+            # format strings for different data sets if specified, else default for up to 4: 
             if isinstance(y := dynamics_formatting, list) and bool(y) and all(isinstance(x, str) for x in y):
                 line_formats = dynamics_formatting
             else:
                 line_formats = ['bo', 'r--', 'k-.', 'g:'] 
             
             #ts = 1e15*t_to_sec*dynamics_ts # dynamics times in fs
-            ts = dynamics_ts
             
-            # returns corresponding danamics dataset label including checking label available:
+            # returns dynamics times for each datasets:
+            # either same array if one passed, or corresponding element if list of arrays passed
+            # array dimensions matching dataset dimensions not checked
+            def get_dynamics_times(i):
+                if isinstance(dynamics_ts, np.ndarray): 
+                    return dynamics_ts
+                elif (isinstance(dynamics_ts, list) and bool(dynamics_ts) 
+                      and all(isinstance(x, np.ndarray) for x in dynamics_ts)):
+                    return dynamics_ts[i]
+                else:
+                    raise RuntimeError('Times for plotting dynamics datasets not specified correctly')
+                    
+            
+            # returns corresponding dynamics dataset label including checking label available:
             def get_dynamics_dataset_label(i):
                 if not dynamics_datasets_labels or len(dynamics_datasets_labels) < len(dynamics_datasets): return None
                 else: return dynamics_datasets_labels[i]
@@ -81,8 +93,9 @@ class Output:
                 plt.xlabel('time (fs)')
                 
                 # plot all the datasets in the comparison for this observable:
+                # assumed times may differ for datasets but same across each dataset for all observables
                 for j, dataset in enumerate(dynamics_datasets):    
-                    plt.plot(ts, dataset[i], line_formats[j], label = get_dynamics_dataset_label(j))
+                    plt.plot(get_dynamics_times(j), dataset[i], line_formats[j], label = get_dynamics_dataset_label(j))
                             
                 plt.legend()
                 plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000)

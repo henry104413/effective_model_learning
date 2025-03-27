@@ -91,6 +91,8 @@ class LearningChain:
            ,(('sigmay', 'sigmay'),): (0.2, 0.5)
            ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
            }
+        
+        custom_function_on_dynamics_return = False # optional function acting on model's dynamics calculation return
     
     
     
@@ -151,7 +153,10 @@ class LearningChain:
       
                  qubit2defect_couplings_library: dict[str, list | tuple] = False,
                  
-                 defect2defect_couplings_library: dict[str, list | tuple] = False
+                 defect2defect_couplings_library: dict[str, list | tuple] = False,
+                 
+                 custom_function_on_dynamics_return: callable = False
+                 # optional function acting on model's dynamics calculation return
                  ):
         
         
@@ -236,7 +241,6 @@ class LearningChain:
         # acceptance tracking for this run:
         k = 0 # auxiliary iteration counter    
         self.run_acceptance_tracker = [] # all accept/reject events (bool)
-        self.run_windows_acceptance_log = [] # acceptance ratios for subsequent windows
         
         
         # carry out all chain steps:
@@ -253,7 +257,7 @@ class LearningChain:
                     sum(self.run_acceptance_tracker[len(self.run_acceptance_tracker)-
                                                     self.acceptance_window : len(self.run_acceptance_tracker)])
                 acceptance_ratio = window_accepted_total/self.acceptance_window
-                self.run_windows_acceptance_log.append(acceptance_ratio)
+                self.chain_windows_acceptance_log.append(acceptance_ratio)
                 
                 # adaptation:
                 # note: assuming acceptance band is positive = maximum difference either way of ratio and target before adaptation
@@ -305,7 +309,7 @@ class LearningChain:
                 self.run_acceptance_tracker.append(False)
                 
          
-        self.chain_windows_acceptance_log.extend(self.run_windows_acceptance_log)   
+        #self.chain_windows_acceptance_log.extend(self.run_windows_acceptance_log)   
         return self.best
     
     
@@ -408,7 +412,9 @@ class LearningChain:
             self.target_datasets =  [self.target_datasets]
             self.target_observables = [self.target_observables]
         
-        model_datasets = model.calculate_dynamics(evaluation_times = self.target_times, observable_ops = self.target_observables)
+        model_datasets = model.calculate_dynamics(evaluation_times = self.target_times, 
+                                                  observable_ops = self.target_observables,
+                                                  custom_function_on_return = self.custom_function_on_dynamics_return)
           
         # add up mean-squared-error over different observables, assuming equal weighting:
         # note: now datasets should all be lists of numpy arrays

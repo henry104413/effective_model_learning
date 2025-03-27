@@ -309,7 +309,8 @@ class BasicModel():
                           evaluation_times: np.ndarray,
                           observable_ops: list[str] = False,
                           # default: qutip -- unless liouvillian==True
-                          dynamics_method: str = False
+                          dynamics_method: str = False,
+                          custom_function_on_return: callable = False
                           ) -> list[np.ndarray]:
         
         """
@@ -318,6 +319,8 @@ class BasicModel():
         
         If observable not specified, assume population in site basis of first qubit in system.
         If string matching existing operator, take that observable on first qubit found with identities elsewhere.
+        
+        Custom function acts on output before returning, assumed to take into account output structure.
         
         Note: Apparently evaluation_times needs to be sorted.
         """
@@ -347,6 +350,7 @@ class BasicModel():
         # triggered if not valid input (should be list with zero non-string elements):
         if not (isinstance(observable_ops, list) 
                 and sum([True for x in observable_ops if type(x) != str]) == 0):
+                # !!! note: this can be done more efficienly with a generator
             raise RuntimeError('do not understand oservable operators input for dynamics calculation')
             
         else: 
@@ -376,8 +380,11 @@ class BasicModel():
                                      options = qutip.Options(nsteps = 1e9) # store_states = True # old nsteps = 1e9
                                      # note: creates instance of Options which has as variables all the solver options - can be set in constructor
                                      )
-            qutip_observables = qutip_dynamics.expect 
-            return qutip_observables # alternatively qutip_dynamics.states
+            returnable = qutip_dynamics.expect # alternatively qutip_dynamics.states
+            if not custom_function_on_return:
+                return returnable 
+            else:
+                return custom_function_on_return(returnable)
     
         
         # alternative: build Liouvillian and exponentiate - currently deprecated:

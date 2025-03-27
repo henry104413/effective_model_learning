@@ -54,18 +54,23 @@ measurement_observables = ['sigmax']
 import definitions
 qubit_initial_state = definitions.ops['sigmax']
 
+def custom_func(arg):
+    # print('taking abs')
+    if isinstance(arg, list): return [abs(x) for x in arg]
+    else: return abs(arg)
+
 
 # instance of learning (quest for best model):
 quest = learning_chain.LearningChain(target_times = ts,
                       target_datasets = measurement_datasets,
                       target_observables = measurement_observables,
                       
-                      initial = (5, 1), # (qubit energy, number of defects)
+                      initial = (5, 2), # (qubit energy, number of defects)
                       qubit_initial_state = qubit_initial_state,
                       
-                      max_chain_steps = 1000,
+                      max_chain_steps = 5000,
                       chain_step_options = {
-                          'tweak all parameters': 0.2,
+                          'tweak all parameters': 0.5,
                           'add L': 0.05,
                           'remove L': 0.05,
                           'add qubit-defect coupling': 0.05, 
@@ -83,9 +88,9 @@ quest = learning_chain.LearningChain(target_times = ts,
                       acceptance_band = 0.2,
                       
                       params_handler_hyperparams = { 
-                          'initial_jump_lengths': {'couplings' : 0.01,
-                                                   'energy' : 0.1,
-                                                   'Ls' : 0.001
+                          'initial_jump_lengths': {'couplings' : 0.05,
+                                                   'energy' : 0.5,
+                                                   'Ls' : 0.005
                                                    },
                           },
                       
@@ -96,28 +101,32 @@ quest = learning_chain.LearningChain(target_times = ts,
                          },
                    
                       qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         (('sigmax', 'sigmax'),): (0.2, 0.5)
-                        ,(('sigmay', 'sigmay'),): (0.2, 0.5)
-                        ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
+                         (('sigmax', 'sigmax'),): (0.3, 1)
+                        ,(('sigmay', 'sigmay'),): (0.3, 1)
+                        ,(('sigmaz', 'sigmaz'),): (0.3, 1)
                          },
                       
                       defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         (('sigmax', 'sigmax'),): (0.2, 0.5)
-                        ,(('sigmay', 'sigmay'),): (0.2, 0.5)
-                        ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
-                        }
+                         (('sigmax', 'sigmax'),): (0.3, 1)
+                        ,(('sigmay', 'sigmay'),): (0.3, 1)
+                        ,(('sigmaz', 'sigmaz'),): (0.3, 1)
+                        },
+                      
+                      custom_function_on_dynamics_return = False#custom_func
                       )
 
 
 #%%
-best = quest.run(1000)
+best = quest.run(5000)
 
 #%%
 best = quest.best
 
 costs = quest.explored_loss
 acceptance_ratios = quest.chain_windows_acceptance_log
-best_datasets = best.calculate_dynamics(ts, observable_ops = measurement_observables)
+evaluation_ts = np.linspace(ts[0], ts[-1], max(10*len(ts), int(1000)))
+best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables,
+                                        custom_function_on_return = custom_func)
 
 
 #%% chain run outputs:
@@ -134,13 +143,14 @@ class Toggles():
 
 # unique name (date and time stamp):
 timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
+# maybe add additional check to in unlikely case parallel run ends up with same name...
 
 # create outputs:
 output.Output(toggles = Toggles, filename = timestamp,
-       dynamics_ts = ts,
+       dynamics_ts = [ts, evaluation_ts],
        dynamics_datasets = [measurement_datasets, best_datasets],
        dynamics_datasets_labels = ['measured', 'learned'],
-       dynamics_formatting = [],
+       dynamics_formatting = ['b+', 'r:'],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        acceptance = acceptance_ratios,
