@@ -55,7 +55,7 @@ import definitions
 qubit_initial_state = definitions.ops['sigmax']
 
 def custom_func(arg):
-    print('taking abs')
+    # print('taking abs')
     if isinstance(arg, list): return [abs(x) for x in arg]
     else: return abs(arg)
 
@@ -68,7 +68,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       initial = (5, 2), # (qubit energy, number of defects)
                       qubit_initial_state = qubit_initial_state,
                       
-                      max_chain_steps = 2000,
+                      max_chain_steps = 5000,
                       chain_step_options = {
                           'tweak all parameters': 0.5,
                           'add L': 0.05,
@@ -112,14 +112,12 @@ quest = learning_chain.LearningChain(target_times = ts,
                         ,(('sigmaz', 'sigmaz'),): (0.3, 1)
                         },
                       
-                      custom_function_on_dynamics_return = False,#custom_func
-                      
-                      iterations_till_progress_update = 20
+                      custom_function_on_dynamics_return = False#custom_func
                       )
 
 
 #%%
-best = quest.run(2000)
+best = quest.run(5000)
 
 #%%
 best = quest.best
@@ -152,7 +150,7 @@ output.Output(toggles = Toggles, filename = timestamp,
        dynamics_ts = [ts, evaluation_ts],
        dynamics_datasets = [measurement_datasets, best_datasets],
        dynamics_datasets_labels = ['measured', 'learned'],
-       dynamics_formatting = ['b+', 'r-'],
+       dynamics_formatting = ['b+', 'r:'],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        acceptance = acceptance_ratios,

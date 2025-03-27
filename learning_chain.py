@@ -10,7 +10,6 @@ from __future__ import annotations
 import typing
 import copy
 import numpy as np
-import time
 
 import learning_model
 import params_handling
@@ -94,8 +93,6 @@ class LearningChain:
            }
         
         custom_function_on_dynamics_return = False # optional function acting on model's dynamics calculation return
-        
-        iterations_till_progress_update = False # number of iterations before iteration number and time elapsed printed
     
     
     
@@ -158,11 +155,8 @@ class LearningChain:
                  
                  defect2defect_couplings_library: dict[str, list | tuple] = False,
                  
-                 custom_function_on_dynamics_return: callable = False,
+                 custom_function_on_dynamics_return: callable = False
                  # optional function acting on model's dynamics calculation return
-                 
-                 iterations_till_progress_update: int = False
-                 # number of iterations before iteration number and time elapsed printed
                  ):
         
         
@@ -184,8 +178,7 @@ class LearningChain:
             else:
                 setattr(self, key, val)
             if key not in ['self', 'initial',
-                           'target_times', 'target_datasets', 'target_observables',
-                           'iterations_till_progress_update']:
+                           'target_times', 'target_datasets', 'target_observables']:
                 self.init_hyperparams[key] = val
         
         # initial model check or creation if specified only by defects number and qubit energy:
@@ -249,9 +242,6 @@ class LearningChain:
         k = 0 # auxiliary iteration counter    
         self.run_acceptance_tracker = [] # all accept/reject events (bool)
         
-        # progress tracking (also used in redirected output):
-        time_last = time.time() # elapsed time (s)
-        k2 = 0
         
         # carry out all chain steps:
         for i in range(steps):
@@ -261,6 +251,7 @@ class LearningChain:
             
             # acceptance tally:
             if k >= self.acceptance_window: # ie, end of latest window reached
+                print(i) # optional "progress bar"
                 k = 0
                 window_accepted_total = \
                     sum(self.run_acceptance_tracker[len(self.run_acceptance_tracker)-
@@ -274,17 +265,8 @@ class LearningChain:
                     self.cool_down()
                 elif acceptance_ratio - self.acceptance_target < -self.acceptance_band: # ie. accepting too little -> heat up
                     self.heat_up()
-            k += 1
-
-            # progress timing:
-            if bool(self.iterations_till_progress_update):
-                if k2 >= self.iterations_till_progress_update:
-                    k2 = 0
-                    print('\n\nIteration:\n' + str(i) + '\nElapsed (s):\n' + 
-                          str(np.round((new_time := time.time()) - time_last,2)), flush = True)
-                    time_last = new_time
-                k2 += 1
-                
+                    
+            k += 1                        
     
             # new proposal container:
             proposal = copy.deepcopy(self.current)
