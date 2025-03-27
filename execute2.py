@@ -23,7 +23,7 @@ import output
 
 # choose data:
 datafile = 'Witnessing_Fig4a.csv'
-dataset_no = 2 # starting from 0
+dataset_no = 0 # starting from 0
 
 # extract x and y values@
 contents = np.genfromtxt('Witnessing_Fig4a.csv',delimiter=',')#,dtype=float) 
@@ -36,20 +36,15 @@ order = xs.argsort()
 xs = xs[order]
 ys = ys[order]
 
-ts = np.linspace(min(xs), max(xs), int(100))
+# note: integrator errors - thought cause was unevenly spaced data likely just unsorted
+# apparently works if sorted descending ascending or descending, but unsorted breaks!
 
-ys_interp = np.interp(ts, xs, ys)
+# times for model evaluation:
+ts = xs
 
-ys_mod = ys_interp*2 - 1
-
-measurement_datasets = [ys_mod]
+# measured data feed:
+measurement_datasets = [ys]
 measurement_observables = ['sigmax']
-
-
-import matplotlib.pyplot as plt
-plt.figure()
-#plt.plot(xs, ys, 'bo')
-plt.plot(ts, ys_mod, 'r+')
 
 
 
@@ -79,8 +74,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                           'remove defect-defect coupling': 0.025
                           },
                       
-                      temperature_proposal_shape = 0.01, # aka k
-                      temperature_proposal_scale = 0.01, # aka theta
+                      temperature_proposal = 0.0001, # either value or (shape, scale) of gamma to sample
                       
                       jump_length_rescaling_factor = 1.05, # for scaling up or down jump lengths of parameter handler
                       
@@ -146,6 +140,7 @@ output.Output(toggles = Toggles, filename = timestamp,
        dynamics_ts = ts,
        dynamics_datasets = [measurement_datasets, best_datasets],
        dynamics_datasets_labels = ['measured', 'learned'],
+       dynamics_formatting = [],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        acceptance = acceptance_ratios,

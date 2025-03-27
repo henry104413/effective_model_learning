@@ -60,13 +60,22 @@ GT.build_operators()
 
 # simulate measurements:
 # note: now using 1st qubit excited population at times ts
-ts = np.linspace(0, 2500, int(100))
+ts = np.logspace(0, 3, int(10))
+# diffs = [ts[i] - ts[i-1] for i in range(len(ts)) if i>=1]
+# #print(ts)
+# print(diffs)
+# for i in range(len(ts)):
+#     ts[i] = ts[i] + (i/len(ts))**2
+# #print(ts)
+# diffs = [ts[i] - ts[i-1] for i in range(len(ts)) if i>=1]
+# print(diffs)
+#%%
 measurement_observables = ['sigmax']
-measurement_datasets = GT.calculate_dynamics(ts, observable_ops = measurement_observables)
+measurement_datasets = GT.calculate_dynamics(xs, observable_ops = measurement_observables)
 
 import matplotlib.pyplot as plt
 plt.figure()
-plt.plot(ts, measurement_datasets[0])
+plt.plot(xs, measurement_datasets[0])
 
 
 
@@ -91,8 +100,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                           'remove defect-defect coupling': 0.025
                           },
                       
-                      temperature_proposal_shape = 0.01, # aka k
-                      temperature_proposal_scale = 0.01, # aka theta
+                      temperature_proposal = 0.0001, # value or (shape, scale) to sample from gamma
                       
                       jump_length_rescaling_factor = 1.05, # for scaling up or down jump lengths of parameter handler
                       

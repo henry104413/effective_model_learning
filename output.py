@@ -41,6 +41,7 @@ class Output:
                  dynamics_ts: np.ndarray = False, 
                  dynamics_datasets: list[list[np.ndarray]] = [], 
                  dynamics_datasets_labels: list[str] = [],
+                 dynamics_formatting: list[str] = False,
                  observable_labels: list[str] = [],
                  loss: list[float|int] = [],
                  acceptance: list[float|int] = [],
@@ -58,12 +59,15 @@ class Output:
         
         # plot comparison of dynamics datasets (up to 4) wrt all observables:
         if toggles.comparison:
-        
-            line_formats = ['b-', 'r--', 'k-.', 'g:'] # different data set plot formats
-            # note: now supports max 4 data sets
+            
+            # format strings for different data sets if specified, else default for up to 4 
+            if isinstance(y := dynamics_formatting, list) and bool(y) and all(isinstance(x, str) for x in y):
+                line_formats = dynamics_formatting
+            else:
+                line_formats = ['bo', 'r--', 'k-.', 'g:'] 
+            
             #ts = 1e15*t_to_sec*dynamics_ts # dynamics times in fs
             ts = dynamics_ts
-            
             
             # returns corresponding danamics dataset label including checking label available:
             def get_dynamics_dataset_label(i):

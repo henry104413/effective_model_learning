@@ -36,7 +36,7 @@ class LearningChain:
     !!! TO ADD:
     Outward facing methods to:
         1) modify chain hyperparameters after initialisation.
-        2) update them in existing parameter and process hadnlers 
+        2) update them in existing parameter and process handlers 
     
     Also potentially take parameter handler jump lengths out of outer dictionary.
     """
@@ -59,8 +59,7 @@ class LearningChain:
             'remove defect-defect coupling': 0.025
             }
         
-        temperature_proposal_shape = 0.01 # aka k
-        temperature_proposal_scale = 0.01 # aka theta
+        temperature_proposal = 0.00001 # or (0.05, 0.05) to sample gamma by default
         
         jump_length_rescaling_factor = 2 # for scaling up or down jump lengths of parameter handler
         
@@ -137,8 +136,7 @@ class LearningChain:
                  max_chain_steps: int = False,
                  chain_step_options: dict[str, float | int] = False,
                  
-                 temperature_proposal_shape: float = False, # aka k
-                 temperature_proposal_scale:float = False, # aka theta
+                 temperature_proposal: float|int | tuple[float|int] = False, # value or gamma (shape, scale)
                  
                  jump_length_rescaling_factor: float = False, 
                  
@@ -233,9 +231,6 @@ class LearningChain:
         Performs "steps" new proposals if specified, else instance-level value used. 
         """
         
-        # !!! ADD temperature sampling
-        self.MH_temperature = 0.00001
-        
         if not steps: steps = self.max_chain_steps 
         
         # acceptance tracking for this run:
@@ -246,6 +241,9 @@ class LearningChain:
         
         # carry out all chain steps:
         for i in range(steps):
+            
+            # set Metropolis-Hastings acceptance temperature:
+            self.MH_temperature = self.sample_T()
             
             # acceptance tally:
             if k >= self.acceptance_window: # ie, end of latest window reached
@@ -589,3 +587,19 @@ class LearningChain:
                                               defect2defect_couplings_library = self.defect2defect_couplings_library,
                                               Ls_library = self.Ls_library)
         
+        
+        
+    def sample_T(self):
+        """
+        Returns temperature for Metropolis-Hastings acceptance.
+        Does not directly modify instance variable.
+        
+        Based on instance level temperature_proposal:            
+        If number, returns this value.
+        If tuple of numbers (shape, scale), returns value sampled from such gamma distribution.
+        """
+        
+        match self.temperature_proposal:
+            case int() | float(): return self.temperature_proposal
+            case (int()|float(), int()|float()): return np.random.gamma(*self.temperature_proposal)
+            case _: raise RuntimeError('Metropolis-Hastings temperature proposal failed')

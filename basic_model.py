@@ -318,6 +318,8 @@ class BasicModel():
         
         If observable not specified, assume population in site basis of first qubit in system.
         If string matching existing operator, take that observable on first qubit found with identities elsewhere.
+        
+        Note: Apparently evaluation_times needs to be sorted.
         """
     
         # check method argument:
