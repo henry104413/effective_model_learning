@@ -70,7 +70,8 @@ class BasicModel():
                 is_qubit: bool = False,
                 energy: int|float = None, 
                 couplings: dict[two_level_system.TwoLevelSystem, list[tuple[float|int, list[tuple[str, str]]]]] = {},
-                Ls: dict[str, int|float] = {}
+                Ls: dict[str, int|float] = {},
+                initial_state: qutip.Qobj = False
                 ) -> two_level_system.TwoLevelSystem:
         
         """
@@ -114,7 +115,13 @@ class BasicModel():
                     
     
         # make new TLS instance:
-        new_TLS = two_level_system.TwoLevelSystem(self, TLS_label, is_qubit, energy, couplings, Ls)        
+        new_TLS = two_level_system.TwoLevelSystem(self, 
+                                                  TLS_label, 
+                                                  is_qubit, 
+                                                  energy, 
+                                                  couplings, 
+                                                  Ls,
+                                                  initial_state)        
         
         # add label to reference dictionary if one is specified
         if TLS_label != '':
@@ -249,16 +256,21 @@ class BasicModel():
     def build_initial_DM(self) -> qutip.Qobj:
         """
         Builds default initial state full density matrix.
-        Assumes all defects are in ground state and all qubits excited.
+        Assumes product state with:
+        all defects as defined or ground if not,
+        all qubits as defined or excited if not.
         Saves to this model's container, also returns it.
         """
         temp = 1
         for TLS in self.TLSs:
-            if TLS.is_qubit:
-                temp = T(temp, (ops['exc'] + ops['sigmay']).unit())
-                # note: if changing this make sure this is normalised!
+            if TLS.initial_state:
+                temp = T(temp, (TLS.initial_state).unit())
             else:
-                temp = T(temp, ops['gnd'])
+                if TLS.is_qubit:
+                    temp = T(temp, (ops['exc'] + ops['sigmay']).unit())
+                    # note: if changing this make sure this is normalised!
+                else:
+                    temp = T(temp, ops['gnd'])
         self.initial_DM = temp
         return temp
     
@@ -297,7 +309,8 @@ class BasicModel():
                           evaluation_times: np.ndarray,
                           observable_ops: list[str] = False,
                           # default: qutip -- unless liouvillian==True
-                          dynamics_method: str = False
+                          dynamics_method: str = False,
+                          custom_function_on_return: callable = False
                           ) -> list[np.ndarray]:
         
         """
@@ -306,6 +319,10 @@ class BasicModel():
         
         If observable not specified, assume population in site basis of first qubit in system.
         If string matching existing operator, take that observable on first qubit found with identities elsewhere.
+        
+        Custom function acts on output before returning, assumed to take into account output structure.
+        
+        Note: Apparently evaluation_times needs to be sorted.
         """
     
         # check method argument:
@@ -333,6 +350,7 @@ class BasicModel():
         # triggered if not valid input (should be list with zero non-string elements):
         if not (isinstance(observable_ops, list) 
                 and sum([True for x in observable_ops if type(x) != str]) == 0):
+                # !!! note: this can be done more efficienly with a generator
             raise RuntimeError('do not understand oservable operators input for dynamics calculation')
             
         else: 
@@ -359,11 +377,14 @@ class BasicModel():
                                      evaluation_times,
                                      c_ops = self.Ls,
                                      e_ops = observable_ops_full,
-                                     options = qutip.Options(nsteps = 1e9) # store_states = True
+                                     options = qutip.Options(nsteps = 1e9) # store_states = True # old nsteps = 1e9
                                      # note: creates instance of Options which has as variables all the solver options - can be set in constructor
                                      )
-            qutip_observables = qutip_dynamics.expect 
-            return qutip_observables # alternatively qutip_dynamics.states
+            returnable = qutip_dynamics.expect # alternatively qutip_dynamics.states
+            if not custom_function_on_return:
+                return returnable 
+            else:
+                return custom_function_on_return(returnable)
     
         
         # alternative: build Liouvillian and exponentiate - currently deprecated:

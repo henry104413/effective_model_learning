@@ -6,7 +6,8 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
-
+from __future__ import annotations
+import typing
 import copy
 import numpy as np
 
@@ -14,6 +15,8 @@ import learning_model
 import params_handling
 import process_handling
 
+if typing.TYPE_CHECKING:
+    from qutip import Qobj
 
 
 # common types:
@@ -33,7 +36,7 @@ class LearningChain:
     !!! TO ADD:
     Outward facing methods to:
         1) modify chain hyperparameters after initialisation.
-        2) update them in existing parameter and process hadnlers 
+        2) update them in existing parameter and process handlers 
     
     Also potentially take parameter handler jump lengths out of outer dictionary.
     """
@@ -42,6 +45,8 @@ class LearningChain:
     class Defaults:
         
         initial = False # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
+        qubit_initial_state = False # instance of Qobj for single qubit 
+        # note: only makes sense if product state initially 
         
         max_chain_steps = 100
         chain_step_options = {
@@ -54,8 +59,7 @@ class LearningChain:
             'remove defect-defect coupling': 0.025
             }
         
-        temperature_proposal_shape = 0.01 # aka k
-        temperature_proposal_scale = 0.01 # aka theta
+        temperature_proposal = 0.00001 # or (0.05, 0.05) to sample gamma by default
         
         jump_length_rescaling_factor = 2 # for scaling up or down jump lengths of parameter handler
         
@@ -87,6 +91,8 @@ class LearningChain:
            ,(('sigmay', 'sigmay'),): (0.2, 0.5)
            ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
            }
+        
+        custom_function_on_dynamics_return = False # optional function acting on model's dynamics calculation return
     
     
     
@@ -124,6 +130,7 @@ class LearningChain:
                  *,
                  
                  initial: TYPE_MODEL | tuple | list = False,
+                 qubit_initial_state: Qobj = False,
                  # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
                  
                  # note: arguments below should have counterpart in class Defaults:
@@ -131,8 +138,7 @@ class LearningChain:
                  max_chain_steps: int = False,
                  chain_step_options: dict[str, float | int] = False,
                  
-                 temperature_proposal_shape: float = False, # aka k
-                 temperature_proposal_scale:float = False, # aka theta
+                 temperature_proposal: float|int | tuple[float|int] = False, # value or gamma (shape, scale)
                  
                  jump_length_rescaling_factor: float = False, 
                  
@@ -147,7 +153,10 @@ class LearningChain:
       
                  qubit2defect_couplings_library: dict[str, list | tuple] = False,
                  
-                 defect2defect_couplings_library: dict[str, list | tuple] = False
+                 defect2defect_couplings_library: dict[str, list | tuple] = False,
+                 
+                 custom_function_on_dynamics_return: callable = False
+                 # optional function acting on model's dynamics calculation return
                  ):
         
         
@@ -227,19 +236,18 @@ class LearningChain:
         Performs "steps" new proposals if specified, else instance-level value used. 
         """
         
-        # !!! ADD temperature sampling
-        self.MH_temperature = 0.00001
-        
         if not steps: steps = self.max_chain_steps 
         
         # acceptance tracking for this run:
         k = 0 # auxiliary iteration counter    
         self.run_acceptance_tracker = [] # all accept/reject events (bool)
-        self.run_windows_acceptance_log = [] # acceptance ratios for subsequent windows
         
         
         # carry out all chain steps:
         for i in range(steps):
+            
+            # set Metropolis-Hastings acceptance temperature:
+            self.MH_temperature = self.sample_T()
             
             # acceptance tally:
             if k >= self.acceptance_window: # ie, end of latest window reached
@@ -249,7 +257,7 @@ class LearningChain:
                     sum(self.run_acceptance_tracker[len(self.run_acceptance_tracker)-
                                                     self.acceptance_window : len(self.run_acceptance_tracker)])
                 acceptance_ratio = window_accepted_total/self.acceptance_window
-                self.run_windows_acceptance_log.append(acceptance_ratio)
+                self.chain_windows_acceptance_log.append(acceptance_ratio)
                 
                 # adaptation:
                 # note: assuming acceptance band is positive = maximum difference either way of ratio and target before adaptation
@@ -301,7 +309,7 @@ class LearningChain:
                 self.run_acceptance_tracker.append(False)
                 
          
-        self.chain_windows_acceptance_log.extend(self.run_windows_acceptance_log)   
+        #self.chain_windows_acceptance_log.extend(self.run_windows_acceptance_log)   
         return self.best
     
     
@@ -319,6 +327,7 @@ class LearningChain:
         initial_model = learning_model.LearningModel()
         initial_model.add_TLS(TLS_label = 'qubit',
                              is_qubit = True,
+                             initial_state = self.qubit_initial_state,
                              energy = qubit_energy,
                              couplings = {},
                              Ls = {}
@@ -403,7 +412,9 @@ class LearningChain:
             self.target_datasets =  [self.target_datasets]
             self.target_observables = [self.target_observables]
         
-        model_datasets = model.calculate_dynamics(evaluation_times = self.target_times, observable_ops = self.target_observables)
+        model_datasets = model.calculate_dynamics(evaluation_times = self.target_times, 
+                                                  observable_ops = self.target_observables,
+                                                  custom_function_on_return = self.custom_function_on_dynamics_return)
           
         # add up mean-squared-error over different observables, assuming equal weighting:
         # note: now datasets should all be lists of numpy arrays
@@ -582,3 +593,19 @@ class LearningChain:
                                               defect2defect_couplings_library = self.defect2defect_couplings_library,
                                               Ls_library = self.Ls_library)
         
+        
+        
+    def sample_T(self):
+        """
+        Returns temperature for Metropolis-Hastings acceptance.
+        Does not directly modify instance variable.
+        
+        Based on instance level temperature_proposal:            
+        If number, returns this value.
+        If tuple of numbers (shape, scale), returns value sampled from such gamma distribution.
+        """
+        
+        match self.temperature_proposal:
+            case int() | float(): return self.temperature_proposal
+            case (int()|float(), int()|float()): return np.random.gamma(*self.temperature_proposal)
+            case _: raise RuntimeError('Metropolis-Hastings temperature proposal failed')

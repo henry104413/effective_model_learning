@@ -15,71 +15,49 @@ import output
 
 
 
-#%% generate simulated target data:
-
-import definitions
-qubit_initial_state = definitions.ops['sigmax']
+#%% import target data:
     
-# set up ground truth model:  
-GT = basic_model.BasicModel()
-GT.add_TLS(TLS_label = 'qubit',
-           is_qubit = True,
-           initial_state = qubit_initial_state,
-           energy = 5,
-           couplings = {
-               
-                        },
-           Ls = {
-                 'sigmaz' : 0.0001,
-                 'sigmax' : 0.003
-                 
-                 }
-           )
-GT.add_TLS(is_qubit = False,
-            TLS_label = 'defect1',
-            energy = 4,
-            couplings = {'qubit': [(0.08, [('sigmax', 'sigmax')])]
-                        },
-            Ls = {
-                  #'sigmaz' : 0.005,
-                  #'sigmay' : 0.002
-                  }
-            )
-# GT.add_TLS(is_qubit = False,
-#             energy = 4.5,
-#             couplings = {'defect1': [(0.6, [('sigmap', 'sigmam'), ('sigmam', 'sigmap')]), 
-#                                      (0.7, [('sigmax', 'sigmax')])]
-#                         },
-#             Ls = {
-#                   'sigmaz' : 0.05,
-#                   'sigmay' : 0.02
-#                   }
-#             )
+# import data from CSV file with possible annotations skipped
+# assuming subsequent pairs of columns are different datasets 
+# and numberical entries on single row are x, y values
 
-GT.build_operators()
+# choose data:
+datafile = 'Witnessing_Fig4a.csv'
+dataset_no = 0 # starting from 0
 
-# simulate measurements:
-# note: now using 1st qubit excited population at times ts
-ts = np.logspace(0, 3, int(10))
-# diffs = [ts[i] - ts[i-1] for i in range(len(ts)) if i>=1]
-# #print(ts)
-# print(diffs)
-# for i in range(len(ts)):
-#     ts[i] = ts[i] + (i/len(ts))**2
-# #print(ts)
-# diffs = [ts[i] - ts[i-1] for i in range(len(ts)) if i>=1]
-# print(diffs)
-#%%
+# extract x and y values@
+contents = np.genfromtxt('Witnessing_Fig4a.csv',delimiter=',')#,dtype=float) 
+dataset = contents[:,[2*dataset_no, 2*dataset_no + 1]]
+xs = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 0]     
+ys = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 1]   
+
+# sort by x:
+order = xs.argsort()
+xs = xs[order]
+ys = ys[order]
+
+# note: integrator errors - thought cause was unevenly spaced data likely just unsorted
+# apparently works if sorted descending ascending or descending, but unsorted breaks!
+
+# times for model evaluation:
+ts = xs
+
+# measured data feed:
+measurement_datasets = [ys]
 measurement_observables = ['sigmax']
-measurement_datasets = GT.calculate_dynamics(xs, observable_ops = measurement_observables)
-
-import matplotlib.pyplot as plt
-plt.figure()
-plt.plot(xs, measurement_datasets[0])
 
 
 
 #%% perform learning:
+    
+# if qubit initial state required:
+import definitions
+qubit_initial_state = definitions.ops['sigmax']
+
+def custom_func(arg):
+    # print('taking abs')
+    if isinstance(arg, list): return [abs(x) for x in arg]
+    else: return abs(arg)
 
 
 # instance of learning (quest for best model):
@@ -88,8 +66,9 @@ quest = learning_chain.LearningChain(target_times = ts,
                       target_observables = measurement_observables,
                       
                       initial = (5, 2), # (qubit energy, number of defects)
+                      qubit_initial_state = qubit_initial_state,
                       
-                      max_chain_steps = 1000,
+                      max_chain_steps = 5000,
                       chain_step_options = {
                           'tweak all parameters': 0.5,
                           'add L': 0.05,
@@ -100,7 +79,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                           'remove defect-defect coupling': 0.025
                           },
                       
-                      temperature_proposal = 0.0001, # value or (shape, scale) to sample from gamma
+                      temperature_proposal = 0.0001, # either value or (shape, scale) of gamma to sample
                       
                       jump_length_rescaling_factor = 1.05, # for scaling up or down jump lengths of parameter handler
                       
@@ -109,9 +88,9 @@ quest = learning_chain.LearningChain(target_times = ts,
                       acceptance_band = 0.2,
                       
                       params_handler_hyperparams = { 
-                          'initial_jump_lengths': {'couplings' : 0.01,
-                                                   'energy' : 0.1,
-                                                   'Ls' : 0.001
+                          'initial_jump_lengths': {'couplings' : 0.05,
+                                                   'energy' : 0.5,
+                                                   'Ls' : 0.005
                                                    },
                           },
                       
@@ -122,28 +101,32 @@ quest = learning_chain.LearningChain(target_times = ts,
                          },
                    
                       qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         (('sigmax', 'sigmax'),): (0.2, 0.5)
-                        ,(('sigmay', 'sigmay'),): (0.2, 0.5)
-                        ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
+                         (('sigmax', 'sigmax'),): (0.3, 1)
+                        ,(('sigmay', 'sigmay'),): (0.3, 1)
+                        ,(('sigmaz', 'sigmaz'),): (0.3, 1)
                          },
                       
                       defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         (('sigmax', 'sigmax'),): (0.2, 0.5)
-                        ,(('sigmay', 'sigmay'),): (0.2, 0.5)
-                        ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
-                        }
+                         (('sigmax', 'sigmax'),): (0.3, 1)
+                        ,(('sigmay', 'sigmay'),): (0.3, 1)
+                        ,(('sigmaz', 'sigmaz'),): (0.3, 1)
+                        },
+                      
+                      custom_function_on_dynamics_return = False#custom_func
                       )
 
 
 #%%
-best = quest.run(3000)
+best = quest.run(5000)
 
 #%%
 best = quest.best
 
 costs = quest.explored_loss
 acceptance_ratios = quest.chain_windows_acceptance_log
-best_datasets = best.calculate_dynamics(ts, observable_ops = measurement_observables)
+evaluation_ts = np.linspace(ts[0], ts[-1], max(10*len(ts), int(1000)))
+best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables,
+                                        custom_function_on_return = custom_func)
 
 
 #%% chain run outputs:
@@ -153,24 +136,26 @@ class Toggles():
     comparison = True # plot comparison of dynamics
     loss = True # plot cost function progression
     acceptance = True # plot acceptance ratios over subsequenct windows
-    graphs = True # plot model graphs with corresponding labels
+    graphs = False # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
     text = True # save selected models as text
     hyperparams = True # save chain hyperparameters as json
 
 # unique name (date and time stamp):
 timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
+# maybe add additional check to in unlikely case parallel run ends up with same name...
 
 # create outputs:
 output.Output(toggles = Toggles, filename = timestamp,
-       dynamics_ts = ts,
+       dynamics_ts = [ts, evaluation_ts],
        dynamics_datasets = [measurement_datasets, best_datasets],
        dynamics_datasets_labels = ['measured', 'learned'],
+       dynamics_formatting = ['b+', 'r:'],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        acceptance = acceptance_ratios,
-       models_to_save = [GT, best],
-       model_names = ['GT', 'best'],
+       models_to_save = [best],
+       model_names = ['best'],
        chain_hyperparams = quest.get_init_hyperparams()
        )
 

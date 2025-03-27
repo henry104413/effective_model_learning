@@ -28,7 +28,10 @@ class TwoLevelSystem:
     
     NB:
     Currently coupling information only stored on one partner.
-    Ensures no duplicate entries in Hamiltonians with current model methods implementation.         
+    Ensures no duplicate entries in Hamiltonians with current model methods implementation.     
+
+    NB2:
+    Initial state specification for individual TLS only possible if starting in product state.
       
     """
     
@@ -39,7 +42,8 @@ class TwoLevelSystem:
                  couplings: dict[typing.Self, list[tuple[float|int, list[tuple[str, str]]]]] = {},
                  # {partner: [(rate, [(op_on_self, op_on_partner)])]}
                  # inner list: all two-site operators in it share the same rate
-                 Ls: dict[str, int|float] = {}
+                 Ls: dict[str, int|float] = {},
+                 initial_state = False
                  ):
         
         
@@ -49,6 +53,7 @@ class TwoLevelSystem:
         self.energy = energy
         self.couplings = couplings
         self.Ls = Ls
+        self.initial_state = initial_state
                  
                  
                  
