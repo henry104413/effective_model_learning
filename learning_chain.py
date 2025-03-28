@@ -10,6 +10,7 @@ from __future__ import annotations
 import typing
 import copy
 import numpy as np
+import time
 
 import learning_model
 import params_handling
@@ -69,7 +70,7 @@ class LearningChain:
         
         params_handler_hyperparams = {
             'initial_jump_lengths': {'couplings' : 0.001,
-                                     'energy' : 0.01,
+                                     'energies' : 0.01,
                                      'Ls' : 0.00001
                                      }
             }
@@ -92,7 +93,15 @@ class LearningChain:
            ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
            }
         
+        params_thresholds = { # minimum values for parameters - if below then process dropped
+            # !!! does this break reversibility??                
+            'Ls':  1e-7,
+            'couplings': 1e-6
+            }
+        
         custom_function_on_dynamics_return = False # optional function acting on model's dynamics calculation return
+        
+        iterations_till_progress_update = False # number of iterations before iteration number and time elapsed printed
     
     
     
@@ -155,8 +164,14 @@ class LearningChain:
                  
                  defect2defect_couplings_library: dict[str, list | tuple] = False,
                  
-                 custom_function_on_dynamics_return: callable = False
+                 params_thresholds: dict[str, float] = False,
+                 # minimum values of parameters below which corresponding process is dropped
+                 
+                 custom_function_on_dynamics_return: callable = False,
                  # optional function acting on model's dynamics calculation return
+                 
+                 iterations_till_progress_update: int = False
+                 # number of iterations before iteration number and time elapsed printed
                  ):
         
         
@@ -178,7 +193,8 @@ class LearningChain:
             else:
                 setattr(self, key, val)
             if key not in ['self', 'initial',
-                           'target_times', 'target_datasets', 'target_observables']:
+                           'target_times', 'target_datasets', 'target_observables',
+                           'iterations_till_progress_update']:
                 self.init_hyperparams[key] = val
         
         # initial model check or creation if specified only by defects number and qubit energy:
@@ -216,15 +232,21 @@ class LearningChain:
         self.params_handler = None 
         self.process_handler = None
         
-        # chain outcome containers:
+        # chain progression containers:
         self.explored_models = [] # repository of explored models - currently not saved
         self.explored_loss = []
         self.current = copy.deepcopy(self.initial)
-        self.best = copy.deepcopy(self.initial)
-        self.current_loss = self.total_dev(self.current)
-        self.best_loss = self.current_loss
+        self.best = copy.deepcopy(self.current)
         self.chain_windows_acceptance_log = []
         
+        # evaluate initial setup:
+        # (immediately filtering parameters below instance-level thresholds)
+        self.initialise_process_handler()
+        self.process_handler.filter_params(self.current, self.params_thresholds)
+        self.current_loss = self.total_dev(self.current)
+        self.best_loss = self.current_loss
+        self.explored_loss.append(self.current_loss)
+    
     
     
     def run(self, steps:int = False) -> learning_model.LearningModel:
@@ -242,6 +264,9 @@ class LearningChain:
         k = 0 # auxiliary iteration counter    
         self.run_acceptance_tracker = [] # all accept/reject events (bool)
         
+        # progress tracking (also used in redirected output):
+        time_last = time.time() # elapsed time (s)
+        k2 = 0
         
         # carry out all chain steps:
         for i in range(steps):
@@ -251,7 +276,6 @@ class LearningChain:
             
             # acceptance tally:
             if k >= self.acceptance_window: # ie, end of latest window reached
-                print(i) # optional "progress bar"
                 k = 0
                 window_accepted_total = \
                     sum(self.run_acceptance_tracker[len(self.run_acceptance_tracker)-
@@ -265,8 +289,17 @@ class LearningChain:
                     self.cool_down()
                 elif acceptance_ratio - self.acceptance_target < -self.acceptance_band: # ie. accepting too little -> heat up
                     self.heat_up()
-                    
-            k += 1                        
+            k += 1
+
+            # progress timing:
+            if bool(self.iterations_till_progress_update):
+                if k2 >= self.iterations_till_progress_update:
+                    k2 = 0
+                    print('\n\nIteration:\n' + str(i) + '\nElapsed (s):\n' + 
+                          str(np.round((new_time := time.time()) - time_last,2)), flush = True)
+                    time_last = new_time
+                k2 += 1
+                
     
             # new proposal container:
             proposal = copy.deepcopy(self.current)
@@ -277,6 +310,10 @@ class LearningChain:
             
             # modify proposal accordingly and save number of possible modifications of chosen type:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
+            
+            # filter parameters below instance-level thresholds:
+            # note: could go into step method; also might break reversibility?
+            self.process_handler.filter_params(proposal, self.params_thresholds)
             
             # if no modifications of chosen type possible, skip straight to next proposal iteration:
             # note: this uses up an iteration with no real new proposal and no tracker record

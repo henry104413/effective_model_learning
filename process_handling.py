@@ -516,4 +516,46 @@ class ProcessHandler:
         return temp
         
         
-                                
+        
+    def filter_params(self,
+                      model: TYPE_MODEL,
+                      thresholds: dict[str, float] 
+                      ) -> None:
+        """
+        Combs through argument model and removes each L or coupling
+        whose parameter (rate) is below threshold set for that process class.
+        
+        Modifies argument model, also returns it.
+        
+        {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+        """
+        # go over all TLSs in model:
+        for TLS in model.TLSs:
+            
+            # check all its Ls and remove if rate below threshold:
+            Ls_to_remove = []
+            for L in TLS.Ls:
+                print(TLS.Ls[L])
+                if abs(TLS.Ls[L]) < thresholds['Ls']:
+                    #TLS.Ls.pop(L)
+                    Ls_to_remove.append(L)
+                    # note: can't immediately pop entry here as iterator requires fixed size dictionary
+            all(TLS.Ls.pop(L) for L in Ls_to_remove)
+            
+            # go over all its partners:
+            partners_to_remove = []
+            for partner in TLS.couplings:
+                # check each coupling and remove if strength below threshold:
+                couplings_to_remove = []
+                for i, coupling in enumerate(TLS.couplings[partner]): # latter is list of couplings tuples to this partner
+                    if abs(coupling[0]) < thresholds['couplings']:
+                        couplings_to_remove.append(i)
+                for i in couplings_to_remove: TLS.couplings[partner].pop(i)        
+                # in case no more couplings left, remove partner from couplings dictionary:
+                if not TLS.couplings[partner]: # ie. list now empty
+                    partners_to_remove.append(partner)        
+            for partner in partners_to_remove: TLS.couplings.pop(partner)
+                    
+        model.build_operators()
+        return model
+            

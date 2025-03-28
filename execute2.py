@@ -55,7 +55,7 @@ import definitions
 qubit_initial_state = definitions.ops['sigmax']
 
 def custom_func(arg):
-    # print('taking abs')
+    print('taking abs')
     if isinstance(arg, list): return [abs(x) for x in arg]
     else: return abs(arg)
 
@@ -68,15 +68,15 @@ quest = learning_chain.LearningChain(target_times = ts,
                       initial = (5, 2), # (qubit energy, number of defects)
                       qubit_initial_state = qubit_initial_state,
                       
-                      max_chain_steps = 5000,
+                      max_chain_steps = 2000,
                       chain_step_options = {
-                          'tweak all parameters': 0.5,
+                          'tweak all parameters': 0.1,
                           'add L': 0.05,
                           'remove L': 0.05,
                           'add qubit-defect coupling': 0.05, 
                           'remove qubit-defect coupling': 0.05,
-                          'add defect-defect coupling': 0.025, 
-                          'remove defect-defect coupling': 0.025
+                          'add defect-defect coupling': 0.05, 
+                          'remove defect-defect coupling': 0.05
                           },
                       
                       temperature_proposal = 0.0001, # either value or (shape, scale) of gamma to sample
@@ -89,7 +89,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       params_handler_hyperparams = { 
                           'initial_jump_lengths': {'couplings' : 0.05,
-                                                   'energy' : 0.5,
+                                                   'energies' : 0.5,
                                                    'Ls' : 0.005
                                                    },
                           },
@@ -112,12 +112,20 @@ quest = learning_chain.LearningChain(target_times = ts,
                         ,(('sigmaz', 'sigmaz'),): (0.3, 1)
                         },
                       
-                      custom_function_on_dynamics_return = False#custom_func
+                      params_thresholds = { # minimum values for parameters - if below then process dropped
+                          # !!! does this break reversibility??                
+                          'Ls':  1e-7,
+                          'couplings': 1e-6
+                          },
+                      
+                      custom_function_on_dynamics_return = False,#custom_func
+                      
+                      iterations_till_progress_update = 20
                       )
 
 
 #%%
-best = quest.run(5000)
+best = quest.run(20)
 
 #%%
 best = quest.best
@@ -126,7 +134,7 @@ costs = quest.explored_loss
 acceptance_ratios = quest.chain_windows_acceptance_log
 evaluation_ts = np.linspace(ts[0], ts[-1], max(10*len(ts), int(1000)))
 best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables,
-                                        custom_function_on_return = custom_func)
+                                        custom_function_on_return = False)
 
 
 #%% chain run outputs:
@@ -150,7 +158,7 @@ output.Output(toggles = Toggles, filename = timestamp,
        dynamics_ts = [ts, evaluation_ts],
        dynamics_datasets = [measurement_datasets, best_datasets],
        dynamics_datasets_labels = ['measured', 'learned'],
-       dynamics_formatting = ['b+', 'r:'],
+       dynamics_formatting = ['b+', 'r-'],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        acceptance = acceptance_ratios,
