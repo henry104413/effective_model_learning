@@ -54,10 +54,15 @@ measurement_observables = ['sigmax']
 import definitions
 qubit_initial_state = definitions.ops['sigmax']
 
+# for trying with absolute value of observable:
 def custom_func(arg):
     print('taking abs')
     if isinstance(arg, list): return [abs(x) for x in arg]
     else: return abs(arg)
+    
+# shorthands for hyperparams definitions:
+couplings_shape_scale = (0.8, 1)
+Ls_shape_scale = (0.2, 0.5)
 
 
 # instance of learning (quest for best model):
@@ -70,7 +75,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       max_chain_steps = 2000,
                       chain_step_options = {
-                          'tweak all parameters': 0.1,
+                          'tweak all parameters': 0.3,
                           'add L': 0.05,
                           'remove L': 0.05,
                           'add qubit-defect coupling': 0.05, 
@@ -81,7 +86,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       temperature_proposal = 0.0001, # either value or (shape, scale) of gamma to sample
                       
-                      jump_length_rescaling_factor = 1.05, # for scaling up or down jump lengths of parameter handler
+                      jump_length_rescaling_factor = 1.0, # for scaling up or down jump lengths of parameter handler
                       
                       acceptance_window = 10,
                       acceptance_target = 0.4,
@@ -95,21 +100,21 @@ quest = learning_chain.LearningChain(target_times = ts,
                           },
                       
                       Ls_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         'sigmax': (0.01, 0.1)
-                         ,'sigmay': (0.01, 0.1)
-                         ,'sigmaz': (0.01, 0.1)
+                         'sigmax': Ls_shape_scale#(0.01, 0.1)
+                         ,'sigmay': Ls_shape_scale#(0.01, 0.1)
+                         ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
                          },
                    
                       qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         (('sigmax', 'sigmax'),): (0.3, 1)
-                        ,(('sigmay', 'sigmay'),): (0.3, 1)
-                        ,(('sigmaz', 'sigmaz'),): (0.3, 1)
+                         (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+                        ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+                        ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
                          },
                       
                       defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         (('sigmax', 'sigmax'),): (0.3, 1)
-                        ,(('sigmay', 'sigmay'),): (0.3, 1)
-                        ,(('sigmaz', 'sigmaz'),): (0.3, 1)
+                         (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+                        ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+                        ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
                         },
                       
                       params_thresholds = { # minimum values for parameters - if below then process dropped
@@ -125,7 +130,7 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 
 #%%
-best = quest.run(20)
+best = quest.run(25)
 
 #%%
 best = quest.best

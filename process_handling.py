@@ -535,9 +535,7 @@ class ProcessHandler:
             # check all its Ls and remove if rate below threshold:
             Ls_to_remove = []
             for L in TLS.Ls:
-                print(TLS.Ls[L])
                 if abs(TLS.Ls[L]) < thresholds['Ls']:
-                    #TLS.Ls.pop(L)
                     Ls_to_remove.append(L)
                     # note: can't immediately pop entry here as iterator requires fixed size dictionary
             all(TLS.Ls.pop(L) for L in Ls_to_remove)
