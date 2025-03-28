@@ -255,7 +255,11 @@ class LearningChain:
         Carries out the chain using instance-level hyperparameters;
         populates instance-level progression trackers, returns best model found.
         
-        Performs "steps" new proposals if specified, else instance-level value used. 
+        Performs "steps" new proposals if specified, else instance-level value used.
+        
+        Note: 
+        If run multiple times, uses current model as starting point (not reinitialised).
+        Keeps appending to instance level trackers.
         """
         
         if not steps: steps = self.max_chain_steps 

@@ -40,7 +40,7 @@ ys = ys[order]
 # apparently works if sorted descending ascending or descending, but unsorted breaks!
 
 # times for model evaluation:
-ts = xs
+ts = xs/1000
 
 # measured data feed:
 measurement_datasets = [ys]
@@ -70,7 +70,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       target_datasets = measurement_datasets,
                       target_observables = measurement_observables,
                       
-                      initial = (5, 2), # (qubit energy, number of defects)
+                      initial = (1, 2), # (qubit energy, number of defects)
                       qubit_initial_state = qubit_initial_state,
                       
                       max_chain_steps = 2000,
@@ -128,9 +128,13 @@ quest = learning_chain.LearningChain(target_times = ts,
                       iterations_till_progress_update = 20
                       )
 
+import matplotlib.pyplot as plt
+plt.figure()
+plt.plot(new_ts := np.linspace(min(ts), max(ts)/1, 1000),
+          quest.initial.calculate_dynamics(new_ts, ['sigmax'])[0])
 
 #%%
-best = quest.run(25)
+best = quest.run(1000)
 
 #%%
 best = quest.best

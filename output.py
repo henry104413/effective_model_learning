@@ -90,7 +90,7 @@ class Output:
             for i, observable in enumerate(observable_labels):
                 plt.figure()
                 plt.ylabel(observable)
-                plt.xlabel('time (fs)')
+                plt.xlabel('time (arbitrary)')
                 
                 # plot all the datasets in the comparison for this observable:
                 # assumed times may differ for datasets but same across each dataset for all observables
