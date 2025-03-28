@@ -1,6 +1,6 @@
 """
 
-Global definitions used throughout the Effective Model Learning codebase.
+Global definitions and shorthands used throughout the Effective Model Learning codebase.
 
 @author: henry
 
@@ -12,7 +12,7 @@ import numpy as np
 
 
 
-#%% global definitions:
+#%% global definitions and shorthands:
 
 
 
@@ -25,25 +25,20 @@ class Constants():
     t_to_sec = 4.136e-15 # multiply by time values before plotting to get the value in seconds
 
 
-
-
-# now how about something really clever...
-# because NOW I should be able to start tensor products with just temp = 1
-
-def T(arg1, arg2):
+def T(arg1: q.Qobj, arg2: q.Qobj) -> q.Qobj:
+    """
+    Returns tensor product of arguments as computed by qutip.
     
+    Also works when one factor being a number, just returning other factor.
+    Note: This is useful as starting point for loops gradually constructing products.
+    """
     if type(arg1) == type(q.Qobj()):
-        
         return q.tensor(arg1, arg2)
-    
     elif type(arg1) in [int, float]: # usually passed as 1
-    
         return arg2
 
 
-
 # 2-D operators definition using dictionary keys:
-
 ops = {#'sigma z' : q.sigmaz(),
        'sigmaz' : q.sigmaz(),
        #sigma x' : q.sigmax(),
@@ -63,9 +58,7 @@ ops = {#'sigma z' : q.sigmaz(),
        }
 
 
-
 # operator parameter labels for plotting:
-    
 ops_labels = {'defects energies' : 'energy (eV)',
               'defects couplings' : 'coupling (eV)',
               'sigma z' : r'$\sigma_z$' + ' rate (eV)',
@@ -76,47 +69,34 @@ ops_labels = {'defects energies' : 'energy (eV)',
               }
 
 
-
+# currently unused: 
+# rate bounds:
 rates_bounds = {'sigmaz' : (0.001, 0.1),
                 'sigmax' : (0.001, 0.1),
                 'sigmay' : (0.001, 0.1),
                 'sigmam' : (0.001, 0.1),
                 'sigmap' : (0.001, 0.1),
                 }
-
-
 rates_arrays = {}
-
 for key in rates_arrays:
-    
     rates_arrays[key] = np.logspace(*rates_bounds[key], 10)
 
-
     
-
-# calculates mean squared error of two arrays:
-# arguments: (numpy array, numpy array)
-
-
+# currently unused:
 def MSE(A, B):
-    
+    """
+    Returns mean squared error of two argument numpy arrays.
+    """
     
     # check type: (must be numpy arrays to use operators below)
-    
     if type(A) != type(np.array([])) or type(B) != type(np.array([])):
-    
         raise RuntimeError('error calculating MSE: arguments must be numpy arrays!\n')
-        
     
     # check matching length:
-    
     if len(A) != len(B):
-        
         raise RuntimeError('error calculating MSE: arguments must be same length!\n')
         
-        
     # calculate mean squared error:    
-    
     return np.sum(np.square(np.abs(A-B)))/len(A)
 
 

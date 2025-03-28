@@ -70,7 +70,7 @@ class LearningChain:
         
         params_handler_hyperparams = {
             'initial_jump_lengths': {'couplings' : 0.001,
-                                     'energy' : 0.01,
+                                     'energies' : 0.01,
                                      'Ls' : 0.00001
                                      }
             }
@@ -93,10 +93,10 @@ class LearningChain:
            ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
            }
         
-        cutoff_thresholds = { # minimum values for parameters - if below then process dropped
+        params_thresholds = { # minimum values for parameters - if below then process dropped
             # !!! does this break reversibility??                
             'Ls':  1e-7,
-            'coupling': 1e-6
+            'couplings': 1e-6
             }
         
         custom_function_on_dynamics_return = False # optional function acting on model's dynamics calculation return
@@ -164,7 +164,7 @@ class LearningChain:
                  
                  defect2defect_couplings_library: dict[str, list | tuple] = False,
                  
-                 cutoff_thresholds: dict[str, float] = False,
+                 params_thresholds: dict[str, float] = False,
                  # minimum values of parameters below which corresponding process is dropped
                  
                  custom_function_on_dynamics_return: callable = False,
@@ -232,15 +232,21 @@ class LearningChain:
         self.params_handler = None 
         self.process_handler = None
         
-        # chain outcome containers:
+        # chain progression containers:
         self.explored_models = [] # repository of explored models - currently not saved
         self.explored_loss = []
         self.current = copy.deepcopy(self.initial)
-        self.best = copy.deepcopy(self.initial)
-        self.current_loss = self.total_dev(self.current)
-        self.best_loss = self.current_loss
+        self.best = copy.deepcopy(self.current)
         self.chain_windows_acceptance_log = []
         
+        # evaluate initial setup:
+        # (immediately filtering parameters below instance-level thresholds)
+        self.initialise_process_handler()
+        self.process_handler.filter_params(self.current, self.params_thresholds)
+        self.current_loss = self.total_dev(self.current)
+        self.best_loss = self.current_loss
+        self.explored_loss.append(self.current_loss)
+    
     
     
     def run(self, steps:int = False) -> learning_model.LearningModel:
@@ -304,6 +310,10 @@ class LearningChain:
             
             # modify proposal accordingly and save number of possible modifications of chosen type:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
+            
+            # filter parameters below instance-level thresholds:
+            # note: could go into step method; also might break reversibility?
+            self.process_handler.filter_params(proposal, self.params_thresholds)
             
             # if no modifications of chosen type possible, skip straight to next proposal iteration:
             # note: this uses up an iteration with no real new proposal and no tracker record

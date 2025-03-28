@@ -60,7 +60,7 @@ class ParamsHandler:
         
         # default values (keys also determine instance attributes to be set):
         default_jump_lengths = {'couplings' : 0.001,
-                                'energy' : 0.01,
+                                'energies' : 0.01,
                                 'Ls' : 0.00001
                                 }   
         default_optimisation_config = {'max_optimisation_steps': int(1e3), 

@@ -70,13 +70,13 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       max_chain_steps = 2000,
                       chain_step_options = {
-                          'tweak all parameters': 0.5,
+                          'tweak all parameters': 0.1,
                           'add L': 0.05,
                           'remove L': 0.05,
                           'add qubit-defect coupling': 0.05, 
                           'remove qubit-defect coupling': 0.05,
-                          'add defect-defect coupling': 0.025, 
-                          'remove defect-defect coupling': 0.025
+                          'add defect-defect coupling': 0.05, 
+                          'remove defect-defect coupling': 0.05
                           },
                       
                       temperature_proposal = 0.0001, # either value or (shape, scale) of gamma to sample
@@ -89,7 +89,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       params_handler_hyperparams = { 
                           'initial_jump_lengths': {'couplings' : 0.05,
-                                                   'energy' : 0.5,
+                                                   'energies' : 0.5,
                                                    'Ls' : 0.005
                                                    },
                           },
@@ -112,6 +112,12 @@ quest = learning_chain.LearningChain(target_times = ts,
                         ,(('sigmaz', 'sigmaz'),): (0.3, 1)
                         },
                       
+                      params_thresholds = { # minimum values for parameters - if below then process dropped
+                          # !!! does this break reversibility??                
+                          'Ls':  1e-7,
+                          'couplings': 1e-6
+                          },
+                      
                       custom_function_on_dynamics_return = False,#custom_func
                       
                       iterations_till_progress_update = 20
@@ -119,7 +125,7 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 
 #%%
-best = quest.run(2000)
+best = quest.run(20)
 
 #%%
 best = quest.best

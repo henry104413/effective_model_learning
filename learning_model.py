@@ -65,7 +65,7 @@ class LearningModel(basic_model.BasicModel):
                     
             # modify its energy if not qubit:
             if not TLS.is_qubit:
-                TLS.energy += np.random.normal(0, self.jump_lengths['energy'])
+                TLS.energy += np.random.normal(0, self.jump_lengths['energies'])
             
             # modify all its couplings to each partner:
             # {partner: [(rate, [(op_on_self, op_on_partner)])]}

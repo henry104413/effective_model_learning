@@ -533,19 +533,29 @@ class ProcessHandler:
         for TLS in model.TLSs:
             
             # check all its Ls and remove if rate below threshold:
+            Ls_to_remove = []
             for L in TLS.Ls:
+                print(TLS.Ls[L])
                 if abs(TLS.Ls[L]) < thresholds['Ls']:
-                    TLS.Ls.pop(L)
-        
-            # go over all its partners
+                    #TLS.Ls.pop(L)
+                    Ls_to_remove.append(L)
+                    # note: can't immediately pop entry here as iterator requires fixed size dictionary
+            all(TLS.Ls.pop(L) for L in Ls_to_remove)
+            
+            # go over all its partners:
+            partners_to_remove = []
             for partner in TLS.couplings:
                 # check each coupling and remove if strength below threshold:
-                for i, coupling in TLS.couplings[partner]: # element of list of couplings to this parthers
+                couplings_to_remove = []
+                for i, coupling in enumerate(TLS.couplings[partner]): # latter is list of couplings tuples to this partner
                     if abs(coupling[0]) < thresholds['couplings']:
-                        TLS.couplings[partner].pop(i)
+                        couplings_to_remove.append(i)
+                for i in couplings_to_remove: TLS.couplings[partner].pop(i)        
                 # in case no more couplings left, remove partner from couplings dictionary:
-                if not TLS.couplings[partner]:
-                    TLS.couplings.pop(partner)
+                if not TLS.couplings[partner]: # ie. list now empty
+                    partners_to_remove.append(partner)        
+            for partner in partners_to_remove: TLS.couplings.pop(partner)
                     
-                    TEST THIS
+        model.build_operators()
+        return model
             
