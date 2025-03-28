@@ -128,7 +128,7 @@ costs = quest.explored_loss
 acceptance_ratios = quest.chain_windows_acceptance_log
 evaluation_ts = np.linspace(ts[0], ts[-1], max(10*len(ts), int(1000)))
 best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables,
-                                        custom_function_on_return = custom_func)
+                                        custom_function_on_return = False)
 
 
 #%% chain run outputs:

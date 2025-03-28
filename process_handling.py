@@ -516,4 +516,36 @@ class ProcessHandler:
         return temp
         
         
-                                
+        
+    def filter_params(self,
+                      model: TYPE_MODEL,
+                      thresholds: dict[str, float] 
+                      ) -> None:
+        """
+        Combs through argument model and removes each L or coupling
+        whose parameter (rate) is below threshold set for that process class.
+        
+        Modifies argument model, also returns it.
+        
+        {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+        """
+        # go over all TLSs in model:
+        for TLS in model.TLSs:
+            
+            # check all its Ls and remove if rate below threshold:
+            for L in TLS.Ls:
+                if abs(TLS.Ls[L]) < thresholds['Ls']:
+                    TLS.Ls.pop(L)
+        
+            # go over all its partners
+            for partner in TLS.couplings:
+                # check each coupling and remove if strength below threshold:
+                for i, coupling in TLS.couplings[partner]: # element of list of couplings to this parthers
+                    if abs(coupling[0]) < thresholds['couplings']:
+                        TLS.couplings[partner].pop(i)
+                # in case no more couplings left, remove partner from couplings dictionary:
+                if not TLS.couplings[partner]:
+                    TLS.couplings.pop(partner)
+                    
+                    TEST THIS
+            

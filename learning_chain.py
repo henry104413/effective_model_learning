@@ -93,6 +93,12 @@ class LearningChain:
            ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
            }
         
+        cutoff_thresholds = { # minimum values for parameters - if below then process dropped
+            # !!! does this break reversibility??                
+            'Ls':  1e-7,
+            'coupling': 1e-6
+            }
+        
         custom_function_on_dynamics_return = False # optional function acting on model's dynamics calculation return
         
         iterations_till_progress_update = False # number of iterations before iteration number and time elapsed printed
@@ -157,6 +163,9 @@ class LearningChain:
                  qubit2defect_couplings_library: dict[str, list | tuple] = False,
                  
                  defect2defect_couplings_library: dict[str, list | tuple] = False,
+                 
+                 cutoff_thresholds: dict[str, float] = False,
+                 # minimum values of parameters below which corresponding process is dropped
                  
                  custom_function_on_dynamics_return: callable = False,
                  # optional function acting on model's dynamics calculation return
