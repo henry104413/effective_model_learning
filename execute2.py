@@ -22,11 +22,11 @@ import output
 # and numberical entries on single row are x, y values
 
 # choose data:
-datafile = 'Witnessing_Fig4a.csv'
+datafile = 'Witnessing_Fig4b.csv'
 dataset_no = 0 # starting from 0
 
 # extract x and y values@
-contents = np.genfromtxt('Witnessing_Fig4a.csv',delimiter=',')#,dtype=float) 
+contents = np.genfromtxt('Witnessing_Fig4b.csv',delimiter=',')#,dtype=float) 
 dataset = contents[:,[2*dataset_no, 2*dataset_no + 1]]
 xs = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 0]     
 ys = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 1]   
@@ -70,7 +70,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       target_datasets = measurement_datasets,
                       target_observables = measurement_observables,
                       
-                      initial = (1, 2), # (qubit energy, number of defects)
+                      initial = (1, 5), # (qubit energy, number of defects)
                       qubit_initial_state = qubit_initial_state,
                       
                       max_chain_steps = 2000,
@@ -128,13 +128,13 @@ quest = learning_chain.LearningChain(target_times = ts,
                       iterations_till_progress_update = 20
                       )
 
-import matplotlib.pyplot as plt
-plt.figure()
-plt.plot(new_ts := np.linspace(min(ts), max(ts)/1, 1000),
-          quest.initial.calculate_dynamics(new_ts, ['sigmax'])[0])
+# import matplotlib.pyplot as plt
+# plt.figure()
+# plt.plot(new_ts := np.linspace(min(ts), max(ts)/1, 1000),
+#           quest.initial.calculate_dynamics(new_ts, ['sigmax'])[0])
 
 #%%
-best = quest.run(1000)
+best = quest.run(2000)
 
 #%%
 best = quest.best
