@@ -350,7 +350,9 @@ class LearningChain:
                 self.run_acceptance_tracker.append(False)
                 
          
-        #self.chain_windows_acceptance_log.extend(self.run_windows_acceptance_log)   
+        if bool(self.iterations_till_progress_update):
+            print('\n\nChain run completed.\n'
+                  +'_________________________\n\n', flush = True)
         return self.best
     
     

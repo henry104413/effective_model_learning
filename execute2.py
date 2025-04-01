@@ -70,7 +70,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       target_datasets = measurement_datasets,
                       target_observables = measurement_observables,
                       
-                      initial = (1, 5), # (qubit energy, number of defects)
+                      initial = (1, 2), # (qubit energy, number of defects)
                       qubit_initial_state = qubit_initial_state,
                       
                       max_chain_steps = 2000,
@@ -84,7 +84,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                           'remove defect-defect coupling': 0.05
                           },
                       
-                      temperature_proposal = 0.0001, # either value or (shape, scale) of gamma to sample
+                      temperature_proposal = 0.0005, # either value or (shape, scale) of gamma to sample
                       
                       jump_length_rescaling_factor = 1.0, # for scaling up or down jump lengths of parameter handler
                       
@@ -134,7 +134,7 @@ quest = learning_chain.LearningChain(target_times = ts,
 #           quest.initial.calculate_dynamics(new_ts, ['sigmax'])[0])
 
 #%%
-best = quest.run(2000)
+best = quest.run()
 
 #%%
 best = quest.best
