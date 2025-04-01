@@ -134,7 +134,7 @@ quest = learning_chain.LearningChain(target_times = ts,
 #           quest.initial.calculate_dynamics(new_ts, ['sigmax'])[0])
 
 #%%
-best = quest.run()
+best = quest.run() #testchange
 
 #%%
 best = quest.best
