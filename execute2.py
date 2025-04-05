@@ -125,7 +125,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       custom_function_on_dynamics_return = False,#custom_func
                       
-                      iterations_till_progress_update = 20
+                      iterations_till_progress_update = False
                       )
 
 # import matplotlib.pyplot as plt
@@ -153,7 +153,7 @@ class Toggles():
     comparison = True # plot comparison of dynamics
     loss = True # plot cost function progression
     acceptance = True # plot acceptance ratios over subsequenct windows
-    graphs = False # plot model graphs with corresponding labels
+    graphs = True # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
     text = True # save selected models as text
     hyperparams = True # save chain hyperparameters as json
