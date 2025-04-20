@@ -11,7 +11,7 @@ import pickle
 import json
 import matplotlib.pyplot as plt
 import numpy as np
-import networkx as nx
+#import networkx as nx
 import typing
 import copy
 import pprint
@@ -248,13 +248,12 @@ class Output:
             # # eg.
             # {'defect1': [(0.6, [('sigmap', 'sigmam'), ('sigmam', 'sigmap')]), 
             #                          (0.7, [('sigmax', 'sigmax')])]
-            # # this must be reworked
             for partner, couplings in TLS.couplings.items(): # couplings is a list of tuples of (str, [(op_here, op_there),...])
                 
                 for coupling in couplings: # coupling tuple is (str, [(op_here, op_there),...])
                 
                     G.add_edge(id(TLS), id(partner),
-                               width = coupling[0]/normal_vals['coupling']*3,
+                               width = coupling[0],
                                label = make_coupling_edge_label(coupling),
                                colour = 'purple'
                                )
@@ -280,14 +279,15 @@ class Output:
             
             # add Ls:
             for L, rate in TLS.Ls.items():
-                break
+                #break
                 label = str(id(TLS)) + L
                 G.add_node(label, subset = 'Ls')
                 node_labels[label] = ''#ops_labels[L]
                 node_colours.append('forestgreen')
                 G.add_edge(id(TLS), label,
-                           width = rate/normal_vals['L_offdiag'],
-                           colour = 'forestgreen'
+                           width = rate,
+                           colour = 'forestgreen',
+                           label = label
                            )
                 edge_labels[(id(TLS), label)] = op_symbol(L)
                 node_sizes.append(0)
@@ -302,20 +302,36 @@ class Output:
             """
             # Works with arc3 and angle3 connectionstyles
             import itertools as it
-            connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
-            # connectionstyle = [f"angle3,angleA={r}" for r in it.accumulate([30] * 4)]
+            #connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
+            connectionstyle = [f"angle3,angleA={r}" for r in it.accumulate([30] * 4)]
         
             pos = nx.shell_layout(G)
+            # layout setup:
+            # centre_node = 'qubit'  # Or any other node to be in the center
+            # defects_nodes = set(G) - {'qubit'}
+            # pos = nx.circular_layout(G.subgraph(defects_nodes))
+            # pos = nx.circular_layout(G)
+            #pos = nx.spring_layout(G, seed = 0)
+            # pos = nx.multipartite_layout(G, subset_key = 'subset')
+            # graphviz_layout = nx.drawing.nx_pydot.graphviz_layout
+            #pos = graphviz_layout(G, prog="twopi")
+            #pos = graphviz_layout(G, prog="dot")
+            #pos = graphviz_layout(G, prog="circo")
+            #pos = graphviz_layout(G, prog="sfdp")
+            
             nx.draw_networkx_nodes(G, pos, ax=ax)
             nx.draw_networkx_labels(G, pos, font_size=20, ax=ax)
-            nx.draw_networkx_edges(
-                G, pos, edge_color="grey", connectionstyle=connectionstyle, ax=ax
-            )
+            # nx.draw_networkx_edges(
+            #     G, pos, edge_color="grey", connectionstyle=connectionstyle, 
+            #     ax=ax
+            # )
         
-            labels = {
-                tuple(edge): f"{attr_name}={attrs[attr_name]}"
-                for *edge, attrs in G.edges(keys=True, data=True)
-            }
+            # labels = {
+            #     tuple(edge): f"{attr_name}={attrs[attr_name]}"
+            #     for *edge, attrs in G.edges(keys=True, data=True)
+            # }
+            
+            labels = dict([((n1, n2), d['label']) for n1, n2, d in G.edges(data=True)])
             nx.draw_networkx_edge_labels(
                 G,
                 pos,
@@ -323,12 +339,19 @@ class Output:
                 connectionstyle=connectionstyle,
                 label_pos=0.3,
                 font_color="blue",
-                bbox={"alpha": 0},
+                bbox={"alpha": 1},
                 ax=ax,
             )
+            # nx.draw_networkx_edge_labels(G,
+            #                               pos = pos, 
+            #                               edge_labels = edge_labels, 
+            #                               font_size = 12)
+            
                 
+        self.G = G    
+            
         fig, ax = plt.subplots(1, 1)
-        draw_labeled_multigraph(G, "w", ax)
+        draw_labeled_multigraph(G, "label", ax)
 
         fig.tight_layout()
         plt.show()
@@ -369,10 +392,6 @@ class Output:
         # import itertools as it
         # connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
         
-        # nx.draw_networkx_edge_labels(G,
-        #                              pos = pos, 
-        #                              edge_labels = edge_labels, 
-        #                              font_size = 12)
-        # plt.savefig(filename + '.svg')#, dpi=300)#, bbox_inches='tight')
+        plt.savefig(filename + '.svg')#, dpi=300)#, bbox_inches='tight')
 
         

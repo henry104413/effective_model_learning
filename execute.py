@@ -5,14 +5,46 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
+
+
 import multiprocessing
 import time
 import numpy as np
+import sys # for passing command line arguments
 
 import basic_model
 import learning_chain
 import output
 
+
+
+# 2025_03_28_150411_best.pickle
+
+# date and time stamp:
+timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
+# note: files are overwritten if saved with the same name
+
+# if launched with additional arguments: different defect & number of repetitions
+# where number of repetitions is an outer (e.g. bash) loop
+
+# set number of defects if passed as command line argument,
+# otherwise default specified here:
+try:
+	defects_count = int(sys.argv[1])
+except IndexError: # ie. no such arguments
+	defects_count = 5
+	
+# set repetition number for file naming:
+try:
+	repetition_number = int(sys.argv[2])
+except IndexError: # ie. no such arguments
+	repetition_number = 1
+
+# output files common name:
+filename = ('250420_Wit4b-grey_ForClusters_D' + str(defects_count) +
+    '_R' + str(repetition_number))
+ 
+print(filename, flush = True)
 
 
 #%% import target data:
@@ -26,7 +58,7 @@ datafile = 'Witnessing_Fig4b.csv'
 dataset_no = 0 # starting from 0
 
 # extract x and y values@
-contents = np.genfromtxt('Witnessing_Fig4b.csv',delimiter=',')#,dtype=float) 
+contents = np.genfromtxt(datafile,delimiter=',')#,dtype=float) 
 dataset = contents[:,[2*dataset_no, 2*dataset_no + 1]]
 xs = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 0]     
 ys = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 1]   
@@ -70,10 +102,10 @@ quest = learning_chain.LearningChain(target_times = ts,
                       target_datasets = measurement_datasets,
                       target_observables = measurement_observables,
                       
-                      initial = (1, 2), # (qubit energy, number of defects)
+                      initial = (1, defects_count), # (qubit energy, number of defects)
                       qubit_initial_state = qubit_initial_state,
                       
-                      max_chain_steps = 100,
+                      max_chain_steps = 10000,
                       chain_step_options = {
                           'tweak all parameters': 0.3,
                           'add L': 0.05,
@@ -125,7 +157,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       
                       custom_function_on_dynamics_return = False,#custom_func
                       
-                      iterations_till_progress_update = False
+                      iterations_till_progress_update = 20
                       )
 
 # import matplotlib.pyplot as plt
@@ -135,6 +167,8 @@ quest = learning_chain.LearningChain(target_times = ts,
 
 #%%
 best = quest.run()
+
+
 
 #%%
 best = quest.best
@@ -153,17 +187,14 @@ class Toggles():
     comparison = True # plot comparison of dynamics
     loss = True # plot cost function progression
     acceptance = True # plot acceptance ratios over subsequenct windows
-    graphs = True # plot model graphs with corresponding labels
+    graphs = False # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
     text = True # save selected models as text
     hyperparams = True # save chain hyperparameters as json
 
-# unique name (date and time stamp):
-timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
-# maybe add additional check to in unlikely case parallel run ends up with same name...
 
 # create outputs:
-O = output.Output(toggles = Toggles, filename = timestamp,
+output.Output(toggles = Toggles, filename = filename,
        dynamics_ts = [ts, evaluation_ts],
        dynamics_datasets = [measurement_datasets, best_datasets],
        dynamics_datasets_labels = ['measured', 'learned'],
@@ -178,59 +209,7 @@ O = output.Output(toggles = Toggles, filename = timestamp,
 
 
 #%% 
-raise SystemExit()
 
 
-import itertools as it
-import numpy as np
-import networkx as nx
-import matplotlib.pyplot as plt
 
 
-def draw_labeled_multigraph(G, attr_name, ax=None):
-    """
-    Length of connectionstyle must be at least that of a maximum number of edges
-    between pair of nodes. This number is maximum one-sided connections
-    for directed graph and maximum total connections for undirected graph.
-    """
-    # Works with arc3 and angle3 connectionstyles
-    connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
-    # connectionstyle = [f"angle3,angleA={r}" for r in it.accumulate([30] * 4)]
-
-    pos = nx.shell_layout(G)
-    nx.draw_networkx_nodes(G, pos, ax=ax)
-    nx.draw_networkx_labels(G, pos, font_size=20, ax=ax)
-    nx.draw_networkx_edges(
-        G, pos, edge_color="grey", connectionstyle=connectionstyle, ax=ax
-    )
-
-    labels = {
-        tuple(edge): f"{attr_name}={attrs[attr_name]}"
-        for *edge, attrs in G.edges(keys=True, data=True)
-    }
-    nx.draw_networkx_edge_labels(
-        G,
-        pos,
-        labels,
-        connectionstyle=connectionstyle,
-        label_pos=0.3,
-        font_color="blue",
-        bbox={"alpha": 0},
-        ax=ax,
-    )
-
-
-nodes = "ABC"
-prod = list(it.product(nodes, repeat=2))
-pair_dict = {f"Product x {i}": prod * i for i in range(1, 5)}
-
-
-fig, axes = plt.subplots(2, 2)
-for (name, pairs), ax in zip(pair_dict.items(), np.ravel(axes)):
-    G = nx.MultiDiGraph()
-    for i, (u, v) in enumerate(pairs):
-        G.add_edge(u, v, w=round(i / 3, 2))
-    draw_labeled_multigraph(G, "w", ax)
-    ax.set_title(name)
-fig.tight_layout()
-plt.show()
