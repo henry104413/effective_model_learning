@@ -12,21 +12,21 @@ import sklearn.cluster
 import sklearn.metrics
 import kneed
 
-# filename = '2025_04_09_132733_1_3_best.pickle'
-filename = '250420_Wit4b-grey_ForClusters_D1_R1_best.pickle'
-with open(filename, 'rb') as filestream:
-    new_model = pickle.load(filestream)
-raise SystemExit()
+
+#%% data preparation:
 
 
-# filename base
+# settings for automatic file import:
+
+# filename_base: (experiment name with defects number):
 filename_base = '250420_Wit4b-grey_ForClusters_D' + str(2)
 
-
-# number of runs (assuming files named starting from 1)
+# runs up to (assuming files named starting from 1):
 runs = 20
 
-# points to cluster (vectorised and decomplexified Liouvillians for all models) 
+
+# container for points to cluster:
+# i.e. vectorised and decomplexified Liouvillians for all models
 points = []
 
 # import available learned models from all runs:
@@ -56,11 +56,13 @@ for i in range(1, runs+1):
     
     points.append(Liouvillian_vect_separated)
 
-# array to feed into clusterer - each row a different model:
+# final array to feed into clusterer 
+# note: each row a different model:
 points_array = np.stack(points)
 
 
-#%%
+
+#%% clustering execution:
 
 # define numbers of clusters explored:
 min_clusters = 2 # note: silhouette requires at least 2
@@ -94,15 +96,12 @@ for k in clusters_counts:
     assignments.append(kmeans.labels_)
     iters_required.append(kmeans.n_iter_)
     silhouette_scores.append(sklearn.metrics.silhouette_score(points_array, kmeans.labels_))
-    
-#from sklearn.metrics import silhouette_score
-#from kneed import KneeLocator
-#...after running something like: conda install -c conda-forge kneed
 
 
-#%%
 
-# find knee/elbow aka maximum curvature point:
+#%% results:
+
+# automatically find knee/elbow aka maximum curvature point:
 knee_finder = kneed.KneeLocator(clusters_counts,
                                 SSEs,
                                 curve="convex",
