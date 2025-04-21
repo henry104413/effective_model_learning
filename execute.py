@@ -10,6 +10,8 @@ Effective model learning
 import numpy as np
 import sys # for passing command line arguments
 import time
+# note: import os also called below in case of an exception
+
 
 import basic_model
 import learning_chain
@@ -28,30 +30,42 @@ try:
 except:
     experiment_name = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
     
+# set target data file:
+try:
+    target_file = str(sys.argv[2])
+except:
+    try:
+        import os
+        next(x for x in os.listdir() if '.csv' in x)
+    except:
+        # by default take first csv file found in current folder
+        # note: only tested on Linux
+        print('Unable to open any csv file - aborting')        
+
 # set number of defects,
 try:
-	defects_count = int(sys.argv[2])
+	defects_count = int(sys.argv[3])
 except: 
 	defects_count = 5
 	
 # set repetition number for file naming:
 # note: refers to repetition of run with same defects number
 try:
-	repetition_number = int(sys.argv[3])
+	repetition_number = int(sys.argv[4])
 except: 
 	repetition_number = 1
 
 # set maximum iterations:
 try:
-    max_iterations = int(sys.argv[4])
+    max_iterations = int(sys.argv[5])
     if max_iterations == 0:
         raise Exception('Maximum iterations not specified by launcher, hence using default.')
 except:
-    print('\n\n\n\nUSING DEFAULT\n\n\n\n')
+    print('\n\n\n\nUSING DEFAULT\n\n\n\n', flush = True)
     max_iterations = 100
 
-# run output files common name:
-# template: '250421_Wit4b-grey_ForClusters'
+# run's output files common name:
+# example: '250421_Wit4b-grey_ForClusters'
 filename = (experiment_name + '_D' + str(defects_count) +
     '_R' + str(repetition_number))
  
@@ -66,7 +80,10 @@ print(filename, flush = True)
 
 # choose data:
 datafile = 'Witnessing_Fig4b.csv'
-dataset_no = 0 # starting from 0
+dataset_no = 0 
+# note: 0 means first pair of columns
+# note: currently assuming first dataset in file is target now
+# and not set by launcher
 
 # extract x and y values@
 contents = np.genfromtxt(datafile,delimiter=',')#,dtype=float) 
