@@ -6,6 +6,7 @@
 # advanced learning hyperparameters set in execute.py file
 # code files musty be in the same directory 
 
+
 # set below:
 # 1) experiment name to use in output filenames
 # 2) target csv file where pairs of columns are individual datasets,
@@ -20,12 +21,15 @@
 experiment_name="justatest2_"
 target_csv=""
 defects_numbers=(1 2 3)
-repetitions=1
-iterations_numbers=(500 600 700 800)
+repetitions_numbers=(100)
+iterations_numbers=(10000)
+
 
 # execution:
 for i in ${!defects_numbers[@]}; do
     defects_number=${defects_numbers[i]}
+
+    # determine iterations number for this number of defects:
     if [ ${#iterations_numbers[@]} -eq ${#defects_numbers[@]} ]; then
     	iterations_number=${iterations_numbers[i]}
     elif [ ${#iterations_numbers[@]} -eq 1 ]; then
@@ -35,9 +39,19 @@ for i in ${!defects_numbers[@]}; do
     	# then execute file will use its default value
     	iterations_number=0	
     fi
-    for ((rep=1; rep<=repetitions; rep++)); do
+    
+    # determine repetitions number for this number of defects:
+    if [ ${#repetitions_numbers[@]} -eq ${#defects_numbers[@]} ]; then
+    	repetitions_number=${repetitions_numbers[i]}
+    elif [ ${#repetitions_numbers[@]} -eq 1 ]; then
+    	repetitions_number=${repetitions_numbers[0]}
+    else
+    	# if not specified properly, set default here:
+    	repetitions_number=1	
+    fi
+    
+    for ((rep=1; rep<=repetitions_number; rep++)); do
 	echo launching for $defects_number defects repetition no. $rep
-	echo iterations number $iterations_number
 	nohup python execute.py "$experiment_name" "$target_csv" "$defects_number" "$rep" "$iterations_number"  </dev/null &>"$experiment_name"_D"$defects_number"_R"$rep"_prog.txt &
 	done
 done

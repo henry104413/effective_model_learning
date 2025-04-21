@@ -61,7 +61,6 @@ try:
     if max_iterations == 0:
         raise Exception('Maximum iterations not specified by launcher, hence using default.')
 except:
-    print('\n\n\n\nUSING DEFAULT\n\n\n\n', flush = True)
     max_iterations = 100
 
 # run's output files common name:
