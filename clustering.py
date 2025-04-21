@@ -5,23 +5,26 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
-import sklearn.cluster
 import pickle
-import copy
 import numpy as np
+import matplotlib.pyplot as plt
+import sklearn.cluster
+import sklearn.metrics
+import kneed
+
 
 
 # filename base
 filename_base = '250420_Wit4b-grey_ForClusters_D' + str(2)
 
-# number of runs (assuming files named starting from 1
+# number of runs (assuming files named starting from 1)
 runs = 20
 
 # points to cluster (vectorised and decomplexified Liouvillians for all models) 
 points = []
 
+# import available learned models from all runs:
 files_imported = 0
-
 for i in range(1, runs+1):
     
     # import best model pickle file for i-th run:
@@ -44,15 +47,15 @@ for i in range(1, runs+1):
     
     points.append(Liouvillian_vect_separated)
 
-# ready to feed into clusterer - each row is a different model:
+# array to feed into clusterer - each row a different model:
 points_array = np.stack(points)
 
 
 #%%
 
 # define numbers of clusters explored:
-min_clusters = 1
-max_clusters = files_imported
+min_clusters = 2 # note: silhouette requires at least 2
+max_clusters = files_imported - 1 # note: silhouette requires at most points - 1
 clusters_counts = list(range(min_clusters, max_clusters + 1))
 
 # containers for clustering outputs:
@@ -60,6 +63,7 @@ SSEs = []
 centres = []
 assignments = []
 iters_required = []
+silhouette_scores = [] # higher is better
 
 # go over all cluster numbers:
 for k in clusters_counts:
@@ -80,18 +84,38 @@ for k in clusters_counts:
     centres.append(kmeans.cluster_centers_)
     assignments.append(kmeans.labels_)
     iters_required.append(kmeans.n_iter_)
+    silhouette_scores.append(sklearn.metrics.silhouette_score(points_array, kmeans.labels_))
+    
+#from sklearn.metrics import silhouette_score
+#from kneed import KneeLocator
+#...after running something like: conda install -c conda-forge kneed
 
 
 #%%
 
+# find knee/elbow aka maximum curvature point:
+knee_finder = kneed.KneeLocator(clusters_counts,
+                                SSEs,
+                                curve="convex",
+                                direction="decreasing"
+                                )
+elbow = knee_finder.elbow
+print('\nElbow found at ' + str(elbow) + ' clusters.\n')
+
 # plot SSE vs number of clusters:
-import matplotlib.pyplot as plt
 plt.figure()
-plt.plot(clusters_counts, SSEs)
+plt.plot(clusters_counts, SSEs, 'b')
 plt.xlabel('number of clusters')
 plt.ylabel('SSE')
 plt.xticks(clusters_counts)
-plt.title(filename_base)
+plt.title(filename_base + '\nelbow found at ' + str(elbow))
 plt.savefig(filename_base + '_clustering_SSEs.svg')
 
-# apparently knee at 4
+# plot silhouette score vs number of clusters
+plt.figure()
+plt.plot(clusters_counts, silhouette_scores, 'r')
+plt.xlabel('number of clusters')
+plt.ylabel('silhouette score')
+plt.xticks(clusters_counts)
+plt.title(filename_base)
+plt.savefig(filename_base + '_clustering_silhouette_scores.svg')
