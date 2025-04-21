@@ -19,7 +19,7 @@ import kneed
 # settings for automatic file import:
 
 # filename_base: (experiment name with defects number):
-filename_base = '250420_Wit4b-grey_ForClusters_D' + str(2)
+filename_base = 'test_Wit_Fig4b-grey_D' + str(2)
 
 # runs up to (assuming files named starting from 1):
 runs = 20

@@ -18,11 +18,11 @@
 # 4) and 5) either have to be same length as 3),
 # or length 1 if same settings to be used for each defect number
 # but in each case must be arrays!  
-experiment_name="justatest2_"
-target_csv=""
-defects_numbers=(1 2 3)
-repetitions_numbers=(100)
-iterations_numbers=(10000)
+experiment_name="test_Wit_Fig4b-grey"
+target_csv="Witnessing_Fig4b.csv"
+defects_numbers=(2)
+repetitions_numbers=(10)
+iterations_numbers=(1000)
 
 
 # execution:
