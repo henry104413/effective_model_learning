@@ -12,10 +12,16 @@ import sklearn.cluster
 import sklearn.metrics
 import kneed
 
+# filename = '2025_04_09_132733_1_3_best.pickle'
+filename = '250420_Wit4b-grey_ForClusters_D1_R1_best.pickle'
+with open(filename, 'rb') as filestream:
+    new_model = pickle.load(filestream)
+raise SystemExit()
 
 
 # filename base
 filename_base = '250420_Wit4b-grey_ForClusters_D' + str(2)
+
 
 # number of runs (assuming files named starting from 1)
 runs = 20
@@ -36,6 +42,9 @@ for i in range(1, runs+1):
         files_imported += 1
     except FileNotFoundError:
         print(filename + '\nNOT FOUND - SKIPPING')
+        continue
+    except Exception as e:
+        print('Error: ' + repr(e))
         continue
         
     # build Liouvillian, turn into 1D vector, separate real and imaginary parts and concatenate:

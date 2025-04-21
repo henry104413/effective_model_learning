@@ -7,10 +7,9 @@ Effective model learning
 
 
 
-import multiprocessing
-import time
 import numpy as np
 import sys # for passing command line arguments
+import time
 
 import basic_model
 import learning_chain
@@ -18,30 +17,42 @@ import output
 
 
 
-# 2025_03_28_150411_best.pickle
+# run parameters taken from additional command line arguments,
+# order: experiment_name, defects_count, repetition_number, max_iterations;
+# defaults specified here if unavailable
+# note: files are overwritten if saved with same name
 
-# date and time stamp:
-timestamp = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
-# note: files are overwritten if saved with the same name
-
-# if launched with additional arguments: different defect & number of repetitions
-# where number of repetitions is an outer (e.g. bash) loop
-
-# set number of defects if passed as command line argument,
-# otherwise default specified here:
+# set experiment name for file naming:
 try:
-	defects_count = int(sys.argv[1])
-except IndexError: # ie. no such arguments
+    experiment_name = str(sys.argv[1])
+except:
+    experiment_name = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
+    
+# set number of defects,
+try:
+	defects_count = int(sys.argv[2])
+except: 
 	defects_count = 5
 	
 # set repetition number for file naming:
+# note: refers to repetition of run with same defects number
 try:
-	repetition_number = int(sys.argv[2])
-except IndexError: # ie. no such arguments
+	repetition_number = int(sys.argv[3])
+except: 
 	repetition_number = 1
 
-# output files common name:
-filename = ('250420_Wit4b-grey_ForClusters_D' + str(defects_count) +
+# set maximum iterations:
+try:
+    max_iterations = int(sys.argv[4])
+    if max_iterations == 0:
+        raise Exception('Maximum iterations not specified by launcher, hence using default.')
+except:
+    print('\n\n\n\nUSING DEFAULT\n\n\n\n')
+    max_iterations = 100
+
+# run output files common name:
+# template: '250421_Wit4b-grey_ForClusters'
+filename = (experiment_name + '_D' + str(defects_count) +
     '_R' + str(repetition_number))
  
 print(filename, flush = True)
@@ -105,7 +116,7 @@ quest = learning_chain.LearningChain(target_times = ts,
                       initial = (1, defects_count), # (qubit energy, number of defects)
                       qubit_initial_state = qubit_initial_state,
                       
-                      max_chain_steps = 10000,
+                      max_chain_steps = max_iterations,
                       chain_step_options = {
                           'tweak all parameters': 0.3,
                           'add L': 0.05,
