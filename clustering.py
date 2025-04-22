@@ -5,6 +5,7 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
+import sys # for passing command line arguments
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,14 +16,30 @@ import kneed
 
 #%% data preparation:
 
-
-# settings for automatic file import:
-
+# import data filename parameters from command line arguments:
+# order: experiment name, defects number, run number bound
+# note: assuming run numbers start at 1
+try:
+    experiment_name = str(sys.argv[1])
+except:
+    print('Clustering:\n Using default experiment name in filename'
+          +'\n - not command line argument')
+    experiment_name = ''
+try:
+    defects_number = str(sys.argv[2])
+except:
+    print('Clustering:\n Using default defects number in filename'
+          +'\n - not command line argument')
+    defects_number = 1
+try:
+    run_number_bound = int(sys.argv[3])
+except:
+    print('Clustering:\n Using default runs number bound in filename'
+          +'\n - not command line argument')
+    run_number_bound = 20
+    
 # filename_base: (experiment name with defects number):
-filename_base = 'test_Wit_Fig4b-grey_D' + str(2)
-
-# runs up to (assuming files named starting from 1):
-runs = 20
+filename_base = experiment_name + '_D' + str(defects_number)
 
 
 # container for points to cluster:
@@ -31,7 +48,7 @@ points = []
 
 # import available learned models from all runs:
 files_imported = 0
-for i in range(1, runs+1):
+for i in range(1, run_number_bound+1):
     
     # import best model pickle file for i-th run:
     # note: occassionally files not generated... do try-except
