@@ -21,8 +21,8 @@
 experiment_name="test_Wit_Fig4b-grey"
 target_csv="Witnessing_Fig4b.csv"
 defects_numbers=(2)
-repetitions_numbers=(10)
-iterations_numbers=(1000)
+repetitions_numbers=(30)
+iterations_numbers=(5000)
 
 
 # execution:
