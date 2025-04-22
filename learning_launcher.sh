@@ -20,7 +20,7 @@
 # but in each case must be arrays!  
 experiment_name="test_Wit_Fig4b-grey"
 target_csv="Witnessing_Fig4b.csv"
-defects_numbers=(2)
+defects_numbers=(1)
 repetitions_numbers=(30)
 iterations_numbers=(5000)
 
