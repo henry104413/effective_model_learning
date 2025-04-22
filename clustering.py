@@ -7,6 +7,7 @@ Effective model learning
 
 import sys # for passing command line arguments
 import pickle
+import json
 import numpy as np
 import matplotlib.pyplot as plt
 import sklearn.cluster
@@ -61,6 +62,7 @@ points = []
 
 # import available learned models for this defects number up to specified runs number:
 files_imported = 0
+filenames = [] # names of successfully imported models
 for i in range(1, run_number_bound+1):
     
     # import best model pickle file for i-th run:
@@ -85,6 +87,7 @@ for i in range(1, run_number_bound+1):
                                                  Liouvillian_vect_complex.imag))
     
     points.append(Liouvillian_vect_separated)
+    filenames.append(filename)
 
 # final array to feed into clusterer 
 # note: each row a different model:
@@ -141,9 +144,14 @@ knee_finder = kneed.KneeLocator(clusters_counts,
 elbow = knee_finder.elbow
 print('\nElbow found at ' + str(elbow) + ' clusters.\n')
 
-# save kmeans object containing fit outputs:
-with open(filename_base + '_clustering_kmeans_obj.pickle', 'wb') as filestream:
-    pickle.dump(kmeans,  filestream)
+# save dictionary containing successfully imported filenames, explored cluster numbers, 
+# and list of assignments (in order of filenames) for each explored cluster number:
+clustering_output = {'filenames': filenames,
+                     'clusters_counts': clusters_counts,
+                     'assignments': {int(clusters_counts[i]): [int(x) for x in assignments[i]] for i in range(len(clusters_counts))}
+                     }
+with open(filename_base + '_clustering_output.json', 'w') as filestream:
+    json.dump(clustering_output,  filestream)
 
 # save SSE and silhouette score vs number of clusters as csv files:
 np.savetxt(filename_base + '_clustering_SSEs.csv', 
@@ -151,7 +159,7 @@ np.savetxt(filename_base + '_clustering_SSEs.csv',
            header = 'clusters,SSEs',
            delimiter = ',', comments = '')
 np.savetxt(filename_base + '_clustering_silhouette_scores.csv', 
-           np.transpose(clusters_counts, silhouette_scores),
+           np.transpose([clusters_counts, silhouette_scores]),
            header = 'clusters,silhouettes',
            delimiter = ',', comments = '')
 
