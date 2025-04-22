@@ -163,20 +163,23 @@ np.savetxt(filename_base + '_clustering_silhouette_scores.csv',
            header = 'clusters,silhouettes',
            delimiter = ',', comments = '')
 
+# xlabels for numbers of clusters with just edges (to avoid overlapping when dense)
+x_tick_labels = [clusters_counts[0]] + ['' for x in range(len(clusters_counts)-2)] + [clusters_counts[-1]]
+
 # plot SSE vs number of clusters:
-plt.figure()
+plt.figure(tight_layout = True)
 plt.plot(clusters_counts, SSEs, 'b')
 plt.xlabel('number of clusters')
 plt.ylabel('SSE')
-plt.xticks(clusters_counts)
+plt.xticks(ticks = clusters_counts, labels = x_tick_labels)
 plt.title(filename_base + '\nelbow found at ' + str(elbow))
 plt.savefig(filename_base + '_clustering_SSEs.svg')
 
 # plot silhouette score vs number of clusters
-plt.figure()
+plt.figure(tight_layout = True)
 plt.plot(clusters_counts, silhouette_scores, 'r')
 plt.xlabel('number of clusters')
 plt.ylabel('silhouette score')
-plt.xticks(clusters_counts)
+plt.xticks(clusters_counts, x_tick_labels)
 plt.title(filename_base)
 plt.savefig(filename_base + '_clustering_silhouette_scores.svg')
