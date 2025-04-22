@@ -16,8 +16,8 @@ import kneed
 
 #%% data preparation:
 
-# import data filename parameters from command line arguments:
-# order: experiment name, defects number, run number bound
+# import data filename parameters and clusters number bounds from command line arguments:
+# order: experiment name, defects number, run number bound, minimum clusters, maximum clusters
 # note: assuming run numbers start at 1
 try:
     experiment_name = str(sys.argv[1])
@@ -37,6 +37,19 @@ except:
     print('Clustering:\n Using default runs number bound in filename'
           +'\n - not command line argument')
     run_number_bound = 20
+try:
+    min_clusters = int(sys.argv[4])
+except:
+    print('Clustering:\n Using default minimum cluster number'
+          +'\n - not command line argument')
+    min_clusters = 2
+try:
+    max_clusters = int(sys.argv[5])
+except:
+    print('Clustering:\n Using default maximum cluster number'
+          +'\n - not command line argument')
+    max_clusters = False
+
     
 # filename_base: (experiment name with defects number):
 filename_base = experiment_name + '_D' + str(defects_number)
@@ -46,7 +59,7 @@ filename_base = experiment_name + '_D' + str(defects_number)
 # i.e. vectorised and decomplexified Liouvillians for all models
 points = []
 
-# import available learned models from all runs:
+# import available learned models for this defects number up to specified runs number:
 files_imported = 0
 for i in range(1, run_number_bound+1):
     
@@ -82,8 +95,9 @@ points_array = np.stack(points)
 #%% clustering execution:
 
 # define numbers of clusters explored:
-min_clusters = 2 # note: silhouette requires at least 2
-max_clusters = files_imported - 1 # note: silhouette requires at most points - 1
+# note: silhouette requires at least 2 and at most points - 1
+if not max_clusters: # ie. not imported from command line arguments
+    max_clusters = files_imported - 1
 clusters_counts = list(range(min_clusters, max_clusters + 1))
 
 # containers for clustering outputs:
@@ -126,6 +140,20 @@ knee_finder = kneed.KneeLocator(clusters_counts,
                                 )
 elbow = knee_finder.elbow
 print('\nElbow found at ' + str(elbow) + ' clusters.\n')
+
+# save kmeans object containing fit outputs:
+with open(filename_base + '_clustering_kmeans_obj.pickle', 'wb') as filestream:
+    pickle.dump(kmeans,  filestream)
+
+# save SSE and silhouette score vs number of clusters as csv files:
+np.savetxt(filename_base + '_clustering_SSEs.csv', 
+           np.transpose([clusters_counts, SSEs]),
+           header = 'clusters,SSEs',
+           delimiter = ',', comments = '')
+np.savetxt(filename_base + '_clustering_silhouette_scores.csv', 
+           np.transpose(clusters_counts, silhouette_scores),
+           header = 'clusters,silhouettes',
+           delimiter = ',', comments = '')
 
 # plot SSE vs number of clusters:
 plt.figure()
