@@ -34,13 +34,13 @@ except:
 try:
     target_file = str(sys.argv[2])
 except:
+    # by default take first csv file found in current folder
+    # note: only tested on Linux
     try:
         import os
-        next(x for x in os.listdir() if '.csv' in x)
+        target_file = next(x for x in os.listdir() if '.csv' in x)
     except:
-        # by default take first csv file found in current folder
-        # note: only tested on Linux
-        print('Unable to open any csv file - aborting')        
+        raise SystemExit('Unable to open any csv file - aborting')        
 
 # set number of defects,
 try:
@@ -78,7 +78,7 @@ print(filename, flush = True)
 # and numberical entries on single row are x, y values
 
 # choose data:
-datafile = 'Witnessing_Fig4b.csv'
+datafile = target_file
 dataset_no = 0 
 # note: 0 means first pair of columns
 # note: currently assuming first dataset in file is target now
@@ -228,6 +228,7 @@ output.Output(toggles = Toggles, filename = filename,
        dynamics_formatting = ['b+', 'r-'],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
+       best_loss = quest.best_loss,
        acceptance = acceptance_ratios,
        models_to_save = [best],
        model_names = ['best'],

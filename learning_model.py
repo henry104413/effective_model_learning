@@ -22,7 +22,10 @@ class LearningModel(basic_model.BasicModel):
     with width for each type of parameter set for instance as jump lengths hyperparameter.
     """    
     
-    def __init__(self, *args, initial_guess = False, jump_lengths = False, **kwargs):
+    def __init__(self, *args, 
+                 # initial_guess = False, 
+                 jump_lengths: dict[str, float|int] = False,
+                 **kwargs):
         
         # parent initialiser sets up model parameters:
         # note: often initialised empty and components added dynamically 
@@ -31,6 +34,12 @@ class LearningModel(basic_model.BasicModel):
         # dictionary of standard jump lengths for each type of operator
         # note: modified with direct method or with argument to parameter changing method
         self.jump_lengths = jump_lengths
+        
+        # container for final/best loss function:
+        # note: only makes sense with respect to some target data,
+        # populated by learning chain run only,
+        # used in clustering when target known, otherwise can be disregarded
+        self.final_loss = False
         
         
     
