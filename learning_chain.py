@@ -353,6 +353,7 @@ class LearningChain:
         if bool(self.iterations_till_progress_update):
             print('\n\nChain run completed.\n'
                   +'_________________________\n\n', flush = True)
+        self.best.final_loss = self.best_loss
         return self.best
     
     

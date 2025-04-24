@@ -44,6 +44,7 @@ class Output:
                  dynamics_formatting: list[str] = False,
                  observable_labels: list[str] = [],
                  loss: list[float|int] = [],
+                 best_loss: float = None,
                  acceptance: list[float|int] = [],
                  models_to_save: list[BasicModel|LearningModel] = [],
                  model_names: list[str] = [],
@@ -108,6 +109,9 @@ class Output:
             plt.yscale('log')
             plt.xlabel('iteration')
             plt.ylabel('loss')
+            plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
+                     10**(0.9*np.log10(plt.gca().get_ylim()[0])),
+                     'best loss = ' + '{:.2e}'.format(best_loss))
             #plt.xlim([0, 10000])
             plt.savefig(filename + '_loss.svg', dpi = 1000)
             
