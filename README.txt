@@ -3,12 +3,12 @@ Author: henry104413
 Under continuous development.
 
 
-Implements quantum system models consisting of two-level subsystems (TLSs) representing qubits and defects. Allows single-site Lindblad processes and coherent couplings between any pairs of TLSs. Includes methods to generate dynamics with respect to specified observables (currently from a predefined set).
+Implements quantum system models consisting of two-level subsystems (TLSs) representing qubits and defects. Allows single-site Lindblad processes and coherent couplings between any pairs of TLSs. Includes methods to generate dynamics according to the Lindblad master equation, with respect to specified observables (currently from a predefined set).
 
 Performs model learning given target data (times, observables, and measurements with respect to those). Uses a reversible-jump Markov chain Monte Carlo algorithm. Based on user-specified hyperparameters, random moves are carried out and accepted or rejected via a Metropolis-Hastings-style criterion. These include adding or removing Lindblad processes or couplings from a predefined library as well as tweaking existing model parameters.
 
 
-The file "execute.py" can be run and takes command line arguments for run settings. The bash script "launcher.sh" allows easily running batches with different settings. Advanced learning hyperparameters can be tuned in the "execute.py" file. The "clustering.py" file is runnable with command line arguments and currently performs and evaluates k-means clustering on a set of imported learned models.
+The file "execute.py" can be run and takes command line arguments for run settings. The bash script "learning_launcher.sh" allows easily running batches with different settings. Advanced learning hyperparameters can be tuned in the "execute.py" file. The "clustering.py" file is also runnable with command line arguments and currently performs and evaluates k-means clustering on a set of imported learned models - can be run using the bash script "clustering_launcher.sh" where clustering parameters can be easily set.
 
 
 Developed for python 3.11.5. A working conda environment "effective_model_learning_conda_env.yml" is provided and a container shall follow in the future.
