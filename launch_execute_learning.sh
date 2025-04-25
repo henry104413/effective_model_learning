@@ -19,7 +19,7 @@
 # or length 1 if same settings to be used for each defect number
 # but in each case must be arrays!  
 target_csv="Witnessing_Fig4b.csv"
-experiment_name="splitting_test_Wit_Fig4b-grey"
+experiment_name="quick-test"
 defects_numbers=(1)
 repetitions_numbers=(10)
 iterations_numbers=(2000)
@@ -52,7 +52,7 @@ for i in ${!defects_numbers[@]}; do
     
     for ((rep=1; rep<=repetitions_number; rep++)); do
 	echo launching for $defects_number defects repetition no. $rep
-	nohup python execute.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number"  </dev/null &>"$experiment_name"_D"$defects_number"_R"$rep"_prog.txt &
+	nohup python execute_learning.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number"  </dev/null &>"$experiment_name"_D"$defects_number"_R"$rep"_prog.txt &
 	done
 done
 

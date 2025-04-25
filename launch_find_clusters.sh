@@ -18,11 +18,11 @@
 
 
 # settings:
-experiment_name="test_Wit_Fig4b-grey"
+experiment_name="quick-test"
 defects_number=1
-run_number_bound=30
+run_number_bound=10
 min_clusters=2
-max_clusters=10
+max_clusters=7
 
 
 # execution:

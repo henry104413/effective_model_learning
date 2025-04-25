@@ -14,7 +14,7 @@
 
 
 
-experiment_name="splitting_test_Wit_Fig4b-grey"
+experiment_name="quick-test"
 defects_number=1
 clusters_count=3
 
