@@ -37,10 +37,10 @@ for ((cluster=0; cluster<clusters_count; cluster++)); do
     while IFS= read -r line; do
         if [ $i -eq 1 ]; then
             cp $line* "$assignment_name"/"$assignment_name"_C"$cluster"
-            echo first: copying "$line"
+            
         else
             cp $line* "$assignment_name"/"$assignment_name"_C"$cluster"/"$assignment_name"_C"$cluster"_all
-            echo others: copying "$line"
+            
         fi 
         ((++i))
     done < "$assignment_name"_C"$cluster".txt
