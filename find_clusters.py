@@ -67,13 +67,13 @@ for i in range(1, run_number_bound+1):
     
     # import best model pickle file for i-th run:
     # note: occassionally files not generated... do try-except
-    filename = filename_base +  '_R' + str(i) + '_best.pickle'
+    filename = filename_base +  '_R' + str(i)
     try:
-        with open(filename, 'rb') as filestream:
+        with open(filename + '_best.pickle', 'rb') as filestream:
             new_model = pickle.load(filestream)
         files_imported += 1
     except FileNotFoundError:
-        print(filename + '\nNOT FOUND - SKIPPING')
+        print(filename + '_best.pickle' + '\nNOT FOUND - SKIPPING')
         continue
     except Exception as e:
         print('Error: ' + repr(e))
@@ -147,7 +147,7 @@ print('\nElbow found at ' + str(elbow) + ' clusters.\n')
 # save dictionary containing successfully imported filenames, explored cluster numbers, 
 # and list of assignments (in order of filenames) for each explored cluster number:
 clustering_output = {'filenames': filenames,
-                     'clusters_counts': clusters_counts,
+                     #'clusters_counts': clusters_counts, # already available in keys of assignments
                      'assignments': {int(clusters_counts[i]): [int(x) for x in assignments[i]] for i in range(len(clusters_counts))}
                      }
 with open(filename_base + '_clustering_output.json', 'w') as filestream:

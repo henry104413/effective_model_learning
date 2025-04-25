@@ -6,12 +6,11 @@ Effective model learning
 """
 
 import sys # for passing command line arguments
-#import pickle
 import json
-import numpy as np
+import pickle
 
-# cluster assignment dictionary and best models must be in this folder
-# for each cluster 
+# note: cluster assignment dictionary and best models must be in this folder
+# command line arguments: experiment name, defects number, number of clusters (k)
 
 
 # import cluster assignment dictionary:
@@ -51,29 +50,43 @@ models_count = len(models)
 assignments = clusters['assignments'][str(clusters_count)]
 
 
-# generate and save in appropriate file list of models for each cluster:
+# generate and save in appropriate file a list of models for each cluster:
+# (as bare model names ending with their repetition index)
+# note: !! extra first line with cluster champion (later repeated in its original place)
 for i in range(clusters_count):
     
+    # list of all models in cluster
     ith_cluster = [models[j] for j in range(len(models)) if assignments[j] == i]
     
-    # np.savetxt(filename_base + '_C' + str(i) + '.txt', 
-    #            np.array(ith_cluster, dtype=str),
-    #            fmt = '%.0d',
-    #            delimiter = '\n',
-    #            comments = '')
-
+    # extract losses for each model from pickle files:
+    cluster_losses = []
+    for model in ith_cluster:
+        with open(model + '_best.pickle', 'rb') as filestream:
+            full_model = pickle.load(filestream)
+            cluster_losses.append(full_model.final_loss)
+    
+    # find model with lowest loss:
+    cluster_champion = ith_cluster[cluster_losses.index(min(cluster_losses))]
+    
+    # output to file:
     with open(filename_base + '_C' + str(i) + '.txt', 'w') as filestream:
+        filestream.write(cluster_champion + '\n')
         for model in ith_cluster:
             filestream.write(model + '\n')
             
+
+# to do: start each list with name of BEST model in current cluster?
+            
               
-    
+ # to do: then a bash (or python?) script to use these lists to put corresponding files together
+   
 
 # clusters['clusters_counts'] is a bit redundant
 # since it should be equal to clusters['assigments'].keys()
 
 # also why is the clusters count as key in assignments being saved as a string??
 # if changed, than change it here too!
+# it is being saved as int so maybe a json thing that it changes them to string upon dumping
 
 # i think the assignment should just save the core filename
 # without the _best.pickle
