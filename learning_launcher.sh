@@ -21,7 +21,7 @@
 target_csv="Witnessing_Fig4b.csv"
 experiment_name="splitting_test_Wit_Fig4b-grey"
 defects_numbers=(1)
-repetitions_numbers=(30)
+repetitions_numbers=(10)
 iterations_numbers=(2000)
 
 

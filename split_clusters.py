@@ -69,7 +69,8 @@ for i in range(clusters_count):
     cluster_champion = ith_cluster[cluster_losses.index(min(cluster_losses))]
     
     # output to file:
-    with open(filename_base + '_C' + str(i) + '.txt', 'w') as filestream:
+    with open(filename_base + '_Cs' + str(clusters_count)
+              + '_C' + str(i) + '.txt', 'w') as filestream:
         filestream.write(cluster_champion + '\n')
         for model in ith_cluster:
             filestream.write(model + '\n')
