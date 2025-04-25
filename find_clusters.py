@@ -5,7 +5,6 @@ Effective model learning
 @author: Henry (henry104413)
 """
 
-
 import sys # for passing command line arguments
 import pickle
 import json
@@ -184,5 +183,3 @@ plt.ylabel('silhouette score')
 plt.xticks(clusters_counts, x_tick_labels)
 plt.title(filename_base)
 plt.savefig(filename_base + '_clustering_silhouette_scores.svg')
-
-

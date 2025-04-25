@@ -26,5 +26,5 @@ max_clusters=10
 
 
 # execution:
-nohup python clustering.py "$experiment_name" "$defects_number" "$run_number_bound" "$min_clusters" "$max_clusters"  </dev/null &>"$experiment_name"_D"$defects_number"_clustering_prog.txt &
+nohup python find_clusters.py "$experiment_name" "$defects_number" "$run_number_bound" "$min_clusters" "$max_clusters"  </dev/null &>"$experiment_name"_D"$defects_number"_clustering_prog.txt &
 
