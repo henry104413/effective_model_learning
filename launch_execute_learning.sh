@@ -47,7 +47,7 @@ for i in ${!defects_numbers[@]}; do
     	repetitions_number=${repetitions_numbers[0]}
     else
     	# if not specified properly, set default here:
-    	repetitions_number=1	
+    	repetitions_number=3
     fi
     
     for ((rep=1; rep<=repetitions_number; rep++)); do
