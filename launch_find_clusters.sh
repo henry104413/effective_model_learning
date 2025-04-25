@@ -1,7 +1,7 @@
 # Effective model learning - bash launcher
 # @author: Henry (henry104413)
 
-# bash to carry out clustering
+# bash to find clusters for given clusters counts
 
 # pickled models must be in this folder
 # and must follow naming convention:
@@ -18,13 +18,13 @@
 
 
 # settings:
-experiment_name="test_Wit_Fig4b-grey"
+experiment_name="quick-test"
 defects_number=1
-run_number_bound=30
+run_number_bound=10
 min_clusters=2
-max_clusters=10
+max_clusters=7
 
 
 # execution:
-nohup python clustering.py "$experiment_name" "$defects_number" "$run_number_bound" "$min_clusters" "$max_clusters"  </dev/null &>"$experiment_name"_D"$defects_number"_clustering_prog.txt &
+nohup python find_clusters.py "$experiment_name" "$defects_number" "$run_number_bound" "$min_clusters" "$max_clusters"  </dev/null &>"$experiment_name"_D"$defects_number"_clustering_prog.txt &
 

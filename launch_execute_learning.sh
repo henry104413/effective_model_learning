@@ -8,9 +8,9 @@
 
 
 # set below:
-# 1) experiment name to use in output filenames
-# 2) target csv file where pairs of columns are individual datasets,
+# 1) target csv file where pairs of columns are individual datasets,
 # - any annotations will be skipped
+# 2) experiment name to use in output filenames
 # 3) array of different numbers of defects to run with
 # 4) array of repetitions numbers for each defect number
 # 5) array of iterations (proposals) numbers for each defect numbers
@@ -18,11 +18,11 @@
 # 4) and 5) either have to be same length as 3),
 # or length 1 if same settings to be used for each defect number
 # but in each case must be arrays!  
-experiment_name="test_Wit_Fig4b-grey"
 target_csv="Witnessing_Fig4b.csv"
+experiment_name="quick-test"
 defects_numbers=(1)
-repetitions_numbers=(30)
-iterations_numbers=(5000)
+repetitions_numbers=(10)
+iterations_numbers=(2000)
 
 
 # execution:
@@ -52,7 +52,7 @@ for i in ${!defects_numbers[@]}; do
     
     for ((rep=1; rep<=repetitions_number; rep++)); do
 	echo launching for $defects_number defects repetition no. $rep
-	nohup python execute.py "$experiment_name" "$target_csv" "$defects_number" "$rep" "$iterations_number"  </dev/null &>"$experiment_name"_D"$defects_number"_R"$rep"_prog.txt &
+	nohup python execute_learning.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number"  </dev/null &>"$experiment_name"_D"$defects_number"_R"$rep"_prog.txt &
 	done
 done
 
