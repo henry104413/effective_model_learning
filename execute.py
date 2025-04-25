@@ -20,19 +20,13 @@ import output
 
 
 # run parameters taken from additional command line arguments,
-# order: experiment_name, defects_count, repetition_number, max_iterations;
+# order: target_file, experiment_name, defects_count, repetition_number, max_iterations;
 # defaults specified here if unavailable
 # note: files are overwritten if saved with same name
 
-# set experiment name for file naming:
-try:
-    experiment_name = str(sys.argv[1])
-except:
-    experiment_name = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
-    
 # set target data file:
 try:
-    target_file = str(sys.argv[2])
+    target_file = str(sys.argv[1])
 except:
     # by default take first csv file found in current folder
     # note: only tested on Linux
@@ -42,6 +36,12 @@ except:
     except:
         raise SystemExit('Unable to open any csv file - aborting')        
 
+# set experiment name for file naming:
+try:
+    experiment_name = str(sys.argv[2])
+except:
+    experiment_name = time.strftime("%Y_%m_%d_%H%M%S", time.gmtime())
+    
 # set number of defects,
 try:
 	defects_count = int(sys.argv[3])
@@ -50,6 +50,7 @@ except:
 	
 # set repetition number for file naming:
 # note: refers to repetition of run with same defects number
+# note: repetitions carried out by external loop (bash script)
 try:
 	repetition_number = int(sys.argv[4])
 except: 
