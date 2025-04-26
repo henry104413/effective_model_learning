@@ -18,11 +18,11 @@
 # last three (= 5), 6), 7) if joined with execute launcher) 
 # each either array of same length as defects numbers
 # or array of length one (then taken same for all defects numbers)
-experiment_name="quick-test"
-defects_numbers=(1)
-repetitions_numbers=(10)
+experiment_name="250425-Wit-4b-grey-batch"
+defects_numbers=(2)
+repetitions_numbers=(200)
 mins_clusters=(2)
-maxs_clusters=(8)
+maxs_clusters=(15)
 
 
 for i in ${!defects_numbers[@]}; do

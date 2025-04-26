@@ -14,10 +14,11 @@
 
 
 
-experiment_name="quick-test"
-defects_number=1
-clusters_count=3
+experiment_name="250425-Wit-4b-grey-batch"
+defects_number=2
+clusters_count=7
 
+# just turn these into arrays as well and put in one more outer loop... quick stuff
 
 python sort_by_clusters.py "$experiment_name" "$defects_number" "$clusters_count" 
 
@@ -36,10 +37,10 @@ for ((cluster=0; cluster<clusters_count; cluster++)); do
     i=1
     while IFS= read -r line; do
         if [ $i -eq 1 ]; then
-            cp $line* "$assignment_name"/"$assignment_name"_C"$cluster"
+            cp "$line"_* "$assignment_name"/"$assignment_name"_C"$cluster"
             
         else
-            cp $line* "$assignment_name"/"$assignment_name"_C"$cluster"/"$assignment_name"_C"$cluster"_all
+            cp "$line"_* "$assignment_name"/"$assignment_name"_C"$cluster"/"$assignment_name"_C"$cluster"_all
             
         fi 
         ((++i))
