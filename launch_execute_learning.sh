@@ -21,7 +21,7 @@
 target_csv="Witnessing_Fig4b.csv"
 experiment_name="quick-test"
 defects_numbers=(1)
-repetitions_numbers=(10)
+repetitions_numbers=(2)
 iterations_numbers=(2000)
 
 
