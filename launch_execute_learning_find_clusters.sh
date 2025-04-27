@@ -23,12 +23,12 @@ trap '' HUP
 # or array of length one (then taken same across all defects numbers)
 # - in any case must be arrays!  
 target_csv="Witnessing_Fig4b.csv"
-experiment_name="quick-test"
-defects_numbers=(1)
-repetitions_numbers=(2)
-iterations_numbers=(2000)
+experiment_name="combined-"
+defects_numbers=(1 2)
+repetitions_numbers=(8)
+iterations_numbers=(200)
 mins_clusters=(2)
-maxs_clusters=(15)
+maxs_clusters=(7)
 
 # important notes:
 # naming convention for best model loadable files:
@@ -40,8 +40,8 @@ maxs_clusters=(15)
 # nb: it follows that at least 3 points required
 
 # trackers to check whether all learning runs completed:
-touch started_tracker ; rm started_tracker
-touch finished_tracker ; rm finished_tracker
+touch started_tracker ; rm started_tracker ; touch started_tracker
+touch finished_tracker ; rm finished_tracker; touch finished_tracker
 
 
 # launch parallel learning runs:
@@ -78,12 +78,14 @@ done
 
 
 # keep checking trackers until all learning runs have finished:
-while [ $(cat started_tracker|wc -l) -gt $(cat finished_tracker|wc -l) ] ; do
+(while [ $(cat started_tracker|wc -l) -gt $(cat finished_tracker|wc -l) ] ; do
     sleep 1 # in seconds
-done
+    #echo "waiting"
+done ;
 
 
 # clustering:
+#echo "clustering"
 for i in ${!defects_numbers[@]}; do
     defects_number=${defects_numbers[i]}
 
@@ -120,6 +122,6 @@ for i in ${!defects_numbers[@]}; do
     # execution:
     python find_clusters.py "$experiment_name" "$defects_number" "$repetitions_number" "$min_clusters" "$max_clusters"  </dev/null &>"$experiment_name"_D"$defects_number"_clustering_prog.txt &
     
-done
+done) &
 
 
