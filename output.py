@@ -99,6 +99,8 @@ class Output:
                     plt.plot(get_dynamics_times(j), dataset[i], line_formats[j], label = get_dynamics_dataset_label(j))
                             
                 plt.legend()
+                plt.text(0, plt.gca().get_ylim()[0] + (plt.gca().get_ylim()[1]-plt.gca().get_ylim()[0])/50,
+                     'best loss = ' + '{:.2e}'.format(best_loss))
                 plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000)
                  
     
@@ -110,7 +112,7 @@ class Output:
             plt.xlabel('iteration')
             plt.ylabel('loss')
             plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
-                     10**(0.9*np.log10(plt.gca().get_ylim()[0])),
+                     10**(0.98*np.log10(plt.gca().get_ylim()[0])),
                      'best loss = ' + '{:.2e}'.format(best_loss))
             #plt.xlim([0, 10000])
             plt.savefig(filename + '_loss.svg', dpi = 1000)

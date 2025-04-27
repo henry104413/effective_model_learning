@@ -213,8 +213,8 @@ best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurem
 # output controls bundle:
 class Toggles():    
     comparison = True # plot comparison of dynamics
-    loss = True # plot cost function progression
-    acceptance = True # plot acceptance ratios over subsequenct windows
+    loss = False # plot cost function progression
+    acceptance = False # plot acceptance ratios over subsequenct windows
     graphs = False # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
     text = True # save selected models as text

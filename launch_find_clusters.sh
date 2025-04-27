@@ -5,26 +5,61 @@
 
 # pickled models must be in this folder
 # and must follow naming convention:
-# <experiment name>_D<number of defects>_R<run number>_best.pickle
+# <experiment name>_D<number of defects>_R<repetition>_best.pickle
 
-# run numbers are iterated through from 1 up to runs number bound
+# repetitions are iterated through from 1 up to repetitions number
 
 # minimum clusters should be at least 2
 # maximum should be at most number of points (models) - 1
 # (both required for silhouette score calculation)
-
-# for now to be called separately for each defects number
-# later will allow array specification
-
+# note: it follows that at least 3 points required
 
 # settings:
-experiment_name="quick-test"
-defects_number=1
-run_number_bound=10
-min_clusters=2
-max_clusters=7
+# last three (= 5), 6), 7) if joined with execute launcher) 
+# each either array of same length as defects numbers
+# or array of length one (then taken same for all defects numbers)
+experiment_name="250425-Wit-4b-grey-batch"
+defects_numbers=(2)
+repetitions_numbers=(200)
+mins_clusters=(2)
+maxs_clusters=(15)
 
 
-# execution:
-nohup python find_clusters.py "$experiment_name" "$defects_number" "$run_number_bound" "$min_clusters" "$max_clusters"  </dev/null &>"$experiment_name"_D"$defects_number"_clustering_prog.txt &
+for i in ${!defects_numbers[@]}; do
+    defects_number=${defects_numbers[i]}
+
+    # determine repetitions number for this number of defects:
+    if [ ${#repetitions_numbers[@]} -eq ${#defects_numbers[@]} ]; then
+    	repetitions_number=${repetitions_numbers[i]}
+    elif [ ${#repetitions_numbers[@]} -eq 1 ]; then
+    	repetitions_number=${repetitions_numbers[0]}
+    else
+    	# if not specified properly, set default here:
+    	repetitions_number=3	
+    fi
+    
+    # determine minimum clusters for this number of defects:
+    if [ ${#mins_clusters[@]} -eq ${#defects_numbers[@]} ]; then
+    	min_clusters=${mins_clusters[i]}
+    elif [ ${#mins_clusters[@]} -eq 1 ]; then
+    	min_clusters=${mins_clusters[0]}
+    else
+    	# if not specified properly, set default here:
+    	min_clusters=2	
+    fi
+    
+    # determine maximum clusters number for this number of defects:
+    if [ ${#maxs_clusters[@]} -eq ${#defects_numbers[@]} ]; then
+    	max_clusters=${maxs_clusters[i]}
+    elif [ ${#repetitions_numbers[@]} -eq 1 ]; then
+    	max_clusters=${maxs_clusters[0]}
+    else
+    	# if not specified properly, set default here:
+    	max_clusters=$(($repetitions_number - 1))
+    fi
+
+    # execution:
+    nohup python find_clusters.py "$experiment_name" "$defects_number" "$repetitions_number" "$min_clusters" "$max_clusters"  </dev/null &>"$experiment_name"_D"$defects_number"_clustering_prog.txt &
+    
+done
 

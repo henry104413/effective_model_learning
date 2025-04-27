@@ -165,6 +165,8 @@ np.savetxt(filename_base + '_clustering_silhouette_scores.csv',
 
 # xlabels for numbers of clusters with just edges (to avoid overlapping when dense)
 x_tick_labels = [clusters_counts[0]] + ['' for x in range(len(clusters_counts)-2)] + [clusters_counts[-1]]
+if not (type(elbow) == type(None)):
+    x_tick_labels[elbow - clusters_counts[0]] = elbow
 
 # plot SSE vs number of clusters:
 plt.figure(tight_layout = True)
