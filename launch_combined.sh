@@ -39,6 +39,10 @@ maxs_clusters=(15)
 # (both required for silhouette score calculation)
 # nb: it follows that at least 3 points required
 
+# trackers to check whether all learning runs completed:
+touch started_tracker ; rm started_tracker
+touch finished_tracker ; rm finished_tracker
+
 
 # launch parallel learning runs:
 for i in ${!defects_numbers[@]}; do
@@ -67,12 +71,16 @@ for i in ${!defects_numbers[@]}; do
     
     for ((rep=1; rep<=repetitions_number; rep++)); do
 	echo launching for $defects_number defects repetition no. $rep
-	python execute_learning.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number"  </dev/null &>"$experiment_name"_D"$defects_number"_R"$rep"_prog.txt &
+	echo "started" >> started_tracker
+	(python execute_learning.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number"  </dev/null &>"$experiment_name"_D"$defects_number"_R"$rep"_prog.txt ; echo "finished" >> finished_tracker) &
 	done
 done
 
 
 # keep checking trackers until all learning runs have finished:
+while [ $(cat started_tracker|wc -l) -gt $(cat finished_tracker|wc -l) ] ; do
+    sleep 1 # in seconds
+done
 
 
 # clustering:
