@@ -14,15 +14,17 @@
 # 3) array of different numbers of defects to run with
 # 4) array of repetitions numbers for each defect number
 # 5) array of iterations (proposals) numbers for each defect numbers
+# 6) proportion (as float) of data values from start to use for training; 1 means use all  
 # note:
 # 4) and 5) either have to be same length as 3),
 # or length 1 if same settings to be used for each defect number
 # but in each case must be arrays!  
 target_csv="Witnessing_Fig4b.csv"
-experiment_name="quick-test"
+experiment_name="250501-subset-learning-4"
 defects_numbers=(1)
 repetitions_numbers=(2)
-iterations_numbers=(2000)
+iterations_numbers=(5000)
+proportion_training=0.2
 
 
 # execution:
@@ -52,7 +54,7 @@ for i in ${!defects_numbers[@]}; do
     
     for ((rep=1; rep<=repetitions_number; rep++)); do
 	echo launching for $defects_number defects repetition no. $rep
-	nohup python execute_learning.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number"  </dev/null &>"$experiment_name"_D"$defects_number"_R"$rep"_prog.txt &
+	nohup python execute_learning.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training"  </dev/null &>"$experiment_name"_D"$defects_number"_R"$rep"_prog.txt &
 	done
 done
 
