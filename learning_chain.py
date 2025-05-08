@@ -327,6 +327,10 @@ class LearningChain:
             # note: proposal not modified by this
             proposal, possible_modifications_reverse_type = self.step(proposal, self.complementary_step(next_step), update = False)
             
+            # if no reversal possible, skip to next proposal iteration:
+            # note: every step should be reversible - this should only ever be triggered when proposal gets killed by filter
+            if not bool(possible_modifications_reverse_type): continue
+            
             # overall probabilities of making this step and of then reversing it:
             p_there = self.next_step_probabilities_dict[next_step]/possible_modifications_chosen_type
             p_back = self.next_step_probabilities_dict[self.complementary_step(next_step)]/possible_modifications_reverse_type
