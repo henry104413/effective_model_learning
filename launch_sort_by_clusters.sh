@@ -14,9 +14,9 @@
 
 
 
-experiment_name="250425-Wit-4b-grey-batch"
-defects_number=2
-clusters_count=7
+experiment_name="combined-"
+defects_number=1
+clusters_count=6
 
 # just turn these into arrays as well and put in one more outer loop... quick stuff
 

@@ -64,6 +64,14 @@ try:
 except:
     max_iterations = 100
 
+# set proportion (ratio) of available data values to use for training:
+# note: currently taken from start and same for all data sets; 1 means use all
+# note: must be a number and not expression
+try:
+    proportion_to_use = float(sys.argv[6])
+except:
+    proportion_to_use = 1
+
 # run's output files common name:
 # example: '250421_Wit4b-grey_ForClusters'
 filename = (experiment_name + '_D' + str(defects_count) +
@@ -96,20 +104,33 @@ order = xs.argsort()
 xs = xs[order]
 ys = ys[order]
 
-# note: integrator errors - thought cause was unevenly spaced data likely just unsorted
-# apparently works if sorted descending ascending or descending, but unsorted breaks!
+# note: apparently has to be sorted else integrator fails
+# (both ascending and descending work, can be unevenly spaced)
 
-# times for model evaluation:
+
+
+#%% data preparation:
+
+# rescaled measurement times:
+# note: proper scaling here avoids having to scale other hyperparameters
 ts = xs/1000
 
-# measured data feed:
+# full measurement data:
+# (encapsulate into lists of datasets and corresponding observable lables)
 measurement_datasets = [ys]
 measurement_observables = ['sigmax']
+    
+# times and measurement data to use for training:
+# (encapsulate into lists of datasets and corresponding observable lables:)
+training_ts = ts[:int(proportion_to_use*len(ts))]
+training_ys = ys[:int(proportion_to_use*len(ys))]
+training_measurement_datasets = [training_ys]
+training_measurement_observables = ['sigmax']
 
 
 
 #%% perform learning:
-    
+
 # if qubit initial state required:
 import definitions
 qubit_initial_state = definitions.ops['sigmax']
@@ -126,9 +147,9 @@ Ls_shape_scale = (0.2, 0.5)
 
 
 # instance of learning (quest for best model):
-quest = learning_chain.LearningChain(target_times = ts,
-                      target_datasets = measurement_datasets,
-                      target_observables = measurement_observables,
+quest = learning_chain.LearningChain(target_times = training_ts,
+                      target_datasets = training_measurement_datasets,
+                      target_observables = training_measurement_observables,
                       
                       initial = (1, defects_count), # (qubit energy, number of defects)
                       qubit_initial_state = qubit_initial_state,
@@ -200,9 +221,6 @@ best = quest.run()
 
 #%%
 best = quest.best
-
-costs = quest.explored_loss
-acceptance_ratios = quest.chain_windows_acceptance_log
 evaluation_ts = np.linspace(ts[0], ts[-1], max(10*len(ts), int(1000)))
 best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables,
                                         custom_function_on_return = False)
@@ -211,7 +229,7 @@ best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurem
 #%% chain run outputs:
 
 # output controls bundle:
-class Toggles():    
+class Toggles:    
     comparison = True # plot comparison of dynamics
     loss = False # plot cost function progression
     acceptance = False # plot acceptance ratios over subsequenct windows
@@ -223,14 +241,14 @@ class Toggles():
 
 # create outputs:
 output.Output(toggles = Toggles, filename = filename,
-       dynamics_ts = [ts, evaluation_ts],
-       dynamics_datasets = [measurement_datasets, best_datasets],
-       dynamics_datasets_labels = ['measured', 'learned'],
-       dynamics_formatting = ['b+', 'r-'],
+       dynamics_ts = [ts, training_ts, evaluation_ts],
+       dynamics_datasets = [measurement_datasets, training_measurement_datasets, best_datasets],
+       dynamics_datasets_labels = ['all measurements', 'training subset', 'prediction'],
+       dynamics_formatting = ['k+', 'bx', 'r-'],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        best_loss = quest.best_loss,
-       acceptance = acceptance_ratios,
+       acceptance = quest.chain_windows_acceptance_log,
        models_to_save = [best],
        model_names = ['best'],
        chain_hyperparams = quest.get_init_hyperparams()
