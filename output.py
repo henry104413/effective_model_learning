@@ -90,17 +90,20 @@ class Output:
             # plot comparison for each observables:
             for i, observable in enumerate(observable_labels):
                 plt.figure()
-                plt.ylabel(observable)
-                plt.xlabel('time (arbitrary)')
-                
+                #plt.ylabel(observable)
+                plt.ylabel(r'<$\sigma_x$>')
+                plt.xlabel(r'time ($\mu s$)')
+                #r'Microstrain [$\mu \epsilon$]'
+                    
                 # plot all the datasets in the comparison for this observable:
                 # assumed times may differ for datasets but same across each dataset for all observables
                 for j, dataset in enumerate(dynamics_datasets):    
                     plt.plot(get_dynamics_times(j), dataset[i], line_formats[j], label = get_dynamics_dataset_label(j))
                             
                 plt.legend()
-                plt.text(0, plt.gca().get_ylim()[0] + (plt.gca().get_ylim()[1]-plt.gca().get_ylim()[0])/50,
-                     'best loss = ' + '{:.2e}'.format(best_loss))
+                if False:
+                    plt.text(0, plt.gca().get_ylim()[0] + (plt.gca().get_ylim()[1]-plt.gca().get_ylim()[0])/50,
+                         'best loss = ' + '{:.2e}'.format(best_loss))
                 plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000)
                  
     

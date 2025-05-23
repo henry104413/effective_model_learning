@@ -20,11 +20,11 @@
 # or length 1 if same settings to be used for each defect number
 # but in each case must be arrays!  
 target_csv="Witnessing_Fig4b.csv"
-experiment_name="250501-subset-learning-4"
-defects_numbers=(1)
-repetitions_numbers=(2)
-iterations_numbers=(5000)
-proportion_training=0.2
+experiment_name="250523-fig-run2"
+defects_numbers=(0 1)
+repetitions_numbers=(4)
+iterations_numbers=(20000)
+proportion_training=0.7
 
 
 # execution:

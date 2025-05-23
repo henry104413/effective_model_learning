@@ -240,11 +240,42 @@ class Toggles:
 
 
 # create outputs:
-output.Output(toggles = Toggles, filename = filename,
+output.Output(toggles = Toggles, filename = filename + '_all_',
        dynamics_ts = [ts, training_ts, evaluation_ts],
        dynamics_datasets = [measurement_datasets, training_measurement_datasets, best_datasets],
        dynamics_datasets_labels = ['all measurements', 'training subset', 'prediction'],
-       dynamics_formatting = ['k+', 'bx', 'r-'],
+       dynamics_formatting = ['mx', 'b+', 'r-'],
+       observable_labels = measurement_observables,
+       loss = quest.explored_loss,
+       best_loss = quest.best_loss,
+       acceptance = quest.chain_windows_acceptance_log,
+       models_to_save = [best],
+       model_names = ['best'],
+       chain_hyperparams = quest.get_init_hyperparams()
+       )
+
+
+# create outputs:
+output.Output(toggles = Toggles, filename = filename + '_training_data_gap_',
+       dynamics_ts = [np.append(training_ts, ts[-1])],
+       dynamics_datasets = [[np.append(training_measurement_datasets[0], 0)]],
+       dynamics_datasets_labels = ['measurements'],
+       dynamics_formatting = ['b+'],
+       observable_labels = measurement_observables,
+       loss = quest.explored_loss,
+       best_loss = quest.best_loss,
+       acceptance = quest.chain_windows_acceptance_log,
+       models_to_save = [best],
+       model_names = ['best'],
+       chain_hyperparams = quest.get_init_hyperparams()
+       )
+
+# create outputs:
+output.Output(toggles = Toggles, filename = filename + '_training_data_model_',
+       dynamics_ts = [training_ts, evaluation_ts],
+       dynamics_datasets = [training_measurement_datasets, best_datasets],
+       dynamics_datasets_labels = ['measurements', 'model'],
+       dynamics_formatting = ['b+', 'r-'],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        best_loss = quest.best_loss,
