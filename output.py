@@ -27,6 +27,8 @@ K_to_eV = definitions.Constants.K_to_eV
 t_to_sec = definitions.Constants.t_to_sec
 # note: h_bar=1, e=1
 
+# fontsize in figures (default was 10)
+plt.rcParams["font.size"] = 20
 
 
 class Output:
@@ -98,13 +100,15 @@ class Output:
                 # plot all the datasets in the comparison for this observable:
                 # assumed times may differ for datasets but same across each dataset for all observables
                 for j, dataset in enumerate(dynamics_datasets):    
-                    plt.plot(get_dynamics_times(j), dataset[i], line_formats[j], label = get_dynamics_dataset_label(j))
+                    plt.plot(get_dynamics_times(j), dataset[i], line_formats[j], label = get_dynamics_dataset_label(j)
+                             ,markersize = 10, markeredgewidth = 2, linewidth = 2
+                             )
                             
                 plt.legend()
                 if False:
                     plt.text(0, plt.gca().get_ylim()[0] + (plt.gca().get_ylim()[1]-plt.gca().get_ylim()[0])/50,
                          'best loss = ' + '{:.2e}'.format(best_loss))
-                plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000)
+                plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000, bbox_inches='tight')
                  
     
         # plot loss progression over chain steps:
@@ -118,7 +122,7 @@ class Output:
                      10**(0.98*np.log10(plt.gca().get_ylim()[0])),
                      'best loss = ' + '{:.2e}'.format(best_loss))
             #plt.xlim([0, 10000])
-            plt.savefig(filename + '_loss.svg', dpi = 1000)
+            plt.savefig(filename + '_loss.svg', dpi = 1000, bbox_inches='tight')
             
             
         # plot acceptance ratio evolution:
@@ -130,7 +134,7 @@ class Output:
             plt.ylabel('acceptance ratio')
             #plt.xlim([0, 10000])
             plt.ylim([-0.05,1.05])
-            plt.savefig(filename + '_acceptance.svg', dpi = 1000)
+            plt.savefig(filename + '_acceptance.svg', dpi = 1000, bbox_inches='tight')
         
     
         # save specified model instances (as text and/or pickle and/or graph):
@@ -401,6 +405,6 @@ class Output:
         # import itertools as it
         # connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
         
-        plt.savefig(filename + '.svg')#, dpi=300)#, bbox_inches='tight')
+        plt.savefig(filename + '.svg', bbox_inches='tight')#, dpi=300)#, bbox_inches='tight')
 
         
