@@ -165,7 +165,7 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                           'remove defect-defect coupling': 0.05
                           },
                       
-                      temperature_proposal = 0.0005, # either value or (shape, scale) of gamma to sample
+                      temperature_proposal = 0.0010, # either value or (shape, scale) of gamma to sample
                       
                       jump_length_rescaling_factor = 1.0, # for scaling up or down jump lengths of parameter handler
                       
@@ -174,9 +174,9 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                       acceptance_band = 0.2,
                       
                       params_handler_hyperparams = { 
-                          'initial_jump_lengths': {'couplings' : 0.05,
-                                                   'energies' : 0.5,
-                                                   'Ls' : 0.005
+                          'initial_jump_lengths': {'couplings' : 0.10,
+                                                   'energies' : 0.9,
+                                                   'Ls' : 0.010
                                                    },
                           },
                       
@@ -244,7 +244,7 @@ output.Output(toggles = Toggles, filename = filename + '_all_',
        dynamics_ts = [ts, training_ts, evaluation_ts],
        dynamics_datasets = [measurement_datasets, training_measurement_datasets, best_datasets],
        dynamics_datasets_labels = ['all measurements', 'training subset', 'prediction'],
-       dynamics_formatting = ['m+', 'b.', 'r-'],
+       dynamics_formatting = ['g+', 'b.', 'r-'],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        best_loss = quest.best_loss,
@@ -260,7 +260,7 @@ output.Output(toggles = Toggles, filename = filename + '_training_data_gap_',
        dynamics_ts = [np.append(training_ts, ts[-1])],
        dynamics_datasets = [[np.append(training_measurement_datasets[0], 0)]],
        dynamics_datasets_labels = ['measurements'],
-       dynamics_formatting = ['b+'],
+       dynamics_formatting = ['g+'],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        best_loss = quest.best_loss,
@@ -275,7 +275,7 @@ output.Output(toggles = Toggles, filename = filename + '_training_data_model_',
        dynamics_ts = [training_ts, evaluation_ts],
        dynamics_datasets = [training_measurement_datasets, best_datasets],
        dynamics_datasets_labels = ['measurements', 'model'],
-       dynamics_formatting = ['b+', 'r-'],
+       dynamics_formatting = ['g+', 'r-'],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        best_loss = quest.best_loss,
