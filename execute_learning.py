@@ -231,20 +231,21 @@ best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurem
 # output controls bundle:
 class Toggles:    
     comparison = True # plot comparison of dynamics
-    loss = False # plot cost function progression
-    acceptance = False # plot acceptance ratios over subsequenct windows
+    loss = True # plot cost function progression
+    acceptance = True # plot acceptance ratios over subsequenct windows
     graphs = False # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
     text = True # save selected models as text
     hyperparams = True # save chain hyperparameters as json
 
 
-# create outputs:
-output.Output(toggles = Toggles, filename = filename + '_all_',
+# create outputs - measurements, training subset, prediction on evaluation_ts:
+if True:
+    output.Output(toggles = Toggles, filename = filename,
        dynamics_ts = [ts, training_ts, evaluation_ts],
        dynamics_datasets = [measurement_datasets, training_measurement_datasets, best_datasets],
        dynamics_datasets_labels = ['all measurements', 'training subset', 'prediction'],
-       dynamics_formatting = ['g+', 'b.', 'r-'],
+       dynamics_formatting = ['b+', 'b.', 'r-'],
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        best_loss = quest.best_loss,
@@ -255,8 +256,9 @@ output.Output(toggles = Toggles, filename = filename + '_all_',
        )
 
 
-# create outputs:
-output.Output(toggles = Toggles, filename = filename + '_training_data_gap_',
+# create outputs - only training subset of measurements, last datapoint plotted for consistent x-axis scaling:
+if False:
+    output.Output(toggles = Toggles, filename = filename + '_training_data_gap',
        dynamics_ts = [np.append(training_ts, ts[-1])],
        dynamics_datasets = [[np.append(training_measurement_datasets[0], 0)]],
        dynamics_datasets_labels = ['measurements'],
@@ -270,8 +272,9 @@ output.Output(toggles = Toggles, filename = filename + '_training_data_gap_',
        chain_hyperparams = quest.get_init_hyperparams()
        )
 
-# create outputs:
-output.Output(toggles = Toggles, filename = filename + '_training_data_model_',
+# create outputs - training on training_ts (possibly subset) and evaluation on best_datasets:
+if False:
+    output.Output(toggles = Toggles, filename = filename + '_training_data_model',
        dynamics_ts = [training_ts, evaluation_ts],
        dynamics_datasets = [training_measurement_datasets, best_datasets],
        dynamics_datasets_labels = ['measurements', 'model'],

@@ -101,17 +101,17 @@ class Output:
                 # assumed times may differ for datasets but same across each dataset for all observables
                 for j, dataset in enumerate(dynamics_datasets):    
                     plt.plot(get_dynamics_times(j), dataset[i], line_formats[j], label = get_dynamics_dataset_label(j)
-                             ,markersize = 10, markeredgewidth = 2, linewidth = 4
+                             ,markersize = 10, markeredgewidth = 2, linewidth = 6
                              )
                             
                 plt.legend()
-                if False:
+                if not False:
                     plt.text(0, plt.gca().get_ylim()[0] + (plt.gca().get_ylim()[1]-plt.gca().get_ylim()[0])/50,
                          'best loss = ' + '{:.2e}'.format(best_loss))
                 plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000, bbox_inches='tight')
                  
     
-        # plot loss progression over chain steps:
+        # plot loss progression over chain steps, also save list as pickle:
         if toggles.loss:     
             plt.figure()
             plt.plot(loss, 'm-', linewidth = 0.3, markersize = 0.1)
@@ -123,6 +123,8 @@ class Output:
                      'best loss = ' + '{:.2e}'.format(best_loss))
             #plt.xlim([0, 10000])
             plt.savefig(filename + '_loss.svg', dpi = 1000, bbox_inches='tight')
+            with open(filename + '_loss.pickle', 'wb') as filestream:
+                pickle.dump(loss, filestream)
             
             
         # plot acceptance ratio evolution:
