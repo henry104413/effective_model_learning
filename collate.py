@@ -17,37 +17,34 @@ if typing.TYPE_CHECKING:
 
 
 # for multiple datasets and defects numbers under one experiment,
-# make list of descriptor tuples (experiment_name, dataset_name, defects_number):
+# specify varying parameter (restoring or damping - both frequencies),
+# then make list of descriptor tuples (experiment_name, dataset_name, defects_number):
 # note: for each descriptor, multiple repetitions (identical parameter chains) were run
-experiment_name = '250602-full'
-dataset_names = [
-                 "Wit-Fig4-5-0_1" ,
-                 "Wit-Fig4-6-0_025",
-                 "Wit-Fig4-6-0_1",
-                 "Wit-Fig4-6-0_2",
-                 "Wit-Fig4-7-0_1"
-                 ]
-defects_numbers = [0, 1, 2]
-descriptors = [(experiment_name, T, D) for T in dataset_names for D in defects_numbers]
 
-labels_drag = {
+varying = 'damping'
+experiment_name = '250602-full'
+dataset_names = {'restoring': ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_1", "Wit-Fig4-7-0_1"],
+                 'damping': ["Wit-Fig4-6-0_025", "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2"]
+                 }
+defects_numbers = [2] #[0, 1, 2] # list of all
+
+descriptors = [(experiment_name, T, D) for T in dataset_names[varying] for D in defects_numbers]
+labels = {}
+labels['damping'] = {
           "Wit-Fig4-5-0_1" : '0.1 MHz',
           "Wit-Fig4-6-0_025" : '0.025 MHz',
           "Wit-Fig4-6-0_1" : '0.1 MHz',
           "Wit-Fig4-6-0_2" : '0.2 MHz',
           "Wit-Fig4-7-0_1" : '0.1 MHz'
          }
-# !!! ?? is it really a frequency?
-
-labels_restoring = {
+# frequency as in inverse of the decay time
+labels['restoring'] = {
           "Wit-Fig4-5-0_1" : '5 MHz',
           "Wit-Fig4-6-0_025" : '6 MHz',
           "Wit-Fig4-6-0_1" : '6 MHz',
           "Wit-Fig4-6-0_2" : '6 MHz',
           "Wit-Fig4-7-0_1" : '7 MHz'
          }
-
-
 
 
 #%%
@@ -83,7 +80,7 @@ class CandidateModelsSet:
         # experiment name, target dataset name, and defects number
         # (define candidate set in current folder):
         self.experiment_name = experiment_name
-        self.dataaset_name = dataset_name
+        self.dataset_name = dataset_name
         self.defects_number = defects_number
         
     def pull_all(self):
@@ -127,12 +124,14 @@ class CandidateModelsSet:
     def get_model_paths(self) -> list[str]:
         """
         Saves and returns list of pickled models filenames from current folder
-        that match experiment name and defects number of this candidate set.
+        that match experiment_name-dataset_name and defects number of this candidate set.
+        
+        !! Note: The naming convention for the experiment and dataset name here has a HYPHEN.
         """
         
         all_files = os.listdir()
         self.matching_model_files = [x for x in all_files 
-                          if ((self.experiment_name + self.dataset_name
+                          if ((self.experiment_name + '-' + self.dataset_name
                                + '_D' + str(self.defects_number)) in x)
                           and ('_best.pickle' in x)]
         return self.matching_model_files
@@ -184,7 +183,17 @@ for descriptor in descriptors:
 
 #%% plots:
     
-# training on full dataset - best candidate given D on top of target data 
+plt.rcParams["font.size"] = 16
+
+
+    
+# training on full dataset - best candidate on top of target dataset, given D: 
+
+plt.figure()
+plt.ylabel(r'<$\sigma_x$>')
+plt.xlabel(r'time ($\mu s$)')
+plt.ylim([-0.05, 1.05])
+plt.xlim([-0.05, 2.55])
  
 colours = (x for x in ['b', 'r', 'g', 'm', 'k'])
 for candidate_set in candidate_models_sets:
@@ -195,23 +204,24 @@ for candidate_set in candidate_models_sets:
     
     champion = candidate_set.best_candidate
     
-    plt.figure()
-    plt.ylabel(r'<$\sigma_x$>')
-    plt.xlabel(r'time ($\mu s$)')
-    #plt.ylim([-0.05, 1.05])
-    #plt.xlim([-0.005, 2.505])
     
     colour = next(colours)
-    plt.plot(xs, ys, '+' + colour, 
-            label = 'measurements'
-            ,markersize = 10, markeredgewidth = 2, linewidth = 4
+    plt.plot(xs, ys, '.' + colour
+            #,label = 'measurements'
+            ,alpha = 0.5, markersize = 6, markeredgewidth = 1
             )
-    plt.plot(xs, champion.calculate_dynamics(xs, ['sigmax'])[0], '-' + colour,
-             label = 'learned', alpha = 0.5, linewidth = 4,
-             linewidth = 4)
+    plt.plot(xs, champion.calculate_dynamics(xs, ['sigmax'])[0], '-' + colour
+            ,label = labels[varying][candidate_set.dataset_name]
+            ,alpha = 0.4, linewidth = 2
+            )
     
-    plt.legend()
+    legend = plt.legend(title = r'$D=' + str(candidate_set.defects_number) + '$' + ', ' + varying)
+    for lh in legend.legend_handles:
+        lh.set_alpha(1)
+
     if False: plt.text()
-    plt.savefig('testplot.svg', dpi = 1000, bbox_inches='tight')
+    plt.savefig('varying_' + varying 
+                + '_D' + str(candidate_set.defects_number)
+                +'.svg', dpi = 1000, bbox_inches='tight')
 
 
