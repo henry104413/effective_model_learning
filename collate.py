@@ -21,12 +21,12 @@ if typing.TYPE_CHECKING:
 # then make list of descriptor tuples (experiment_name, dataset_name, defects_number):
 # note: for each descriptor, multiple repetitions (identical parameter chains) were run
 
-varying = 'damping'
+varying = 'restoring'
 experiment_name = '250602-full'
 dataset_names = {'restoring': ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_1", "Wit-Fig4-7-0_1"],
                  'damping': ["Wit-Fig4-6-0_025", "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2"]
                  }
-defects_numbers = [2] #[0, 1, 2] # list of all
+defects_numbers = [3] #[0, 1, 2] # list of all
 
 descriptors = [(experiment_name, T, D) for T in dataset_names[varying] for D in defects_numbers]
 labels = {}
