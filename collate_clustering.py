@@ -20,7 +20,8 @@ if typing.TYPE_CHECKING:
 experiment_name = '250602-full'
 dataset_name = "Wit-Fig4-6-0_025"
 defects_numbers = [0, 1, 2, 3] # list of all
-knees = [6, 7, 6, 12] # manually input identified knees for corresponding defects
+knees_alg = [6, 7, 6, 12] # algorithmic knees for corresponding defects
+knees_man = [3, 5, 3, 0] # manual knees based on SS consideration as well - ignored if 0
 
 def load_dataset(filenamename: str) -> tuple[np.ndarray]:
     """
@@ -57,7 +58,7 @@ plt.rcParams["font.size"] = 16
     
 # training on full dataset - best candidate on top of target dataset, given D: 
 
-labels = {'SSEs': 'SSE',
+labels = {'SSEs': 'sum of squared errors',
           'silhouette_scores': 'silhouette score'}
 
 for metric in ['SSEs', 'silhouette_scores']:
@@ -88,12 +89,15 @@ for metric in ['SSEs', 'silhouette_scores']:
         colour = next(colours)
         plt.plot(ks, vals, '-' + colour
                 ,label = str(defects_number)
-                ,alpha = 0.4, linewidth = 2
+                ,alpha = 0.5, linewidth = 2
                 )
-        plt.plot(knees[i], vals[np.where(ks == knees[i])], 'o' + colour, 
-                 alpha = 0.4, markeredgewidth = 2, markersize = 10)
+        plt.plot(knees_alg[i], vals[np.where(ks == knees_alg[i])], 'o' + colour, 
+                 alpha = 0.3, markeredgewidth = 2, markersize = 10)
+        if knees_man[i]:
+            plt.plot(knees_man[i], vals[np.where(ks == knees_man[i])], 'D' + colour, 
+                     alpha = 0.3, markeredgewidth = 2, markersize = 10)
         
-    legend = plt.legend(title = r'$D' + '$')
+    legend = plt.legend(title = r'$D' + '$', loc = 'upper right')
     for lh in legend.legend_handles:
         lh.set_alpha(1)
 
