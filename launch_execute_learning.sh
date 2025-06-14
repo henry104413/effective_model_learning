@@ -23,7 +23,7 @@ target_csv="Wit-Fig4-6-0_025.csv"
 experiment_name="250614-test-"
 defects_numbers=(2)
 repetitions_numbers=(1)
-iterations_numbers=(10)
+iterations_numbers=(100)
 proportion_training=1
 
 

@@ -254,7 +254,7 @@ if True:
        models_to_save = [best],
        model_names = ['best'],
        chain_hyperparams = quest.get_init_hyperparams(),
-       all_proposals = quest.explored_proposals
+       all_proposals = quest.all_proposals
        )
 
 
@@ -272,7 +272,7 @@ if False:
        models_to_save = [best],
        model_names = ['best'],
        chain_hyperparams = quest.get_init_hyperparams(),
-       all_proposals = quest.explored_proposals
+       all_proposals = quest.all_proposals
        )
 
 # create outputs - training on training_ts (possibly subset) and evaluation on best_datasets:

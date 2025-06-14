@@ -20,11 +20,12 @@
 # 4) and 5) either have to be same length as 3),
 # or length 1 if same settings to be used for each defect number
 # !! but in each case must be arrays!  
-declare -a target_csvs=("Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1")
-experiment_name="250602-full"
-defects_numbers=(0 1 2)
-repetitions_numbers=(200)
-iterations_numbers=(30000)
+declare -a target_csvs=("Wit-Fig4-6-0_025")
+# "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
+experiment_name="250614-test"
+defects_numbers=(2)
+repetitions_numbers=(1)
+iterations_numbers=(13)
 proportion_training=1
 
 
