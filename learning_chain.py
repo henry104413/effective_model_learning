@@ -174,7 +174,7 @@ class LearningChain:
                  iterations_till_progress_update: int = False,
                  # number of iterations before iteration number and time elapsed printed
                  
-                 store_all_proposals: bool = True
+                 store_all_proposals: bool = False
                  ):
         
         

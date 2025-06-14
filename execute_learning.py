@@ -206,7 +206,9 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                       
                       custom_function_on_dynamics_return = False,#custom_func
                       
-                      iterations_till_progress_update = 20
+                      iterations_till_progress_update = 20,
+                      
+                      store_all_proposals = True
                       )
 
 # import matplotlib.pyplot as plt
