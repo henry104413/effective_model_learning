@@ -21,12 +21,15 @@ if typing.TYPE_CHECKING:
 # then make list of descriptor tuples (experiment_name, dataset_name, defects_number):
 # note: for each descriptor, multiple repetitions (identical parameter chains) were run
 
-varying = 'restoring'
+varying = 'all'
 experiment_name = '250602-full'
 dataset_names = {'restoring': ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_1", "Wit-Fig4-7-0_1"],
-                 'damping': ["Wit-Fig4-6-0_025", "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2"]
+                 'damping': ["Wit-Fig4-6-0_025", "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2"],
+                 'all' : ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025",
+                          "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2",
+                          "Wit-Fig4-7-0_1"]
                  }
-defects_numbers = [3] #[0, 1, 2] # list of all
+defects_numbers = [ 1, 2, 3] # list of all
 
 descriptors = [(experiment_name, T, D) for T in dataset_names[varying] for D in defects_numbers]
 labels = {}
@@ -45,6 +48,17 @@ labels['restoring'] = {
           "Wit-Fig4-6-0_2" : '6 MHz',
           "Wit-Fig4-7-0_1" : '7 MHz'
          }
+
+feature_sizes_dict = { 
+    # from bottom to top of first oscillation (first two local extrema difference after initial descent)
+          "Wit-Fig4-5-0_1" : 0.286,
+          "Wit-Fig4-6-0_025" : 0.468,
+          "Wit-Fig4-6-0_1" : 0.181,
+          "Wit-Fig4-6-0_2" : 0.046,
+          "Wit-Fig4-7-0_1" : 0.102
+         }
+
+
 
 
 #%%
@@ -118,7 +132,11 @@ class CandidateModelsSet:
                     self.best_loss = temp
                     self.best_candidate = copy.deepcopy(candidate)
                     self.best_filename = candidate_file
-                
+        
+        if not True: # print
+            print('\n\nchampion for + ' + str(self.dataset_name) + ' D ' + str(self.defects_number)
+                  + ':\n loss = ' + str(self.best_loss) )
+    
         return self.best_candidate        
     
     def get_model_paths(self) -> list[str]:
@@ -165,6 +183,9 @@ def load_dataset(dataset_name: str) -> tuple[np.ndarray]:
     return xs, ys
 
 
+#%% training on full dataset - best candidate on top of target dataset, given D: 
+
+# note: initially plotted individually for each D... I think?    
 
 # for each candidate models set specified by experiment name, target dataset name.
 # and defects number (ie. all repetitions of same model learning),
@@ -176,52 +197,143 @@ for descriptor in descriptors:
     candidate_models_set.find_best()
     candidate_models_sets.append(candidate_models_set)
 
-
-
-
-
-
-#%% plots:
+# plots:
     
+plt.rcParams["font.size"] = 16    
+
+if not True:    
+    
+    plt.figure()
+    plt.ylabel(r'<$\sigma_x$>')
+    plt.xlabel(r'time ($\mu s$)')
+    plt.ylim([-0.05, 1.05])
+    plt.xlim([-0.05, 2.55])
+     
+    colours = (x for x in ['b', 'r', 'g', 'm', 'k'])
+    for candidate_set in candidate_models_sets:
+        
+        # load target data corresponding to dataset name in candidate_models_set instance
+        # note: assumed present in current folder
+        xs, ys = load_dataset(candidate_set.dataset_name)
+        
+        champion = candidate_set.best_candidate
+        
+        
+        colour = next(colours)
+        plt.plot(xs, ys, '.' + colour
+                #,label = 'measurements'
+                ,alpha = 0.5, markersize = 6, markeredgewidth = 1
+                )
+        plt.plot(xs, champion.calculate_dynamics(xs, ['sigmax'])[0], '-' + colour
+                ,label = labels[varying][candidate_set.dataset_name]
+                ,alpha = 0.4, linewidth = 2
+                )
+        
+        legend = plt.legend(title = r'$D=' + str(candidate_set.defects_number) + '$' + ', ' + varying)
+        for lh in legend.legend_handles:
+            lh.set_alpha(1)
+    
+        if False: plt.text()
+        plt.savefig('varying_' + varying 
+                    + '_D' + str(candidate_set.defects_number)
+                    +'.svg', dpi = 1000, bbox_inches='tight')
+    
+
+
+#%% checkerboard of champions' final loss across different Ds and different datasets sorted by feature size:
+   
 plt.rcParams["font.size"] = 16
 
+def return_champion_loss(experiment_name, dataset, D):
+    candidate_models_set = CandidateModelsSet(experiment_name, dataset, D)
+    candidate_models_set.find_best()
+    champion_loss = candidate_models_set.best_loss
+    return champion_loss
+    
+# dataset names sorted by feature size
+vals = np.array([val for key, val in feature_sizes_dict.items()])
+order = vals.argsort()
+feature_sizes = vals[order]
+datasets_by_feature_size = np.array([x for x in feature_sizes_dict])[order]
 
-    
-# training on full dataset - best candidate on top of target dataset, given D: 
-
-plt.figure()
-plt.ylabel(r'<$\sigma_x$>')
-plt.xlabel(r'time ($\mu s$)')
-plt.ylim([-0.05, 1.05])
-plt.xlim([-0.05, 2.55])
- 
-colours = (x for x in ['b', 'r', 'g', 'm', 'k'])
-for candidate_set in candidate_models_sets:
-    
-    # load target data corresponding to dataset name in candidate_models_set instance
-    # note: assumed present in current folder
-    xs, ys = load_dataset(candidate_set.dataset_name)
-    
-    champion = candidate_set.best_candidate
-    
-    
-    colour = next(colours)
-    plt.plot(xs, ys, '.' + colour
-            #,label = 'measurements'
-            ,alpha = 0.5, markersize = 6, markeredgewidth = 1
-            )
-    plt.plot(xs, champion.calculate_dynamics(xs, ['sigmax'])[0], '-' + colour
-            ,label = labels[varying][candidate_set.dataset_name]
-            ,alpha = 0.4, linewidth = 2
-            )
-    
-    legend = plt.legend(title = r'$D=' + str(candidate_set.defects_number) + '$' + ', ' + varying)
-    for lh in legend.legend_handles:
-        lh.set_alpha(1)
-
-    if False: plt.text()
-    plt.savefig('varying_' + varying 
-                + '_D' + str(candidate_set.defects_number)
-                +'.svg', dpi = 1000, bbox_inches='tight')
+Ds = np.array(defects_numbers)
 
 
+if True: # make matrix A
+
+    # make array of champions final loss functions (matrix to plot essentially):
+    # ...
+    A = np.empty([len(datasets_by_feature_size), len(Ds)])    
+    for row, dataset in enumerate(datasets_by_feature_size):
+        for col, D in enumerate(Ds):
+            A[row, col] = return_champion_loss(experiment_name, dataset, D)
+            
+
+if True: # make unwrapped list:
+
+    comps = [(T, D) for T in datasets_by_feature_size for D in Ds]  
+    xs = [x[1] for x in comps]
+    ys = [feature_sizes_dict[x[0]] for x in comps]
+    zs = [return_champion_loss(experiment_name, x[0], x[1]) for x in comps]
+    
+
+#%% 
+if not True: # plot matrix
+    
+    fig = plt.figure()
+    ax = plt.gca()
+    cax = ax.matshow(A, interpolation='nearest')
+    fig.colorbar(cax)
+    
+    feature_size_labels = [str(x) for x in feature_sizes]
+    D_labels = [str(x) for x in Ds]
+    
+    yaxis = np.arange(len(feature_size_labels))
+    xaxis = Ds
+    ax.set_yticks(yaxis)
+    ax.set_xticks(Ds)
+    ax.set_yticklabels(feature_size_labels)
+    ax.set_xticklabels(D_labels)   
+    
+    ax.set_xlabel(r'$D$')
+    ax.set_ylabel('feature size')     
+    ax.set_title('final loss')        
+    fig.savefig('test_checkerboard' + '.svg')
+  
+#%% 
+if True: # plot as scatter thing:
+    
+    # normalise z to order of 10:
+    zs = [z/max(zs) for z in zs]
+    
+    import matplotlib.ticker
+    fmt = lambda x, pos: '{:.1f}'.format(x)
+    
+
+    
+    fig = plt.figure(figsize=(2.5, 4.2))
+    import matplotlib.colors
+    plt.scatter(xs, ys, c = zs,
+                edgecolors='none',
+                s=0.5e3, marker='s',
+                alpha = 1,
+                cmap = 'inferno',
+                #norm = matplotlib.colors.LogNorm()
+                )
+    #cb.ax.set_yticklabels([("%d" % i) for i in cb.get_ticks()]) # set ticks of your format
+    ax = plt.gca()
+    ax.set_facecolor('#D3D3D3')
+    #ax.tick_params(axis='x', pad=)
+    plt.xlabel(r'$D$')
+    plt.ylabel('feature size')     
+    plt.ylim([-0.00, 0.55])
+    plt.xlim([0.2, 3.8])
+    formatter = matplotlib.ticker.LogFormatter() # add to colorbar: format = formatter
+    #formatter = matplotlib.ticker.ScalarFormatter()
+    cbar = plt.colorbar(label = 'relative loss', format = '{x:.1f}')
+    # formatting not working for LogNorm - only formats first tick... formatter doesn't do anything
+    #plt.xticks(xs) # works but for some reason leads to bold font... jeez matplotlib honestly
+    
+    #cb.update_ticks()
+    fig.savefig('checkerboard' + '.svg', dpi = 1000, bbox_inches='tight')
+  

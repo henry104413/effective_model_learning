@@ -103,6 +103,7 @@ class LearningChain:
         
         iterations_till_progress_update = False # number of iterations before iteration number and time elapsed printed
     
+        store_all_proposals = False # switch to keep all proposed models
     
     
     def complementary_step(self, step_type: str) -> str:
@@ -170,8 +171,10 @@ class LearningChain:
                  custom_function_on_dynamics_return: callable = False,
                  # optional function acting on model's dynamics calculation return
                  
-                 iterations_till_progress_update: int = False
+                 iterations_till_progress_update: int = False,
                  # number of iterations before iteration number and time elapsed printed
+                 
+                 store_all_proposals: bool = True
                  ):
         
         
@@ -233,7 +236,7 @@ class LearningChain:
         self.process_handler = None
         
         # chain progression containers:
-        self.explored_models = [] # repository of explored models - currently not saved
+        self.explored_proposals = [] # repository of explored models
         self.explored_loss = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.current)
@@ -246,7 +249,7 @@ class LearningChain:
         self.current_loss = self.total_dev(self.current)
         self.best_loss = self.current_loss
         self.explored_loss.append(self.current_loss)
-    
+        if self.store_all_proposals: self.explored_proposals
     
     
     def run(self, steps:int = False) -> learning_model.LearningModel:
@@ -340,6 +343,10 @@ class LearningChain:
             proposal_loss = self.total_dev(proposal)
             self.explored_loss.append(proposal_loss)
             
+            # save every proposal - used for statistical analysis of chain:
+            if self.store_all_proposals:
+                self.explored_proposals.append(copy.deepcopy(proposal))
+                
             # Metropolis-Hastings acceptance:
             acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back)
             if np.random.uniform() < acceptance_probability: # ie. accept proposal
@@ -358,6 +365,11 @@ class LearningChain:
             print('\n\nChain run completed.\n'
                   +'_________________________\n\n', flush = True)
         self.best.final_loss = self.best_loss
+        
+        self.all_proposals = {'proposals': self.explored_proposals,
+                              'loss': self.explored_loss
+                             } 
+        
         return self.best
     
     

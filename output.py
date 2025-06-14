@@ -50,6 +50,7 @@ class Output:
                  acceptance: list[float|int] = [],
                  models_to_save: list[BasicModel|LearningModel] = [],
                  model_names: list[str] = [],
+                 all_proposals: dict[str, list[float]|list[LearningModel]] = {},
                  chain_hyperparams: dict = False,
                  chain_name: str = False,
                  fontsize: float = False):
@@ -160,7 +161,14 @@ class Output:
             if toggles.graphs:
                 self.create_model_graph(model, filename + get_model_name(i) + '_graph')
        
-                
+        
+        # save all proposals into single pickle - dictionary with keys 'loss' & 'proposal',
+        # where each proposal is an instance of LearningModel:
+        if toggles.all_proposals:
+            with open(filename + '_proposals.pickle', 'wb') as filestream:
+                pickle.dump(all_proposals, filestream)
+
+        
         # save chain hyperparameters dictionary as dictionary string and as pickle:
         # note: unfortunately JSON doesn't support tuples as keys
         # note: apparently string can be loaded back using ast.literal_eval
@@ -172,6 +180,8 @@ class Output:
                 filestream.write(pprint.pformat(chain_hyperparams))
             with open(filename + get_chain_name() + '_hyperparameters.pickle', 'wb') as filestream:
                 pickle.dump(chain_hyperparams,  filestream)
+                
+        
                 
                 
             

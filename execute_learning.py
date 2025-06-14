@@ -236,6 +236,7 @@ class Toggles:
     graphs = False # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
     text = True # save selected models as text
+    all_proposals = True # save all proposals in dictionary of lists under keys 'losses', 'proposals' 
     hyperparams = True # save chain hyperparameters as json
 
 
@@ -252,7 +253,8 @@ if True:
        acceptance = quest.chain_windows_acceptance_log,
        models_to_save = [best],
        model_names = ['best'],
-       chain_hyperparams = quest.get_init_hyperparams()
+       chain_hyperparams = quest.get_init_hyperparams(),
+       all_proposals = quest.explored_proposals
        )
 
 
@@ -269,7 +271,8 @@ if False:
        acceptance = quest.chain_windows_acceptance_log,
        models_to_save = [best],
        model_names = ['best'],
-       chain_hyperparams = quest.get_init_hyperparams()
+       chain_hyperparams = quest.get_init_hyperparams(),
+       all_proposals = quest.explored_proposals
        )
 
 # create outputs - training on training_ts (possibly subset) and evaluation on best_datasets:
@@ -285,7 +288,8 @@ if False:
        acceptance = quest.chain_windows_acceptance_log,
        models_to_save = [best],
        model_names = ['best'],
-       chain_hyperparams = quest.get_init_hyperparams()
+       chain_hyperparams = quest.get_init_hyperparams(),
+       all_proposals = quest.all_proposals
        )
 
 
