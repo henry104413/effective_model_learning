@@ -80,7 +80,11 @@ class ProcessHandler:
         for TLS in model.TLSs:
             addable_Ls = [x for x in Ls_library if x not in TLS.Ls] # addable Ls for this TLS
             possible_additions.extend([(TLS, x) for x in addable_Ls])
-        
+            
+        # !!! AD HOC MODIFICATION FOR res-L-qubit-only BRANCH ONLY:
+        # fitler out all possible additions if chosen system is a defect
+        possible_additions = [x for x in possible_additions if x[0].is_qubit]
+            
         # update model if required and additions possible, otherwise leave unchanged:
         if possible_additions and update:
             # pick one pair of TLS and L operator:
