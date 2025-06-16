@@ -133,8 +133,9 @@ class CandidateModelsSet:
                     self.best_candidate = copy.deepcopy(candidate)
                     self.best_filename = candidate_file
         
-        if not True: # print
-            print('\n\nchampion for + ' + str(self.dataset_name) + ' D ' + str(self.defects_number)
+        if True: # print
+            print('\n\nchampion for ' + str(self.experiment_name) + '-' + str(self.dataset_name) + '_D' + str(self.defects_number)
+                  + ':\n file = ' + str(self.best_filename)
                   + ':\n loss = ' + str(self.best_loss) )
     
         return self.best_candidate        
@@ -183,6 +184,19 @@ def load_dataset(dataset_name: str) -> tuple[np.ndarray]:
     return xs, ys
 
 
+
+def return_champion_loss(experiment_name, dataset, D):
+    """
+    Returns loss (float number) of champion of set of repetitions;
+    arguments: experiment name, dataset name, defects number (cycles through repetitions available in folder). 
+    """
+    candidate_models_set = CandidateModelsSet(experiment_name, dataset, D)
+    candidate_models_set.find_best()
+    champion_loss = candidate_models_set.best_loss
+    return champion_loss
+
+
+
 #%% training on full dataset - best candidate on top of target dataset, given D: 
 
 # note: initially plotted individually for each D... I think?    
@@ -192,7 +206,7 @@ def load_dataset(dataset_name: str) -> tuple[np.ndarray]:
 # instantiate CandidateModelsSet and run its find_best(),
 # so that a champion candidate for each learning configuration is available:
 candidate_models_sets = [] # list of instances for all descriptors, each has champion:
-for descriptor in descriptors:
+for descriptor in []:# descriptors:
     candidate_models_set = CandidateModelsSet(descriptor[0], descriptor[1], descriptor[2])
     candidate_models_set.find_best()
     candidate_models_sets.append(candidate_models_set)
@@ -244,11 +258,6 @@ if not True:
    
 plt.rcParams["font.size"] = 16
 
-def return_champion_loss(experiment_name, dataset, D):
-    candidate_models_set = CandidateModelsSet(experiment_name, dataset, D)
-    candidate_models_set.find_best()
-    champion_loss = candidate_models_set.best_loss
-    return champion_loss
     
 # dataset names sorted by feature size
 vals = np.array([val for key, val in feature_sizes_dict.items()])
@@ -259,7 +268,7 @@ datasets_by_feature_size = np.array([x for x in feature_sizes_dict])[order]
 Ds = np.array(defects_numbers)
 
 
-if True: # make matrix A
+if not True: # make matrix A
 
     # make array of champions final loss functions (matrix to plot essentially):
     # ...
@@ -269,7 +278,7 @@ if True: # make matrix A
             A[row, col] = return_champion_loss(experiment_name, dataset, D)
             
 
-if True: # make unwrapped list:
+if not True: # make unwrapped list:
 
     comps = [(T, D) for T in datasets_by_feature_size for D in Ds]  
     xs = [x[1] for x in comps]
@@ -301,7 +310,7 @@ if not True: # plot matrix
     fig.savefig('test_checkerboard' + '.svg')
   
 #%% 
-if True: # plot as scatter thing:
+if not True: # plot as scatter thing:
     
     # normalise z to order of 10:
     zs = [z/max(zs) for z in zs]
@@ -337,3 +346,93 @@ if True: # plot as scatter thing:
     #cb.update_ticks()
     fig.savefig('checkerboard' + '.svg', dpi = 1000, bbox_inches='tight')
   
+    
+#%%
+if True: # scatter of custom sets with different experiment names:
+    
+    plt.rcParams["font.size"] = 16
+
+    configs_OG = [
+        '250615-L-qubit-only-everything-couples-Wit-Fig4-6-0_025_D2',
+        '250615-L-qubit-only-single-full-library-Wit-Fig4-6-0_025_D1',
+        '250615-L-qubit-only-starlike-Wit-Fig4-6-0_025_D2',
+        '250615-L-qubit-sigmaz-only-everything-couples-Wit-Fig4-6-0_025_D2',
+        '250615-L-qubit-sigmaz-only-single-sigmax-coupling-Wit-Fig4-6-0_025_D1',
+        '250615-L-qubit-sigmaz-only-starlike-Wit-Fig4-6-0_025_D2',
+        '250602-full-Wit-Fig4-6-0_025_D1',
+        '250602-full-Wit-Fig4-6-0_025_D2'
+            ]
+    
+    configs = { # name of experiment : defect numbers (tuple - must be iterable anyway!)
+        '250615-L-qubit-only-everything-couples' : (2,),
+        '250615-L-qubit-only-single-full-library' : (1,),
+        '250615-L-qubit-only-starlike' : (2,),
+        '250615-L-qubit-sigmaz-only-everything-couples' : (2,),
+        '250615-L-qubit-sigmaz-only-single-sigmax-coupling' : (1,),
+        '250615-L-qubit-sigmaz-only-starlike' : (2,),
+        '250602-full' : (1, 2)
+              }
+    
+    sep = '\n'
+   # $''\n'r'$
+    experiment_labels = { # presentable labels corresponding to experiments ie. configs keys
+      
+        '250615-L-qubit-only-everything-couples' : 
+            r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
+           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'mesh',
+        '250615-L-qubit-only-single-full-library' :
+            r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$ L_{virt} \in \{\}$'+sep
+           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'star',
+        '250615-L-qubit-only-starlike' :
+            r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
+           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'star',
+        '250615-L-qubit-sigmaz-only-everything-couples' :
+            r'$L_{syst} \in \{\sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
+           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'mesh',
+        '250615-L-qubit-sigmaz-only-single-sigmax-coupling' : 
+            r'$L_{syst} \in \{\sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
+           +r'$C \in \{\sigma_x \sigma_x\}$'+sep+'star',
+        '250615-L-qubit-sigmaz-only-starlike' : 
+            r'$L_{syst} \in \{\sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
+           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'star',
+        '250602-full' :
+            r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$L_{virt} \in \{\sigma_x, \sigma_y, \sigma_z\}$'+sep
+           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'mesh'
+              }
+    
+    losses = []
+    labels = []
+    
+    experiments = [x for x in configs]
+    
+    dataset = 'Wit-Fig4-6-0_025'
+
+    for experiment in experiments:
+        # nah - method for that already
+        #repetition_base = experiment + '-' + dataset + '_D' + str(configs[experiment])   # + _R1_best.pickle etc  
+        
+        for D in configs[experiment]: # tuple of Ds   
+        
+            losses.append(return_champion_loss(experiment, dataset, D))
+            labels.append(experiment_labels[experiment] + '\nD='+ str(D))
+        
+        
+  #%%  
+    #losses = [x/max(losses) for x in losses]
+    losses_arr = np.array(losses)
+    order = losses_arr.argsort()
+    labels_arr = np.array(labels)
+    losses_arr_sorted = losses_arr[order]
+    labels_arr_sorted = labels_arr[order]
+    
+    labels_sorted = [labels[i] for i in order]
+    
+    plt.figure(figsize=(10, 20))
+    plt.barh(np.arange(len(losses)), losses_arr_sorted, color='orange')
+    #plt.xscale('log')
+    plt.yticks(ticks = np.arange(len(losses)), labels = labels_sorted)
+    
+    plt.xlabel('lowest loss')#
+    plt.savefig('loss_vs_configuration_nonlog' + '.svg', dpi = 1000, bbox_inches='tight')
+  
+    

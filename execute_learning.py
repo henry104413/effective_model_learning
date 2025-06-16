@@ -161,8 +161,8 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                           'remove L': 0.05,
                           'add qubit-defect coupling': 0.05, 
                           'remove qubit-defect coupling': 0.05,
-                          'add defect-defect coupling': 0.05, 
-                          'remove defect-defect coupling': 0.05
+                          'add defect-defect coupling': 0,#0.05, 
+                          'remove defect-defect coupling': 0#0.05
                           },
                       
                       temperature_proposal = 0.0010, # either value or (shape, scale) of gamma to sample
