@@ -249,7 +249,7 @@ class LearningChain:
         self.current_loss = self.total_dev(self.current)
         self.best_loss = self.current_loss
         self.explored_loss.append(self.current_loss)
-        if self.store_all_proposals: self.explored_proposals
+        if self.store_all_proposals: self.explored_proposals.append(copy.deepcopy(self.initial))
     
     
     def run(self, steps:int = False) -> learning_model.LearningModel:
@@ -367,7 +367,8 @@ class LearningChain:
         self.best.final_loss = self.best_loss
         
         self.all_proposals = {'proposals': self.explored_proposals,
-                              'loss': self.explored_loss
+                              'loss': self.explored_loss,
+                              'acceptance': self.run_acceptance_tracker
                              } 
         
         return self.best
