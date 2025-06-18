@@ -165,7 +165,7 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                           'remove defect-defect coupling': 0#0.05
                           },
                       
-                      temperature_proposal = 0.0010, # either value or (shape, scale) of gamma to sample
+                      temperature_proposal = 0.0005, # either value or (shape, scale) of gamma to sample
                       
                       jump_length_rescaling_factor = 1.0, # for scaling up or down jump lengths of parameter handler
                       
