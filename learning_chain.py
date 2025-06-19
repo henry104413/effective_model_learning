@@ -105,6 +105,9 @@ class LearningChain:
     
         store_all_proposals = False # switch to keep all proposed models
     
+        L_qubit_only = False # switch to reject all L on non-qubits (defects)
+    
+    
     
     def complementary_step(self, step_type: str) -> str:
         """
@@ -174,7 +177,9 @@ class LearningChain:
                  iterations_till_progress_update: int = False,
                  # number of iterations before iteration number and time elapsed printed
                  
-                 store_all_proposals: bool = False
+                 store_all_proposals: bool = False,
+                 
+                 L_qubit_only = False
                  ):
         
         

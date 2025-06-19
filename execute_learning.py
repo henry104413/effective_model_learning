@@ -181,21 +181,21 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                           },
                       
                       Ls_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         'sigmax': Ls_shape_scale#(0.01, 0.1)
-                         ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-                         ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+                         #'sigmax': Ls_shape_scale#(0.01, 0.1)
+                         #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+                         'sigmaz': Ls_shape_scale#(0.01, 0.1)
                          },
                    
                       qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
                          (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-                        ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-                        ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+                        #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+                        #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
                          },
                       
                       defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-                        ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-                        ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+                        # (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+                        #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+                        #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
                         },
                       
                       params_thresholds = { # minimum values for parameters - if below then process dropped
@@ -208,7 +208,9 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                       
                       iterations_till_progress_update = 20,
                       
-                      store_all_proposals = True
+                      store_all_proposals = True,
+                      
+                      L_qubit_only = True
                       )
 
 # import matplotlib.pyplot as plt
