@@ -463,7 +463,7 @@ class LearningChain:
             case 'remove qubit L':
                 return self.process_handler.remove_random_qubit_L(model, update = update)
             case 'remove defect L':
-                return self.process_handler.remove_random__defect_L(model, update = update)
+                return self.process_handler.remove_random_defect_L(model, update = update)
             case 'add qubit-defect coupling':
                 return self.process_handler.add_random_qubit2defect_coupling(model, update = update)
             case 'remove qubit-defect coupling': 

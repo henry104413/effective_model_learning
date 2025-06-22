@@ -46,7 +46,7 @@ except:
 try:
 	defects_count = int(sys.argv[3])
 except: 
-	defects_count = 5
+	defects_count = 2
 	
 # set repetition number for file naming:
 # note: refers to repetition of run with same defects number
@@ -156,13 +156,15 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                       
                       max_chain_steps = max_iterations,
                       chain_step_options = {
-                          'tweak all parameters': 0.3,
-                          'add L': 0.05,
-                          'remove L': 0.05,
-                          'add qubit-defect coupling': 0.05, 
-                          'remove qubit-defect coupling': 0.05,
-                          'add defect-defect coupling': 0,#0.05, 
-                          'remove defect-defect coupling': 0#0.05
+                          'tweak all parameters': 5,
+                          'add qubit L': 1,
+                          'remove qubit L': 1,
+                          'add defect L': 1,
+                          'remove defect L': 1,
+                          'add qubit-defect coupling': 1, 
+                          'remove qubit-defect coupling': 1,
+                          'add defect-defect coupling': 1, 
+                          'remove defect-defect coupling': 1
                           },
                       
                       temperature_proposal = 0.0005, # either value or (shape, scale) of gamma to sample
@@ -180,22 +182,28 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                                                    },
                           },
                       
-                      Ls_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         #'sigmax': Ls_shape_scale#(0.01, 0.1)
-                         #,'sigmay': Ls_shape_scale#(0.01, 0.1)
-                         'sigmaz': Ls_shape_scale#(0.01, 0.1)
+                      qubit_Ls_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+                         'sigmax': Ls_shape_scale#(0.01, 0.1)
+                         ,'sigmay': Ls_shape_scale#(0.01, 0.1)
+                         ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+                         },
+                   
+                      defect_Ls_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+                         'sigmax': Ls_shape_scale#(0.01, 0.1)
+                         ,'sigmay': Ls_shape_scale#(0.01, 0.1)
+                         ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
                          },
                    
                       qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
                          (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-                        #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-                        #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+                        ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+                        ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
                          },
                       
                       defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                        # (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-                        #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-                        #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+                        (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+                        ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+                        ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
                         },
                       
                       params_thresholds = { # minimum values for parameters - if below then process dropped
