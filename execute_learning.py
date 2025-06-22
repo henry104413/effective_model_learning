@@ -135,11 +135,6 @@ training_measurement_observables = ['sigmax']
 import definitions
 qubit_initial_state = definitions.ops['sigmax']
 
-# for trying with absolute value of observable:
-def custom_func(arg):
-    print('taking abs')
-    if isinstance(arg, list): return [abs(x) for x in arg]
-    else: return abs(arg)
     
 # shorthands for hyperparams definitions:
 couplings_shape_scale = (0.8, 1)
@@ -214,11 +209,10 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                       
                       custom_function_on_dynamics_return = False,#custom_func
                       
-                      iterations_till_progress_update = 20,
+                      iterations_till_progress_update = 100,
                       
                       store_all_proposals = True,
                       
-                      L_qubit_only = True
                       )
 
 # import matplotlib.pyplot as plt

@@ -90,6 +90,7 @@ class LearningChain:
            }
 
         qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
+                                          # (0.8, 1) currently seems to work well
             (('sigmax', 'sigmax'),): (0.2, 0.5)
            ,(('sigmay', 'sigmay'),): (0.2, 0.5)
            ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
@@ -113,8 +114,7 @@ class LearningChain:
     
         store_all_proposals = False # switch to keep all proposed models
     
-        L_qubit_only = False # switch to reject all L on non-qubits (defects)
-    
+        
     
     
     def complementary_step(self, step_type: str) -> str:
@@ -193,7 +193,6 @@ class LearningChain:
                  
                  store_all_proposals: bool = False,
                  
-                 L_qubit_only = False
                  ):
         
         
