@@ -52,12 +52,14 @@ class LearningChain:
         max_chain_steps = 100
         chain_step_options = {
             'tweak all parameters': 10,
-            'add L': 0.1,
-            'remove L': 0.1,
-            'add qubit-defect coupling': 0.05, 
-            'remove qubit-defect coupling': 0.05,
-            'add defect-defect coupling': 0.025, 
-            'remove defect-defect coupling': 0.025
+            'add qubit L': 0.1,
+            'remove qubit L': 0.1,
+            'add defect L': 0.1,
+            'remove defect L': 0.1,
+            'add qubit-defect coupling': 0.1, 
+            'remove qubit-defect coupling': 0.1,
+            'add defect-defect coupling': 0.1, 
+            'remove defect-defect coupling': 0.1
             }
         
         temperature_proposal = 0.00001 # or (0.05, 0.05) to sample gamma by default
@@ -75,7 +77,13 @@ class LearningChain:
                                      }
             }
         
-        Ls_library = { # sampled from gamma distribution with given (shape, scale)
+        qubit_Ls_library = { # sampled from gamma distribution with given (shape, scale)
+            'sigmax': (0.1, 0.5)
+           ,'sigmay': (0.1, 0.5)
+           ,'sigmaz': (0.1, 0.5)
+           }
+
+        defect_Ls_library = { # sampled from gamma distribution with given (shape, scale)
             'sigmax': (0.1, 0.5)
            ,'sigmay': (0.1, 0.5)
            ,'sigmaz': (0.1, 0.5)
@@ -117,10 +125,14 @@ class LearningChain:
         match step_type:
             case 'tweak all parameters':
                 return 'tweak all parameters'
-            case 'add L': 
-                return 'remove L'
-            case 'remove L':
-                return 'add L'
+            case 'add qubit L': 
+                return 'remove qubit L'
+            case 'remove qubit L':
+                return 'add qubit L'
+            case 'add defect L': 
+                return 'remove defect L'
+            case 'remove defect L':
+                return 'add defect L'
             case 'add qubit-defect coupling':
                 return 'remove qubit-defect coupling' 
             case 'remove qubit-defect coupling': 
@@ -162,7 +174,9 @@ class LearningChain:
                  params_handler_hyperparams: dict[dict] = False,
                  # note: can contain lots of things - class to be simplified
                  
-                 Ls_library: dict[str, list | tuple] = False,
+                 qubit_Ls_library: dict[str, list | tuple] = False,
+                 
+                 defect_Ls_library: dict[str, list | tuple] = False,
       
                  qubit2defect_couplings_library: dict[str, list | tuple] = False,
                  
@@ -442,9 +456,13 @@ class LearningChain:
                     return (self.params_handler.tweak_all_parameters(model), 1)
                 if not update:
                     return (model, 1)
-            case 'add L': 
+            case 'add qubit L': 
                 return self.process_handler.add_random_L(model, update = update)
-            case 'remove L':
+            case 'add defect L': 
+                return self.process_handler.add_random_L(model, update = update)
+            case 'remove qubit L':
+                return self.process_handler.remove_random_L(model, update = update)
+            case 'remove defect L':
                 return self.process_handler.remove_random_L(model, update = update)
             case 'add qubit-defect coupling':
                 return self.process_handler.add_random_qubit2defect_coupling(model, update = update)

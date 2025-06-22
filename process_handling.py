@@ -35,14 +35,17 @@ class ProcessHandler:
     def __init__(self,
                  chain: LearningChain = False,
                  model: TYPE_MODEL = False,
-                 Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
+                 qubit_Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
+                 defect_Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
                  qubit2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,
                  defect2defect_couplings_library: TYPE_COUPLING_LIBRARY = False
                  # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
                  ):
 
-        self.Ls_library = Ls_library
-        self.initial_Ls_library = copy.deepcopy(Ls_library)
+        self.qubit_Ls_library = qubit_Ls_library
+        self.initial_qubit_Ls_library = copy.deepcopy(qubit_Ls_library)
+        self.defect_Ls_library = defect_Ls_library
+        self.initial_defect_Ls_library = copy.deepcopy(defect_Ls_library)
         self.qubit2defect_couplings_library = qubit2defect_couplings_library
         self.defect2defect_couplings_library = defect2defect_couplings_library
         self.model = model # only for future methods tied to specific model
@@ -50,14 +53,14 @@ class ProcessHandler:
 
         
 
-    def add_random_L(self,
+    def add_random_qubit_L(self,
                      model: TYPE_MODEL, *,
-                     Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
+                     qubit_Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
                      update: bool = True
                      ) -> tuple[TYPE_MODEL, int]:
         
         """
-        Can add random new single-site Linblad process from process library to random subsystem.
+        Can add random new single-site Linblad process from process library to random qubit.
         Modifies argument model, also returns it as (updated model, # possible additions).
                                                      
         Argument library used if passed, instance-level one otherwise, error if neither available.  
@@ -68,22 +71,23 @@ class ProcessHandler:
         """
         
         # check library available:
-        if not Ls_library:
-            if isinstance(self.Ls_library, dict):
-                Ls_library = self.Ls_library
+        if not qubit_Ls_library:
+            if isinstance(self.qubit_Ls_library, dict):
+                qubit_Ls_library = self.qubit_Ls_library
             else:
-                raise RuntimeError('Cannot add Lindblad process as process library not specified')
+                raise RuntimeError('Cannot add qubit Lindblad process as process library not specified')
         
         # gather all possible additions, ie. combinations (TLS, L in library but not on TLS)
         # (all treated as equally probable)
         possible_additions = []
         for TLS in model.TLSs:
-            addable_Ls = [x for x in Ls_library if x not in TLS.Ls] # addable Ls for this TLS
+            if not TLS.is_qubit: continue
+            addable_Ls = [x for x in qubit_Ls_library if x not in TLS.Ls] # addable Ls for this TLS
             possible_additions.extend([(TLS, x) for x in addable_Ls])
             
         # !!! AD HOC MODIFICATION FOR res-L-qubit-only BRANCH ONLY:
         # fitler out all possible additions if chosen system is a defect
-        possible_additions = [x for x in possible_additions if x[0].is_qubit]
+        # possible_additions = [x for x in possible_additions if x[0].is_qubit]
             
         # update model if required and additions possible, otherwise leave unchanged:
         if possible_additions and update:
@@ -91,7 +95,56 @@ class ProcessHandler:
             TLS, operator = possible_additions[np.random.choice(len(possible_additions))]
             
             # sample rate from distribution of type specified here and properties in library
-            new_rate = np.random.gamma(*Ls_library[operator])
+            new_rate = np.random.gamma(*qubit_Ls_library[operator])
+            
+            # update model:
+            TLS.Ls[operator] = new_rate
+            model.build_operators()
+        
+        # return model and number of possible additions:
+        return model, len(possible_additions)
+    
+    
+    
+    def add_random_defect_L(self,
+                     model: TYPE_MODEL, *,
+                     defect_Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
+                     update: bool = True
+                     ) -> tuple[TYPE_MODEL, int]:
+        
+        """
+        Can add random new single-site Linblad process from process library to random defect.
+        Modifies argument model, also returns it as (updated model, # possible additions).
+                                                     
+        Argument library used if passed, instance-level one otherwise, error if neither available.  
+        Update flag true means addition performed; false avoids changing model,
+        to only get count of addable Ls for prior/marginal probabilities calculation.
+        
+        Currently rate sampled gamma distribution of given (shape, size).
+        """
+        
+        # check library available:
+        if not defect_Ls_library:
+            if isinstance(self.defect_Ls_library, dict):
+                defect_Ls_library = self.defect_Ls_library
+            else:
+                raise RuntimeError('Cannot add defect Lindblad process as process library not specified')
+        
+        # gather all possible additions, ie. combinations (TLS, L in library but not on TLS)
+        # (all treated as equally probable)
+        possible_additions = []
+        for TLS in model.TLSs:
+            if TLS.is_qubit: continue
+            addable_Ls = [x for x in defect_Ls_library if x not in TLS.Ls] # addable Ls for this TLS
+            possible_additions.extend([(TLS, x) for x in addable_Ls])
+            
+        # update model if required and additions possible, otherwise leave unchanged:
+        if possible_additions and update:
+            # pick one pair of TLS and L operator:
+            TLS, operator = possible_additions[np.random.choice(len(possible_additions))]
+            
+            # sample rate from distribution of type specified here and properties in library
+            new_rate = np.random.gamma(*defect_Ls_library[operator])
             
             # update model:
             TLS.Ls[operator] = new_rate
@@ -310,15 +363,15 @@ class ProcessHandler:
             
         return model, len(possible_additions)
         
+    
         
-        
-    def remove_random_L(self,
+    def remove_random_qubit_L(self,
                         model: TYPE_MODEL,
                         update: bool = True
                         ) -> tuple[TYPE_MODEL, int]:
     
         """
-        Can remove random existing single-site Linblad process from random subsystem.
+        Can remove random existing single-site Linblad process from random qubit.
         Modifies argument model, also returns it as (updated model, # possible removals).
         Update flag true means removal performed; false avoids changing model,
         to only get count of removable Ls for prior/marginal probabilities calculation.
@@ -328,6 +381,7 @@ class ProcessHandler:
         # (all treated as equally probable)
         possible_removals = []
         for TLS in model.TLSs:
+            if not TLS.is_qubit: continue
             possible_removals.extend([(TLS, x) for x in TLS.Ls])
         
         # pick one pair of TLS and L operator if removals possible and update flag on:
@@ -344,34 +398,92 @@ class ProcessHandler:
         return model, len(possible_removals)
      
     
+    
+    def remove_random_defect_L(self,
+                        model: TYPE_MODEL,
+                        update: bool = True
+                        ) -> tuple[TYPE_MODEL, int]:
+    
+        """
+        Can remove random existing single-site Linblad process from random defect.
+        Modifies argument model, also returns it as (updated model, # possible removals).
+        Update flag true means removal performed; false avoids changing model,
+        to only get count of removable Ls for prior/marginal probabilities calculation.
+        """
         
-    def define_Ls_library(self, Ls_library: TYPE_LS_LIBRARY) -> None:
+        # gather all possible removals, ie. combinations (TLS, existing L on TLS)
+        # (all treated as equally probable)
+        possible_removals = []
+        for TLS in model.TLSs:
+            if TLS.is_qubit: continue
+            possible_removals.extend([(TLS, x) for x in TLS.Ls])
+        
+        # pick one pair of TLS and L operator if removals possible and update flag on:
+        if possible_removals and update:
+            TLS, operator = possible_removals[np.random.choice(len(possible_removals))]
+            
+            # update model:
+            TLS.Ls.pop(operator)
+            model.build_operators()
+        else:
+            pass
+            
+        # return model and number of possible removals:
+        return model, len(possible_removals)
+    
+    
+        
+    def define_qubit_Ls_library(self, qubit_Ls_library: TYPE_LS_LIBRARY) -> None:
         
         """
-        Sets process library post-initialisation.
+        Sets qubit Ls library post-initialisation.
         """ 
         
-        self.Ls_library = Ls_library
+        self.qubit_Ls_library = qubit_Ls_library
         
         
         
-    def reset_Ls_library(self) -> None:
+    def reset_qubit_Ls_library(self) -> None:
         
         """
-        Resets Ls library to initial one.   
+        Resets qubit Ls library to initial one.   
         """    
     
-        self.Ls_library = copy.deepcopy(self.initial_Ls_library)
+        self.qubit_Ls_library = copy.deepcopy(self.initial_qubit_Ls_library)
         
+    
+    
+    def define_defect_Ls_library(self, defect_Ls_library: TYPE_LS_LIBRARY) -> None:
+        
+        """
+        Sets defect Ls library post-initialisation.
+        """ 
+        
+        self.defect_Ls_library = defect_Ls_library
+        
+        
+        
+    def reset_defect_Ls_library(self) -> None:
+        
+        """
+        Resets defect Ls library to initial one.   
+        """    
+    
+        self.defect_Ls_library = copy.deepcopy(self.initial_defect_Ls_library)
+    
     
     
     def rescale_Ls_library_range(self, factor: int | float) -> None:
     
         """
+        !!! Note: Unused legacy method, not maintained!
+        
         Rescales bound distance from middle of range by half of given factor for all process library rates.
         Range hence changes by up to factor.
         Rates assumed positive and capped at zero from left (hence range can change less).
         """
+    
+        raise RuntimeError('Unmaintained legacy process handler method rescale_Ls_library_range() called')
     
         if type(self.Ls_library) == bool and not self.Ls_library:
             raise RuntimeError('Process library not retained by handler so cannot rescale range')
