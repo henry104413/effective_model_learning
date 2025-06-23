@@ -84,11 +84,13 @@ except:
     configuration_number = False
     
 
-# get corresponding chain configuration:    
+# get subexperiment name and  corresponding chain configuration:    
 subexperiment_name = list(configs.specific_experiment_chain_hyperparams.keys())[configuration_number]
 config = copy.deepcopy(configs.default_chain_hyperparams)
-for key in configs.specific_experiment_chain_hyperparams:
-    config[key] = configs.specific_experiment_chain_hyperparams[key]
+for supersede in configs.specific_experiment_chain_hyperparams[subexperiment_name]:
+    config[supersede] = configs.specific_experiment_chain_hyperparams[subexperiment_name][supersede]
+# note: supersede is name of each hyperparam that is superseded in defaults
+# by value for this specific experiment (subexperiment)
 
 # run's output files common name:
 # example: '250421_Wit4b-grey_ForClusters'
