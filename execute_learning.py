@@ -46,7 +46,7 @@ except:
 try:
 	defects_count = int(sys.argv[3])
 except: 
-	defects_count = 2
+	defects_count = 1
 	
 # set repetition number for file naming:
 # note: refers to repetition of run with same defects number
@@ -62,7 +62,7 @@ try:
     if max_iterations == 0:
         raise Exception('Maximum iterations not specified by launcher, hence using default.')
 except:
-    max_iterations = 100
+    max_iterations = 1000
 
 # set proportion (ratio) of available data values to use for training:
 # note: currently taken from start and same for all data sets; 1 means use all
@@ -211,7 +211,7 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                       
                       iterations_till_progress_update = 100,
                       
-                      store_all_proposals = True,
+                      store_all_proposals = True
                       
                       )
 
