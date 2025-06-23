@@ -10,13 +10,15 @@ Effective model learning
 import numpy as np
 import sys # for passing command line arguments
 import time
+import copy
 # note: import os also called below in case of an exception
 
 
 import basic_model
 import learning_chain
 import output
-
+import configs
+import definitions
 
 
 # run parameters taken from additional command line arguments,
@@ -36,7 +38,8 @@ except:
     except:
         raise SystemExit('Unable to open any csv file - aborting')        
 
-# set experiment name for file naming:
+# set experiment name for file naming: 
+# note: includes custom experiment name and target datafile name
 try:
     experiment_name = str(sys.argv[2])
 except:
@@ -71,10 +74,25 @@ try:
     proportion_to_use = float(sys.argv[6])
 except:
     proportion_to_use = 1
+    
+# set chain hyperparameter configuration number for specific subexperiment:
+# note: assumes configurations stored as LEarningChain initialiser keyword argument dictionaries
+# imported from configs file where specific_experiment_chain_hyperparams at least this number of entries
+try:
+    configuration_number = int(sys.argv[7])
+except:
+    configuration_number = False
+    
+
+# get corresponding chain configuration:    
+subexperiment_name = list(configs.specific_experiment_chain_hyperparams.keys())[configuration_number]
+config = copy.deepcopy(configs.default_chain_hyperparams)
+for key in configs.specific_experiment_chain_hyperparams:
+    config[key] = configs.specific_experiment_chain_hyperparams[key]
 
 # run's output files common name:
 # example: '250421_Wit4b-grey_ForClusters'
-filename = (experiment_name + '_D' + str(defects_count) +
+filename = (experiment_name + '_' + target_file + '_' + subexperiment_name + '_D' + str(defects_count) +
     '_R' + str(repetition_number))
  
 print(filename, flush = True)
@@ -87,7 +105,7 @@ print(filename, flush = True)
 # and numberical entries on single row are x, y values
 
 # choose data:
-datafile = target_file
+datafile = target_file + '.csv'
 dataset_no = 0 
 # note: 0 means first pair of columns
 # note: currently assuming first dataset in file is target now
@@ -132,9 +150,7 @@ training_measurement_observables = ['sigmax']
 #%% perform learning:
 
 # if qubit initial state required:
-import definitions
 qubit_initial_state = definitions.ops['sigmax']
-
     
 # shorthands for hyperparams definitions:
 couplings_shape_scale = (0.8, 1)
@@ -150,68 +166,10 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                       qubit_initial_state = qubit_initial_state,
                       
                       max_chain_steps = max_iterations,
-                      chain_step_options = {
-                          'tweak all parameters': 5,
-                          'add qubit L': 1,
-                          'remove qubit L': 1,
-                          'add defect L': 1,
-                          'remove defect L': 1,
-                          'add qubit-defect coupling': 1, 
-                          'remove qubit-defect coupling': 1,
-                          'add defect-defect coupling': 1, 
-                          'remove defect-defect coupling': 1
-                          },
                       
-                      temperature_proposal = 0.0005, # either value or (shape, scale) of gamma to sample
+                      store_all_proposals = True,
                       
-                      jump_length_rescaling_factor = 1.0, # for scaling up or down jump lengths of parameter handler
-                      
-                      acceptance_window = 10,
-                      acceptance_target = 0.4,
-                      acceptance_band = 0.2,
-                      
-                      params_handler_hyperparams = { 
-                          'initial_jump_lengths': {'couplings' : 0.10,
-                                                   'energies' : 0.9,
-                                                   'Ls' : 0.010
-                                                   },
-                          },
-                      
-                      qubit_Ls_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         'sigmax': Ls_shape_scale#(0.01, 0.1)
-                         ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-                         ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
-                         },
-                   
-                      defect_Ls_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         'sigmax': Ls_shape_scale#(0.01, 0.1)
-                         ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-                         ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
-                         },
-                   
-                      qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                         (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-                        ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-                        ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
-                         },
-                      
-                      defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-                        (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-                        ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-                        ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
-                        },
-                      
-                      params_thresholds = { # minimum values for parameters - if below then process dropped
-                          # !!! does this break reversibility??                
-                          'Ls':  1e-7,
-                          'couplings': 1e-6
-                          },
-                      
-                      custom_function_on_dynamics_return = False,#custom_func
-                      
-                      iterations_till_progress_update = 100,
-                      
-                      store_all_proposals = True
+                      **config # specific experiment chain hyperparameters
                       
                       )
 

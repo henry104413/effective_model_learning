@@ -49,57 +49,57 @@ class LearningChain:
         qubit_initial_state = False # instance of Qobj for single qubit 
         # note: only makes sense if product state initially 
         
-        max_chain_steps = 100
+        max_chain_steps = 10000
         chain_step_options = {
             'tweak all parameters': 10,
-            'add qubit L': 0.1,
-            'remove qubit L': 0.1,
-            'add defect L': 0.1,
-            'remove defect L': 0.1,
-            'add qubit-defect coupling': 0.1, 
-            'remove qubit-defect coupling': 0.1,
-            'add defect-defect coupling': 0.1, 
-            'remove defect-defect coupling': 0.1
+            'add qubit L': 1,
+            'remove qubit L': 1,
+            'add defect L': 1,
+            'remove defect L': 1,
+            'add qubit-defect coupling': 1, 
+            'remove qubit-defect coupling': 1,
+            'add defect-defect coupling': 1, 
+            'remove defect-defect coupling': 1
             }
         
-        temperature_proposal = 0.00001 # or (0.05, 0.05) to sample gamma by default
+        temperature_proposal = 0.0005 # or (0.05, 0.05) to sample gamma by default
         
-        jump_length_rescaling_factor = 2 # for scaling up or down jump lengths of parameter handler
+        jump_length_rescaling_factor = 1 # for scaling up or down jump lengths of parameter handler
         
-        acceptance_window = 100
+        acceptance_window = 10
         acceptance_target = 0.4
         acceptance_band = 0.2
         
         params_handler_hyperparams = {
-            'initial_jump_lengths': {'couplings' : 0.001,
-                                     'energies' : 0.01,
-                                     'Ls' : 0.00001
+            'initial_jump_lengths': {'couplings' : 0.1,
+                                     'energies' : 0.1,
+                                     'Ls' : 0.01
                                      }
             }
         
         qubit_Ls_library = { # sampled from gamma distribution with given (shape, scale)
-            'sigmax': (0.1, 0.5)
-           ,'sigmay': (0.1, 0.5)
-           ,'sigmaz': (0.1, 0.5)
+            'sigmax': (0.2, 0.5)
+           ,'sigmay': (0.2, 0.5)
+           ,'sigmaz': (0.2, 0.5)
            }
 
         defect_Ls_library = { # sampled from gamma distribution with given (shape, scale)
-            'sigmax': (0.1, 0.5)
-           ,'sigmay': (0.1, 0.5)
-           ,'sigmaz': (0.1, 0.5)
+            'sigmax': (0.2, 0.5)
+           ,'sigmay': (0.2, 0.5)
+           ,'sigmaz': (0.2, 0.5)
            }
 
         qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
                                           # (0.8, 1) currently seems to work well
-            (('sigmax', 'sigmax'),): (0.2, 0.5)
-           ,(('sigmay', 'sigmay'),): (0.2, 0.5)
-           ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
+            (('sigmax', 'sigmax'),): (0.8, 1)
+           ,(('sigmay', 'sigmay'),): (0.8, 1)
+           ,(('sigmaz', 'sigmaz'),): (0.8, 1)
            }
         
         defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-            (('sigmax', 'sigmay'),): (0.2, 0.5)
-           ,(('sigmay', 'sigmay'),): (0.2, 0.5)
-           ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
+            (('sigmax', 'sigmay'),): (0.8, 1)
+           ,(('sigmay', 'sigmay'),): (0.8, 1)
+           ,(('sigmaz', 'sigmay'),): (0.8, 1)
            }
         
         params_thresholds = { # minimum values for parameters - if below then process dropped
