@@ -73,7 +73,7 @@ feature_sizes_dict = {
 
 class CandidateModelsSet:
     
-# instance consists of experiment name and D
+# instance consists of experiment base name and D
 # R candidate models have been learned (repetitions)
 # method pull_all to go through current folder and loads all Rs found for this experiment name and D
 # it then identifies, saves, and returns the best candidate model (pickle with actual model)
@@ -88,13 +88,13 @@ class CandidateModelsSet:
     
 
     def __init__(self, experiment_name: str,
-                 dataset_name: str,
+                 #dataset_name: str,
                  defects_number: int):
         
         # experiment name, target dataset name, and defects number
         # (define candidate set in current folder):
         self.experiment_name = experiment_name
-        self.dataset_name = dataset_name
+        #self.dataset_name = dataset_name
         self.defects_number = defects_number
         
     def pull_all(self):
@@ -134,7 +134,9 @@ class CandidateModelsSet:
                     self.best_filename = candidate_file
         
         if True: # print
-            print('\n\nchampion for ' + str(self.experiment_name) + '-' + str(self.dataset_name) + '_D' + str(self.defects_number)
+            print('\n\nchampion for ' + str(self.experiment_name)
+                  #+ '-' + str(self.dataset_name)
+                  + '_D' + str(self.defects_number)
                   + ':\n file = ' + str(self.best_filename)
                   + ':\n loss = ' + str(self.best_loss) )
     
@@ -145,12 +147,14 @@ class CandidateModelsSet:
         Saves and returns list of pickled models filenames from current folder
         that match experiment_name-dataset_name and defects number of this candidate set.
         
-        !! Note: The naming convention for the experiment and dataset name here has a HYPHEN.
+        !! Note: The naming convention here earlier was experiment_name HYPHEN dataset_name.
+        Now changed to just experiment name and feeding it the full name base up to _D.
         """
         
         all_files = os.listdir()
         self.matching_model_files = [x for x in all_files 
-                          if ((self.experiment_name + '-' + self.dataset_name
+                          if ((self.experiment_name 
+                               #+ '-' + self.dataset_name
                                + '_D' + str(self.defects_number)) in x)
                           and ('_best.pickle' in x)]
         return self.matching_model_files
@@ -185,12 +189,15 @@ def load_dataset(dataset_name: str) -> tuple[np.ndarray]:
 
 
 
-def return_champion_loss(experiment_name, dataset, D):
+def return_champion_loss(experiment_name, D):
     """
     Returns loss (float number) of champion of set of repetitions;
-    arguments: experiment name, dataset name, defects number (cycles through repetitions available in folder). 
+    arguments: experiment name, defects number (cycles through repetitions available in folder). 
+    
+    Note: Earlier was experiment and dataset names separately
+    but merged into one base name to be passed up to _D.
     """
-    candidate_models_set = CandidateModelsSet(experiment_name, dataset, D)
+    candidate_models_set = CandidateModelsSet(experiment_name, D)
     candidate_models_set.find_best()
     champion_loss = candidate_models_set.best_loss
     return champion_loss
@@ -352,69 +359,68 @@ if True: # scatter of custom sets with different experiment names:
     
     plt.rcParams["font.size"] = 16
 
-    configs_OG = [
-        '250615-L-qubit-only-everything-couples-Wit-Fig4-6-0_025_D2',
-        '250615-L-qubit-only-single-full-library-Wit-Fig4-6-0_025_D1',
-        '250615-L-qubit-only-starlike-Wit-Fig4-6-0_025_D2',
-        '250615-L-qubit-sigmaz-only-everything-couples-Wit-Fig4-6-0_025_D2',
-        '250615-L-qubit-sigmaz-only-single-sigmax-coupling-Wit-Fig4-6-0_025_D1',
-        '250615-L-qubit-sigmaz-only-starlike-Wit-Fig4-6-0_025_D2',
-        '250602-full-Wit-Fig4-6-0_025_D1',
-        '250602-full-Wit-Fig4-6-0_025_D2'
-            ]
+    # old configs for 250615 batch
+
+    # configs_OG = [
+    #     '250615-L-qubit-only-everything-couples-Wit-Fig4-6-0_025_D2',
+    #     '250615-L-qubit-only-single-full-library-Wit-Fig4-6-0_025_D1',
+    #     '250615-L-qubit-only-starlike-Wit-Fig4-6-0_025_D2',
+    #     '250615-L-qubit-sigmaz-only-everything-couples-Wit-Fig4-6-0_025_D2',
+    #     '250615-L-qubit-sigmaz-only-single-sigmax-coupling-Wit-Fig4-6-0_025_D1',
+    #     '250615-L-qubit-sigmaz-only-starlike-Wit-Fig4-6-0_025_D2',
+    #     '250602-full-Wit-Fig4-6-0_025_D1',
+    #     '250602-full-Wit-Fig4-6-0_025_D2'
+    #         ]
     
-    configs = { # name of experiment : defect numbers (tuple - must be iterable anyway!)
-        '250615-L-qubit-only-everything-couples' : (2,),
-        '250615-L-qubit-only-single-full-library' : (1,),
-        '250615-L-qubit-only-starlike' : (2,),
-        '250615-L-qubit-sigmaz-only-everything-couples' : (2,),
-        '250615-L-qubit-sigmaz-only-single-sigmax-coupling' : (1,),
-        '250615-L-qubit-sigmaz-only-starlike' : (2,),
-        '250602-full' : (1, 2)
-              }
-    
-    sep = '\n'
-   # $''\n'r'$
-    experiment_labels = { # presentable labels corresponding to experiments ie. configs keys
+    # configs = { # name of experiment : defect numbers (tuple - must be iterable anyway!)
+    #     '250615-L-qubit-only-everything-couples' : (2,),
+    #     '250615-L-qubit-only-single-full-library' : (1,),
+    #     '250615-L-qubit-only-starlike' : (2,),
+    #     '250615-L-qubit-sigmaz-only-everything-couples' : (2,),
+    #     '250615-L-qubit-sigmaz-only-single-sigmax-coupling' : (1,),
+    #     '250615-L-qubit-sigmaz-only-starlike' : (2,),
+    #     '250602-full' : (1, 2)
+    #           }
+   #  sep = '\n'
+   # # $''\n'r'$
+   #  experiment_labels = { # presentable labels corresponding to experiments ie. configs keys
       
-        '250615-L-qubit-only-everything-couples' : 
-            r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
-           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'mesh',
-        '250615-L-qubit-only-single-full-library' :
-            r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$ L_{virt} \in \{\}$'+sep
-           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'star',
-        '250615-L-qubit-only-starlike' :
-            r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
-           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'star',
-        '250615-L-qubit-sigmaz-only-everything-couples' :
-            r'$L_{syst} \in \{\sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
-           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'mesh',
-        '250615-L-qubit-sigmaz-only-single-sigmax-coupling' : 
-            r'$L_{syst} \in \{\sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
-           +r'$C \in \{\sigma_x \sigma_x\}$'+sep+'star',
-        '250615-L-qubit-sigmaz-only-starlike' : 
-            r'$L_{syst} \in \{\sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
-           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'star',
-        '250602-full' :
-            r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$L_{virt} \in \{\sigma_x, \sigma_y, \sigma_z\}$'+sep
-           +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'mesh'
-              }
+   #      '250615-L-qubit-only-everything-couples' : 
+   #          r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
+   #         +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'mesh',
+   #      '250615-L-qubit-only-single-full-library' :
+   #          r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$ L_{virt} \in \{\}$'+sep
+   #         +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'star',
+   #      '250615-L-qubit-only-starlike' :
+   #          r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
+   #         +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'star',
+   #      '250615-L-qubit-sigmaz-only-everything-couples' :
+   #          r'$L_{syst} \in \{\sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
+   #         +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'mesh',
+   #      '250615-L-qubit-sigmaz-only-single-sigmax-coupling' : 
+   #          r'$L_{syst} \in \{\sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
+   #         +r'$C \in \{\sigma_x \sigma_x\}$'+sep+'star',
+   #      '250615-L-qubit-sigmaz-only-starlike' : 
+   #          r'$L_{syst} \in \{\sigma_z\}$''\n'r'$L_{virt} \in \{\}$'+sep
+   #         +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'star',
+   #      '250602-full' :
+   #          r'$L_{syst} \in \{\sigma_x, \sigma_y, \sigma_z\}$''\n'r'$L_{virt} \in \{\sigma_x, \sigma_y, \sigma_z\}$'+sep
+   #         +r'$C \in \{\sigma_x \sigma_x, \sigma_y \sigma_y, \sigma_z \sigma_z\}$'+sep+'mesh'
+   #            }
     
     losses = []
     labels = []
     
-    experiments = [x for x in configs]
+    configs = ['Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--', 'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx-', 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v--', 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v-sx-', 'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx-Cv2v--', 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx-Cv2v-sx-', 'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--', 'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-', 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--', 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-', 'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx,sy,sz-Cv2v--', 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-']
+    experiment_base = '250623'
+    target_file = 'Wit-Fig4-6-0_025'
+    for config in configs: 
+        experiment_name = experiment_base + '_' + target_file + '_' + config 
     
-    dataset = 'Wit-Fig4-6-0_025'
-
-    for experiment in experiments:
-        # nah - method for that already
-        #repetition_base = experiment + '-' + dataset + '_D' + str(configs[experiment])   # + _R1_best.pickle etc  
+        for D in [2]: # tuple of Ds   
         
-        for D in configs[experiment]: # tuple of Ds   
-        
-            losses.append(return_champion_loss(experiment, dataset, D))
-            labels.append(experiment_labels[experiment] + '\nD='+ str(D))
+            losses.append(return_champion_loss(experiment_name, D))
+            labels.append(config + '\nD='+ str(D))
         
         
   #%%  

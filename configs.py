@@ -89,30 +89,30 @@ specific_experiment_chain_hyperparams = {
     {
     'qubit_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-         'sigmax': Ls_shape_scale#(0.01, 0.1)
-         ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-         ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+         #'sigmax': Ls_shape_scale#(0.01, 0.1)
+         #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+         'sigmaz': Ls_shape_scale#(0.01, 0.1)
          },
 
     'defect_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-         'sigmax': Ls_shape_scale#(0.01, 0.1)
-         ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-         ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+         #'sigmax': Ls_shape_scale#(0.01, 0.1)
+         #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+         #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
          },
 
     'qubit2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
          (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-         ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-         ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+         #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+         #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
          },
 
     'defect2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-         (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-         ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-         ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+         #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+         #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+         #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
          }
     },
     
@@ -120,30 +120,30 @@ specific_experiment_chain_hyperparams = {
     {
     'qubit_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          'sigmaz': Ls_shape_scale#(0.01, 0.1)
           },
 
     'defect_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
           },
 
     'qubit2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
           (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           },
 
     'defect2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
           (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
     
@@ -158,23 +158,23 @@ specific_experiment_chain_hyperparams = {
 
     'defect_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
           },
 
     'qubit2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
           (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           },
 
     'defect2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
     
@@ -189,23 +189,23 @@ specific_experiment_chain_hyperparams = {
 
     'defect_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
           },
 
     'qubit2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
           (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           },
 
     'defect2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
           (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
     
@@ -228,15 +228,15 @@ specific_experiment_chain_hyperparams = {
     'qubit2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
           (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           },
 
     'defect2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
     
@@ -259,15 +259,15 @@ specific_experiment_chain_hyperparams = {
     'qubit2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
           (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           },
 
     'defect2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
           (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
     
@@ -275,16 +275,16 @@ specific_experiment_chain_hyperparams = {
     {
     'qubit_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          'sigmaz': Ls_shape_scale#(0.01, 0.1)
           },
 
     'defect_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
           },
 
     'qubit2defect_couplings_library':
@@ -296,9 +296,9 @@ specific_experiment_chain_hyperparams = {
 
     'defect2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
     
@@ -306,16 +306,16 @@ specific_experiment_chain_hyperparams = {
     {
     'qubit_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          'sigmaz': Ls_shape_scale#(0.01, 0.1)
           },
 
     'defect_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
           },
 
     'qubit2defect_couplings_library':
@@ -344,9 +344,9 @@ specific_experiment_chain_hyperparams = {
 
     'defect_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
           },
 
     'qubit2defect_couplings_library':
@@ -358,9 +358,9 @@ specific_experiment_chain_hyperparams = {
 
     'defect2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
     
@@ -375,9 +375,9 @@ specific_experiment_chain_hyperparams = {
 
     'defect_Ls_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmay': Ls_shape_scale#(0.01, 0.1)
-          ,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
           },
 
     'qubit2defect_couplings_library':
@@ -420,9 +420,9 @@ specific_experiment_chain_hyperparams = {
 
     'defect2defect_couplings_library':
         { # sampled from mirrored gamma distribution with given (shape, scale)
-          (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
-          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
     
