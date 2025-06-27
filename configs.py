@@ -84,7 +84,7 @@ default_chain_hyperparams = {
 
 
 specific_experiment_chain_hyperparams = {
-  
+# 1)  
 'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--':
     {
     'qubit_Ls_library':
@@ -115,7 +115,8 @@ specific_experiment_chain_hyperparams = {
          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
          }
     },
-    
+
+# 2)    
 'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx-':
     {
     'qubit_Ls_library':
@@ -146,7 +147,8 @@ specific_experiment_chain_hyperparams = {
           #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
-    
+ 
+ # 3)   
 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v--':
     {
     'qubit_Ls_library':
@@ -177,7 +179,8 @@ specific_experiment_chain_hyperparams = {
           #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
-    
+
+# 4)    
 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v-sx-':
     {
     'qubit_Ls_library':
@@ -208,7 +211,8 @@ specific_experiment_chain_hyperparams = {
           #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
-    
+ 
+ # 5)   
 'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx-Cv2v--':
     {
     'qubit_Ls_library':
@@ -239,7 +243,8 @@ specific_experiment_chain_hyperparams = {
           #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
-    
+ 
+ # 6)   
 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx-Cv2v-sx-':
     {
     'qubit_Ls_library':
@@ -270,7 +275,8 @@ specific_experiment_chain_hyperparams = {
           #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
-    
+ 
+ # 7)   
 'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--':
     {
     'qubit_Ls_library':
@@ -301,7 +307,8 @@ specific_experiment_chain_hyperparams = {
           #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
-    
+
+# 8)    
 'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-':
     {
     'qubit_Ls_library':
@@ -332,7 +339,8 @@ specific_experiment_chain_hyperparams = {
           ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
-    
+
+# 9)    
 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--':
     {
     'qubit_Ls_library':
@@ -363,7 +371,8 @@ specific_experiment_chain_hyperparams = {
           #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
-    
+
+# 10)    
 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-':
     {
     'qubit_Ls_library':
@@ -394,7 +403,8 @@ specific_experiment_chain_hyperparams = {
           ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
-    
+
+# 11)    
 'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx,sy,sz-Cv2v--':
     {
     'qubit_Ls_library':
@@ -425,7 +435,8 @@ specific_experiment_chain_hyperparams = {
           #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
     },
-    
+ 
+ # 12)   
 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-':
     {
     'qubit_Ls_library':
@@ -455,6 +466,167 @@ specific_experiment_chain_hyperparams = {
           ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
           ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
           }
+    },
+
+# 13)    
+'Lsyst-sx-Lvirt--Cs2v-sx-Cv2v--':
+    {
+    'qubit_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          },
+
+    'defect_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          },
+
+    'qubit2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          },
+
+    'defect2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          }
+    },
+
+# 14)    
+'Lsyst-sx-Lvirt--Cs2v-sz-Cv2v--':
+    {
+    'qubit_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          },
+
+    'defect_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          },
+
+    'qubit2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          (('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          },
+
+    'defect2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          }
+    },
+
+# 15)    
+'Lsyst-sz-Lvirt--Cs2v-sz-Cv2v--':
+    {
+    'qubit_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          },
+
+    'defect_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          },
+
+    'qubit2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          (('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          },
+
+    'defect2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          }
+    },
+    
+# 16)
+'Lsyst-sz-Lvirt--Cs2v-sx,sy-Cv2v--':
+{
+    'qubit_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          },
+
+    'defect_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          },
+
+    'qubit2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          ,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          },
+
+    'defect2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          }
+    },
+
+# 17)
+'Lsyst-sz-Lvirt--Cs2v-sx,sz-Cv2v--':
+{
+    'qubit_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          },
+
+    'defect_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #'sigmax': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmay': Ls_shape_scale#(0.01, 0.1)
+          #,'sigmaz': Ls_shape_scale#(0.01, 0.1)
+          },
+
+    'qubit2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          (('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          },
+
+    'defect2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #(('sigmax', 'sigmax'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale#(0.3, 1)
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale#(0.3, 1)
+          }
     }
+
    
 }

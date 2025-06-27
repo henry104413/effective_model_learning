@@ -22,17 +22,18 @@
 # !! but in each case must be arrays!  
 declare -a target_csvs=("Wit-Fig4-6-0_025")
 # "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
-experiment_name="250623test"
+experiment_name="250624"
 defects_numbers=(2)
-repetitions_numbers=(1)
-iterations_numbers=(100)
+repetitions_numbers=(15)
+iterations_numbers=(50000)
 proportion_training=1
 configs_count=12
+configs=(15 16)
 
 
 # execution:
 for target_csv in "${target_csvs[@]}"; do
-for ((config=0; config<configs_count; config++)); do
+for config in ${configs[@]}; do
 	for i in ${!defects_numbers[@]}; do
 	    defects_number=${defects_numbers[i]}
 

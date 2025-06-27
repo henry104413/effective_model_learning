@@ -411,8 +411,35 @@ if True: # scatter of custom sets with different experiment names:
     losses = []
     labels = []
     
-    configs = ['Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--', 'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx-', 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v--', 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v-sx-', 'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx-Cv2v--', 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx-Cv2v-sx-', 'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--', 'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-', 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--', 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-', 'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx,sy,sz-Cv2v--', 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-']
-    experiment_base = '250623'
+    configs = ['Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--', 
+               'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx-', 
+               'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v--', 
+               'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v-sx-',
+               'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx-Cv2v--',
+               'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx-Cv2v-sx-',
+               'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--',
+               'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-',
+               'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--',
+               'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-',
+               'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx,sy,sz-Cv2v--', 
+               'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-',
+               'Lsyst-sx-Lvirt--Cs2v-sx-Cv2v--',
+               'Lsyst-sx-Lvirt--Cs2v-sz-Cv2v--',
+               'Lsyst-sz-Lvirt--Cs2v-sz-Cv2v--',
+               'Lsyst-sz-Lvirt--Cs2v-sx,sy-Cv2v--',
+               'Lsyst-sz-Lvirt--Cs2v-sx,sz-Cv2v--'
+               ]
+    
+    colours = ['orange' if x < 12 else 'firebrick' if x < 15 else 'navy' for x in range(17)]
+    # configs = [
+    #     'Lsyst-sx-Lvirt--Cs2v-sx-Cv2v--',
+    #     'Lsyst-sx-Lvirt--Cs2v-sz-Cv2v--',
+    #     'Lsyst-sz-Lvirt--Cs2v-sz-Cv2v--',
+    #     'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--',
+    #     'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--'
+    #     ]
+    
+    experiment_base = '250624'
     target_file = 'Wit-Fig4-6-0_025'
     for config in configs: 
         experiment_name = experiment_base + '_' + target_file + '_' + config 
@@ -420,25 +447,68 @@ if True: # scatter of custom sets with different experiment names:
         for D in [2]: # tuple of Ds   
         
             losses.append(return_champion_loss(experiment_name, D))
-            labels.append(config + '\nD='+ str(D))
+            labels.append(config)
+            
+    def ops_label_dresser(ops: str, setname: str) -> str: # works
+        """
+        Argument is comma-delimiting string containing sx, sy, sz.
+        
+        Returns dressed string of operators to show in as processes of each class,
+        assuming setname containing "C" means it's symmetric coupling (ie. applied on both subsystems).
+        """
+        ops_list = [x for x in ops.split(',') if x] # separates by comma and eliminates empty strings
+        symbols = {'sx': r'$\sigma_x$',
+                   'sy': r'$\sigma_y$',
+                   'sz': r'$\sigma_z$'}
+        output = ''
+        for x in ops_list:
+            if output: output = output + ', '
+            output = output + symbols[x]
+            if 'C' in setname: output = output + r'$\otimes$' + symbols[x] 
+        return output
+        
+    def interpret_config(string: str) -> str:
+        """
+        Argument is configuration label string of form Lsyst-ops-Lvirt-ops-Cs2v-ops-Cv2v-ops-,
+        where ops is comma-delimited string containg any of sx, sy, sz.
+        
+        Returns dressed label of Ls and couplings as sets of operators;
+        each single operator taken as acting on both systems if coupling.
+        """
+        Lsyst_Lvirt_Cs2v_Cv2v = [string.split('-')[x] for x in (1,3,5,7)]
+        setnames = [r'$L_{syst}$', r'$L_{virt}$', r'$C_{s2v}$', r'$C_{v2v}$']
+        label = ''
+        for i, ops in enumerate(Lsyst_Lvirt_Cs2v_Cv2v):
+            if i>0: label = label + '\n'
+            label = label + setnames[i] + r'$\in\{$' + ops_label_dresser(ops, setnames[i]) + r'$\}$'
+        
+        return label    
+            
+    A = ([interpret_config(x) for x in labels])
+            
+        
         
         
   #%%  
     #losses = [x/max(losses) for x in losses]
     losses_arr = np.array(losses)
     order = losses_arr.argsort()
-    labels_arr = np.array(labels)
+    labels_arr = np.array([interpret_config(x) for x in labels])
     losses_arr_sorted = losses_arr[order]
     labels_arr_sorted = labels_arr[order]
+    colours = np.array(colours)[order]
     
     labels_sorted = [labels[i] for i in order]
     
-    plt.figure(figsize=(10, 20))
-    plt.barh(np.arange(len(losses)), losses_arr_sorted, color='orange')
+    plt.figure(figsize=(10, 30))
+    plt.barh(np.arange(len(losses)), losses_arr_sorted, color=colours)
     #plt.xscale('log')
-    plt.yticks(ticks = np.arange(len(losses)), labels = labels_sorted)
-    
+    plt.yticks(ticks = np.arange(len(losses)), labels = labels_arr_sorted)
+    plt.title('D = 2')
     plt.xlabel('lowest loss')#
-    plt.savefig('loss_vs_configuration_nonlog' + '.svg', dpi = 1000, bbox_inches='tight')
+    ax=plt.gca()
+    #ax.axis["left"].major_ticklabels.set_ha("left")
+    #ax.set_xticklabels(ha='left')
+    plt.savefig('250624_3_loss_vs_configuration_nonlog' + '.svg', dpi = 1000, bbox_inches='tight')
   
     
