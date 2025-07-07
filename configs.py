@@ -14,6 +14,7 @@ and entris are hyperparams dictionaries that overwrite (supersede) given default
 
 @author: Henry (henry104413)
 """
+import copy
 
 couplings_shape_scale = (0.8, 1)
 Ls_shape_scale = (0.2, 0.5)
@@ -630,3 +631,14 @@ specific_experiment_chain_hyperparams = {
 
    
 }
+
+    
+    
+def get_hyperparams(batch_name: str) -> dict:
+    """
+    Returns dictionary of default hyperparameters
+    with inclusion of specific hyperparameters under key given by argument.
+    """
+    hyperparameters = copy.deepcopy(default_chain_hyperparams)
+    hyperparameters.update(specific_experiment_chain_hyperparams[batch_name])
+    return hyperparameters

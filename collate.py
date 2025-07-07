@@ -261,6 +261,8 @@ if not True:
     
 
 
+
+
 #%% checkerboard of champions' final loss across different Ds and different datasets sorted by feature size:
    
 plt.rcParams["font.size"] = 16
@@ -511,4 +513,10 @@ if True: # scatter of custom sets with different experiment names:
     #ax.set_xticklabels(ha='left')
     plt.savefig('250624_3_loss_vs_configuration_nonlog' + '.svg', dpi = 1000, bbox_inches='tight')
   
+
+
+#%%
+
+# mapper of models to vectors and back:
     
+#
