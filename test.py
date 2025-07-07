@@ -54,7 +54,7 @@ hyperparameters = configs.get_hyperparams('Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx
 with open('testmodel.pickle', 'rb') as filestream:
     model = pickle.load(filestream)
 
-def op_label(op: str, tex: bool = False)->str:
+def make_op_label(op: str, tex: bool = False)->str:
     match op:
         case 'sigmax':
             if tex: return r'$\sigma_x$'
@@ -137,8 +137,8 @@ for pair, pair_label in zip(q2d_pairs, q2d_pairs_labels):
         for i, op_pair in enumerate(coupling): # coupling is TUPLE of tuples!!
             if i == 0: ops_label_latex += ' '
             if i>0: ops_label_latex += '+'
-            ops_label += '-' + op_label(op_pair[0]) + '-' + op_label(op_pair[1])
-            ops_label_latex += op_label(op_pair[0], tex=True) + r'$\otimes$' + op_label(op_pair[1], tex=True)
+            ops_label += '-' + make_op_label(op_pair[0]) + '-' + make_op_label(op_pair[1])
+            ops_label_latex += make_op_label(op_pair[0], tex=True) + r'$\otimes$' + make_op_label(op_pair[1], tex=True)
         
         # labels for this process between these pairs
         labels.append(pair_label + ops_label)
@@ -175,8 +175,8 @@ for pair, pair_label in zip(d2d_pairs, d2d_pairs_labels):
         for i, op_pair in enumerate(coupling): # coupling is TUPLE of tuples!!
             if i == 0: ops_label_latex += ' '
             if i>0: ops_label_latex += '+'
-            ops_label += '-' + op_label(op_pair[0]) + '-' + op_label(op_pair[1])
-            ops_label_latex += op_label(op_pair[0], tex=True) + r'$\otimes$' + op_label(op_pair[1], tex=True)
+            ops_label += '-' + make_op_label(op_pair[0]) + '-' + make_op_label(op_pair[1])
+            ops_label_latex += make_op_label(op_pair[0], tex=True) + r'$\otimes$' + make_op_label(op_pair[1], tex=True)
         
         # labels for this process between these pairs
         labels.append(pair_label + ops_label)
@@ -198,7 +198,33 @@ for pair, pair_label in zip(d2d_pairs, d2d_pairs_labels):
                     if set(existing_coupling[1]) == set(coupling): # ie. type is present
                         value += existing_coupling[0]
         values.append(value)
+ 
+# qubit Ls in order of qubits and then ops from library:
+# note: only assuming one value of each type present
+# ...they are not linear and multiple could exist, but algorithm wouldn't add one if same type exists already
+for qubit, qubit_label in zip(qubits, qubits_labels):
+    for L in list(hyperparameters['qubit_Ls_library'].keys()):
+        labels.append(qubit_label + '-' + make_op_label(L) + '-')
+        labels_latex.append(qubit_label + r'$\ $' + make_op_label(L, tex=True))
+        if L in qubit.Ls:
+            values.append(qubit.Ls[L])
+        else:
+            values.append(float(0))
         
+# defect Ls in order of defects and then ops from library:
+# note: only assuming one value of each type present
+# ...they are not linear and multiple could exist, but algorithm wouldn't add one if same type exists already
+for defect, defect_label in zip(defects, defects_labels):
+    for L in list(hyperparameters['defect_Ls_library'].keys()):
+        labels.append(defect_label + '-' + make_op_label(L) + '-')
+        labels_latex.append(defect_label + r'$\ $' + make_op_label(L, tex=True))
+        if L in defect.Ls:
+            values.append(defect.Ls[L])
+        else:
+            values.append(float(0))
+    
+ 
+    
 plt.figure()
 plt.plot(values, range(len(values)), 'b +')
 plt.yticks(range(len(values)), labels = labels_latex)#, rotation = 90)
