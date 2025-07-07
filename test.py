@@ -131,20 +131,21 @@ for pair, pair_label in zip(q2d_pairs, q2d_pairs_labels):
         # otherwise it would be duplicate... 
         # but for completenes and assuming linearity can just add together all rates potential instances of that coupling
         
-        PROBLEM BELOW:
-        COUPLING IS NOT A TUPLE, ITS A TUPLE OF TUPLES!! SO LABELS FAIL
-        JUST ITERATE OVER ALL ELEMENTS OF TUPLE AND ADD TOGETHER... 
+        # PROBLEM BELOW:
+        # COUPLING IS NOT A TUPLE, ITS A TUPLE OF TUPLES!! SO LABELS FAIL
+        # JUST ITERATE OVER ALL ELEMENTS OF TUPLE AND ADD TOGETHER... 
         
         ops_label = ''
         ops_label_latex = ''
         for i, op_pair in enumerate(coupling): # coupling is TUPLE of tuples!!
-            if i>0: ops_label_latex += ' +'
-            ops_label += '-' + op_label(coupling[0]) + '-' + op_label(coupling[1])
-            ops_label_latex += ' ' + op_label(coupling[0], tex=True) + r'$\otimes$' + op_label(coupling[1], tex=True)
+            if i == 0: ops_label_latex += ' '
+            if i>0: ops_label_latex += '+'
+            ops_label += '-' + op_label(op_pair[0]) + '-' + op_label(op_pair[1])
+            ops_label_latex += op_label(op_pair[0], tex=True) + r'$\otimes$' + op_label(op_pair[1], tex=True)
         
         # labels for this process between these pairs
-        labels.append(pair_label + '-' + op_label(coupling[0]) + '-' + op_label(coupling[1]))
-        labels_latex.append(pair_label + ' ' + op_label(coupling[0], tex=True) + r'$\otimes$' + op_label(coupling[1], tex=True))
+        labels.append(pair_label + ops_label)
+        labels_latex.append(pair_label + ops_label_latex)
         
         # note: couplings stored as:
         # TLS.couplings = {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
@@ -165,16 +166,28 @@ for pair, pair_label in zip(q2d_pairs, q2d_pairs_labels):
         
 # d2d in order of pairs and then library operators:
 # note: coupling information stored on one of the pair hence check both! 
-for pair, label in zip(d2d_pairs, d2d_pairs_labels):
+for pair, pair_label in zip(d2d_pairs, d2d_pairs_labels):
     for coupling in list(hyperparameters['defect2defect_couplings_library'].keys()):
         # go over all types of coupling in library, check if present on either of this pair with other as partner:
         # note: learning methods should allow it to only exist on one of pair at a time,
         # otherwise it would be duplicate... 
         # but for completenes and assuming linearity can just add together all rates potential instances of that coupling
         
+        # PROBLEM BELOW:
+        # COUPLING IS NOT A TUPLE, ITS A TUPLE OF TUPLES!! SO LABELS FAIL
+        # JUST ITERATE OVER ALL ELEMENTS OF TUPLE AND ADD TOGETHER... 
+        
+        ops_label = ''
+        ops_label_latex = ''
+        for i, op_pair in enumerate(coupling): # coupling is TUPLE of tuples!!
+            if i == 0: ops_label_latex += ' '
+            if i>0: ops_label_latex += '+'
+            ops_label += '-' + op_label(op_pair[0]) + '-' + op_label(op_pair[1])
+            ops_label_latex += op_label(op_pair[0], tex=True) + r'$\otimes$' + op_label(op_pair[1], tex=True)
+        
         # labels for this process between these pairs
-        labels.append(label + '-' + op_label(coupling[0]) + '-' + op_label(coupling[1]))
-        labels_latex.append(label + ' ' + op_label(coupling[0], tex=True) + r'$\otimes$' + op_label(coupling[1], tex=True))
+        labels.append(pair_label + ops_label)
+        labels_latex.append(pair_label + ops_label_latex)
         
         # note: couplings stored as:
         # TLS.couplings = {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
@@ -192,7 +205,3 @@ for pair, label in zip(d2d_pairs, d2d_pairs_labels):
                     if set(existing_coupling[1]) == set(coupling): # ie. type is present
                         value += existing_coupling[0]
         values.append(value)
-        
-
-
-
