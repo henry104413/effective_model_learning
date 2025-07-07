@@ -48,7 +48,8 @@ import configs.py
 #%%
 import configs
 import pickle
-hyperparameters = configs.get_hyperparams('Lsyst-sz-Lvirt--Cs2v-sx,sz-Cv2v--')
+import matplotlib.pyplot as plt
+hyperparameters = configs.get_hyperparams('Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-')
 
 with open('testmodel.pickle', 'rb') as filestream:
     model = pickle.load(filestream)
@@ -131,10 +132,6 @@ for pair, pair_label in zip(q2d_pairs, q2d_pairs_labels):
         # otherwise it would be duplicate... 
         # but for completenes and assuming linearity can just add together all rates potential instances of that coupling
         
-        # PROBLEM BELOW:
-        # COUPLING IS NOT A TUPLE, ITS A TUPLE OF TUPLES!! SO LABELS FAIL
-        # JUST ITERATE OVER ALL ELEMENTS OF TUPLE AND ADD TOGETHER... 
-        
         ops_label = ''
         ops_label_latex = ''
         for i, op_pair in enumerate(coupling): # coupling is TUPLE of tuples!!
@@ -173,10 +170,6 @@ for pair, pair_label in zip(d2d_pairs, d2d_pairs_labels):
         # otherwise it would be duplicate... 
         # but for completenes and assuming linearity can just add together all rates potential instances of that coupling
         
-        # PROBLEM BELOW:
-        # COUPLING IS NOT A TUPLE, ITS A TUPLE OF TUPLES!! SO LABELS FAIL
-        # JUST ITERATE OVER ALL ELEMENTS OF TUPLE AND ADD TOGETHER... 
-        
         ops_label = ''
         ops_label_latex = ''
         for i, op_pair in enumerate(coupling): # coupling is TUPLE of tuples!!
@@ -205,3 +198,8 @@ for pair, pair_label in zip(d2d_pairs, d2d_pairs_labels):
                     if set(existing_coupling[1]) == set(coupling): # ie. type is present
                         value += existing_coupling[0]
         values.append(value)
+        
+plt.figure()
+plt.plot(values, range(len(values)), 'b +')
+plt.yticks(range(len(values)), labels = labels_latex)#, rotation = 90)
+plt.savefig('testvectorisation.svg', dpi = 1000, bbox_inches='tight') 
