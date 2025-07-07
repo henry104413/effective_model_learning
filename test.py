@@ -49,12 +49,19 @@ import configs.py
 import configs
 import pickle
 import matplotlib.pyplot as plt
+
 hyperparameters = configs.get_hyperparams('Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-')
 
 with open('testmodel.pickle', 'rb') as filestream:
     model = pickle.load(filestream)
 
+# to be populated up for each process in the library (vectorised model of fixed length, zeros where processes absent)
+
+
 def make_op_label(op: str, tex: bool = False)->str:
+    """
+    For common string names of operators returns a shorthand or latex symbol if tex passed as true.
+    """
     match op:
         case 'sigmax':
             if tex: return r'$\sigma_x$'
@@ -72,16 +79,17 @@ def make_op_label(op: str, tex: bool = False)->str:
             if tex: return r'$\sigma_-$'
             else: return 'sm'
 
+
+# gather all qubits, all defects, qubit-defect pairs, and defect-defect pairs,
+# as well as corresponding labels using the system (S) and virtual systems (V) nomenclature
+
 qubits = [x for x in model.TLSs if x.is_qubit]
-qubits_count = len(qubits)
 qubits_labels = ['S' + str(i+1) for i in range(len(qubits))] 
 
 defects = [x for x in model.TLSs if not x.is_qubit]
-defects_count = len(defects)
 defects_labels = ['V' + str(i+1) for i in range(len(defects))]
   
 q2d_pairs = [(q, d) for q in qubits for d in defects]
-
 q2d_pairs_labels = [qubits_labels[qubits.index(q)] + ',' + defects_labels[defects.index(d)]
                     for q, d in q2d_pairs] 
 
@@ -90,30 +98,13 @@ for d1 in defects:
     for d2 in defects:
         if d1 != d2 and (d2, d1) not in d2d_pairs:
             d2d_pairs.append((d1, d2))
-
 d2d_pairs_labels = [defects_labels[defects.index(d1)] + ',' + defects_labels[defects.index(d2)]
                     for d1, d2 in d2d_pairs] 
 
 
-
-# qubit_Ls_library = hyperparameters['qubit_Ls_library']
-# defect_Ls_library = hyperparameters['defect_Ls_library']
-# qubit2defect_couplings_library = hyperparameters['qubit2defect_couplings_library']
-# defect2defect_couplings_library = hyperparameters['defect2defect_couplings_library']
-
-process_class_lib_names = ['qubit2defect_couplings_library',
-                           'defect2defect_couplings_library',
-                           'qubit_Ls_library',
-                           'defect_Ls_library']
-                          
-process_class_libs = [list(hyperparameters[key].keys()) for key in process_class_lib_names]
-
-# targets = defects + q2d_pairs + d2d_pairs + qubits + defects
-
 # initialise lists for labels, labels with latex symbols, and parameter values
-# to be populated up to length of total vectorised model
-labels = [] #[d + '-sz-' for d in defects_labels]
-labels_latex = [] #[d + r'$\sigma_z$' for d in defects_labels]
+labels = []
+labels_latex = []
 values = []
     
 # defect splittings:
@@ -201,7 +192,7 @@ for pair, pair_label in zip(d2d_pairs, d2d_pairs_labels):
  
 # qubit Ls in order of qubits and then ops from library:
 # note: only assuming one value of each type present
-# ...they are not linear and multiple could exist, but algorithm wouldn't add one if same type exists already
+# note: not linear and multiple could exist, but algorithm wouldn't add one if same type exists already
 for qubit, qubit_label in zip(qubits, qubits_labels):
     for L in list(hyperparameters['qubit_Ls_library'].keys()):
         labels.append(qubit_label + '-' + make_op_label(L) + '-')
