@@ -22,12 +22,13 @@
 # !! but in each case must be arrays!  
 declare -a target_csvs=("Wit-Fig4-6-0_025")
 # "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
-experiment_name="correlation-fixed-E"
+experiment_name="full-test-single"
 defects_numbers=(2)
-repetitions_numbers=(5)
-iterations_numbers=(40000)
+repetitions_numbers=(3)
+iterations_numbers=(100)
 proportion_training=1
 configs=(11)
+full=0
 
 
 # execution:
@@ -59,7 +60,7 @@ for config in ${configs[@]}; do
 	    
 	    for ((rep=1; rep<=repetitions_number; rep++)); do
 		echo launching for $defects_number defects repetition no. $rep
-		nohup python execute_learning.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" </dev/null &>"$experiment_name"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt &
+		nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" </dev/null &>"$experiment_name"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt &
 		done
 	done
 done

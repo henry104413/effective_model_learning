@@ -42,7 +42,7 @@ default_chain_hyperparams = {
         
         'params_handler_hyperparams': { 
             'initial_jump_lengths': {'couplings' : 0.10,
-                                     'energies' : 0.9,
+                                     'energies' : 0.0,
                                      'Ls' : 0.010
                                      }
             },

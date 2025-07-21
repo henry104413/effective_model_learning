@@ -232,47 +232,104 @@ import configs
 import seaborn
 import matplotlib.pyplot as plt
 
+experiment_name = 'correlation-fixed-E_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-
+D = 2
+Rs = [1, 2, 3, 4, 5]
 hyperparams = configs.get_hyperparams(config_name)
 
-with open('corr-test_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle',
-          'rb') as filestream:
-    proposals_dict = pickle.load(filestream)
+setup_done = False
+
+# go over all chains to be
+for R in Rs:
+    filename = experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R) + '_proposals.pickle'
+    with open(filename,
+              'rb') as filestream:
+        proposals_dict = pickle.load(filestream)
+        
+    proposals = proposals_dict['proposals']
     
-proposals = proposals_dict['proposals']
-
-# clearly all proposals were saved now despite condition on burn-in... ok then
-
-proposals = proposals[-2000:]
-
-first_proposal = proposals[0]
-_, labels, labels_latex = first_proposal.vectorise_under_library(hyperparameters = hyperparams)
-labels = labels_latex
-
-parameter_lists = {name: [] for name in labels}
-
-for i, proposal in enumerate(proposals):
-# here proposal is an instance of model with vectorisation method
-    vector = proposal.vectorise_under_library(hyperparameters = hyperparams)[0]
-    # vectorised in order of labels, hence take n-th entry corresponds to n-th label model parameter
-    for j, value in enumerate(vector):
-        parameter_lists[labels[j]].append(vector[j])
+    print(len(proposals))
     
-data = pd.DataFrame(data = parameter_lists, columns = labels) # columns!
+    # clearly all proposals were saved now despite condition on burn-in... ok then
+    
+    proposals = proposals[:]
+    
+    if not setup_done:
+        first_proposal = proposals[0]
+        _, labels, labels_latex = first_proposal.vectorise_under_library(hyperparameters = hyperparams)
+        labels = labels_latex # currently using the latex labels for labels
+        parameter_lists = {name: [] for name in labels}
+        setup_done = True
+        
+    for i, proposal in enumerate(proposals):
+    # here proposal is an instance of model with vectorisation method
+        vector = proposal.vectorise_under_library(hyperparameters = hyperparams)[0]
+        # vectorised in order of labels, hence take n-th entry corresponds to n-th label model parameter
+        for j, value in enumerate(vector):
+            parameter_lists[labels[j]].append(vector[j])
+        
+data = pd.DataFrame(data = parameter_lists, columns = labels[:]) # columns! - now without energies
 
 pdCM = data.corr()
 
 plt.figure(figsize=(10,10))
 seaborn.heatmap(pdCM, annot=False, cmap="PiYG", fmt=".2f", linewidths=0.5, vmin = -1, vmax = 1)
 # colormaps: coolwarm, PiYG
-plt.savefig('correlation_test3.svg', dpi = 1000, bbox_inches='tight')
+plt.savefig('correlation_corrected_fixed_E_wE.svg', dpi = 1000, bbox_inches='tight')
 
-# plt.figure(figsize=(8,6))
-# npCM = pdCM
 
-# plt.savefig('correlation_test2.svg', dpi = 1000, bbox_inches='tight')
 
-# now populate lists for one feature each (rather than 1 sample)
-# to work with pandas...
-# then EZ
+#%%
+# CREATE SIMULATED DATA IN OTHER BASES:
+    
+import numpy as np
+import pickle    
+import matplotlib.pyplot as plt
+    
+# measured data wrt sx:
+data_file = 'Wit-Fig4-6-0_025.csv'
+dataset_no = 0 # means first pair of columns
+contents = np.genfromtxt(data_file, delimiter=',')#,dtype=float) 
+dataset = contents[:,[2*dataset_no, 2*dataset_no + 1]]
+ts = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 0]     
+sx = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 1]   
+order = ts.argsort() # sort by t in case of unsorted:
+ts = ts[order]
+sx = sx[order]
+ts = ts/1000 # convert from ns to us
+
+
+# import a model (would have been trained on ts, sx):
+model_file = 'correlation_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R5_best'
+with open(model_file + '.pickle', 'rb') as filestream:
+    best = pickle.load(filestream)
+    
+
+# random noise shift for sy, sz, and simulated measurements of sy, sz:
+noise_sy = np.random.normal(loc = 0, scale = 0.02, size = len(ts))
+noise_sz = np.random.normal(loc = 0, scale = 0.02, size = len(ts))
+sy, sz = best.calculate_dynamics(ts, observable_ops = ['sigmay', 'sigmaz'],
+                                        custom_function_on_return = False)
+sim_sy = sy + noise_sy
+sim_sz = sz + noise_sz
+
+# plot:
+plt.figure()
+plt.plot(ts, sx, 'b.', label = r'$\sigma_x$', alpha = 0.5, markersize = 5)
+plt.plot(ts, sy, 'm-', label = '_hidden', alpha = 0.4)
+plt.plot(ts, sim_sy, 'm.', label = r'$\sigma_y$', alpha = 0.5, markersize = 5)
+plt.plot(ts, sz, 'g-', label = '_hidden', alpha = 0.4)
+plt.plot(ts, sim_sz, 'g.', label = r'$\sigma_z$', alpha = 0.5, markersize = 5)
+plt.legend()
+plt.xlabel(r'$time\ (\mu s)$') 
+plt.savefig('simulated_' + model_file + '.svg', dpi = 1000, bbox_inches='tight')
+
+simulated_data = {'ts': ts,
+                  'sx': sx,
+                  'sy': sim_sy,
+                  'sz': sim_sz
+                  }
+
+with open('simulated_data.pickle', 'wb') as filestream:
+    pickle.dump(simulated_data, filestream)

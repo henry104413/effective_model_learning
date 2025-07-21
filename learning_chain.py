@@ -361,11 +361,6 @@ class LearningChain:
             proposal_loss = self.total_dev(proposal)
             self.explored_loss.append(proposal_loss)
             
-            # save every proposal - used for statistical analysis of chain:
-            # temporarily burn-in cutoff is set here - to later be moved to analysis bit
-            if self.store_all_proposals and i >= 5000:
-                self.explored_proposals.append(copy.deepcopy(proposal))
-                
             # Metropolis-Hastings acceptance:
             acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back)
             if np.random.uniform() < acceptance_probability: # ie. accept proposal
@@ -376,6 +371,10 @@ class LearningChain:
                     self.best_loss = proposal_loss
                     self.best = copy.deepcopy(proposal)
                 self.run_acceptance_tracker.append(True)
+                # save accepted proposal for statistical analysis of chain - temporarily burn-in cutoff is set here
+                if self.store_all_proposals and i >= 10000:
+                    self.explored_proposals.append(copy.deepcopy(proposal))
+                
             else: # ie. reject proposal
                 self.run_acceptance_tracker.append(False)
                 
