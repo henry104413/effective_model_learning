@@ -220,3 +220,59 @@ plt.figure()
 plt.plot(values, range(len(values)), 'b +')
 plt.yticks(range(len(values)), labels = labels_latex)#, rotation = 90)
 plt.savefig('testvectorisation.svg', dpi = 1000, bbox_inches='tight') 
+
+
+
+#%%
+# CORRELATION
+
+import pandas as pd
+import pickle
+import configs
+import seaborn
+import matplotlib.pyplot as plt
+
+config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
+
+hyperparams = configs.get_hyperparams(config_name)
+
+with open('corr-test_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle',
+          'rb') as filestream:
+    proposals_dict = pickle.load(filestream)
+    
+proposals = proposals_dict['proposals']
+
+# clearly all proposals were saved now despite condition on burn-in... ok then
+
+proposals = proposals[-2000:]
+
+first_proposal = proposals[0]
+_, labels, labels_latex = first_proposal.vectorise_under_library(hyperparameters = hyperparams)
+labels = labels_latex
+
+parameter_lists = {name: [] for name in labels}
+
+for i, proposal in enumerate(proposals):
+# here proposal is an instance of model with vectorisation method
+    vector = proposal.vectorise_under_library(hyperparameters = hyperparams)[0]
+    # vectorised in order of labels, hence take n-th entry corresponds to n-th label model parameter
+    for j, value in enumerate(vector):
+        parameter_lists[labels[j]].append(vector[j])
+    
+data = pd.DataFrame(data = parameter_lists, columns = labels) # columns!
+
+pdCM = data.corr()
+
+plt.figure(figsize=(10,10))
+seaborn.heatmap(pdCM, annot=False, cmap="PiYG", fmt=".2f", linewidths=0.5, vmin = -1, vmax = 1)
+# colormaps: coolwarm, PiYG
+plt.savefig('correlation_test3.svg', dpi = 1000, bbox_inches='tight')
+
+# plt.figure(figsize=(8,6))
+# npCM = pdCM
+
+# plt.savefig('correlation_test2.svg', dpi = 1000, bbox_inches='tight')
+
+# now populate lists for one feature each (rather than 1 sample)
+# to work with pandas...
+# then EZ

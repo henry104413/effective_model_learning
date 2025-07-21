@@ -362,7 +362,8 @@ class LearningChain:
             self.explored_loss.append(proposal_loss)
             
             # save every proposal - used for statistical analysis of chain:
-            if self.store_all_proposals:
+            # temporarily burn-in cutoff is set here - to later be moved to analysis bit
+            if self.store_all_proposals and i >= 5000:
                 self.explored_proposals.append(copy.deepcopy(proposal))
                 
             # Metropolis-Hastings acceptance:

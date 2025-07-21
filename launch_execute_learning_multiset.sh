@@ -22,13 +22,12 @@
 # !! but in each case must be arrays!  
 declare -a target_csvs=("Wit-Fig4-6-0_025")
 # "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
-experiment_name="250624"
+experiment_name="corr-test"
 defects_numbers=(2)
-repetitions_numbers=(15)
-iterations_numbers=(50000)
+repetitions_numbers=(3)
+iterations_numbers=(10000)
 proportion_training=1
-configs_count=12
-configs=(15 16)
+configs=(11)
 
 
 # execution:

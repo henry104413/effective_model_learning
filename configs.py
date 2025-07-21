@@ -85,7 +85,7 @@ default_chain_hyperparams = {
 
 
 specific_experiment_chain_hyperparams = {
-# 1)  
+# 0)  
 'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--':
     {
     'qubit_Ls_library':
@@ -117,7 +117,7 @@ specific_experiment_chain_hyperparams = {
          }
     },
 
-# 2)    
+# 1)    
 'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx-':
     {
     'qubit_Ls_library':
@@ -149,7 +149,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
  
- # 3)   
+ # 2)   
 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v--':
     {
     'qubit_Ls_library':
@@ -181,7 +181,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
 
-# 4)    
+# 3)    
 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v-sx-':
     {
     'qubit_Ls_library':
@@ -213,7 +213,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
  
- # 5)   
+ # 4)   
 'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx-Cv2v--':
     {
     'qubit_Ls_library':
@@ -245,7 +245,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
  
- # 6)   
+ # 5)   
 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx-Cv2v-sx-':
     {
     'qubit_Ls_library':
@@ -277,7 +277,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
  
- # 7)   
+ # 6)   
 'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--':
     {
     'qubit_Ls_library':
@@ -309,7 +309,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
 
-# 8)    
+# 7)    
 'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-':
     {
     'qubit_Ls_library':
@@ -341,7 +341,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
 
-# 9)    
+# 8)    
 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--':
     {
     'qubit_Ls_library':
@@ -373,7 +373,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
 
-# 10)    
+# 9)    
 'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-':
     {
     'qubit_Ls_library':
@@ -405,7 +405,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
 
-# 11)    
+# 10)    
 'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx,sy,sz-Cv2v--':
     {
     'qubit_Ls_library':
@@ -437,7 +437,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
  
- # 12)   
+ # 11)   
 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-':
     {
     'qubit_Ls_library':
@@ -469,7 +469,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
 
-# 13)    
+# 12)    
 'Lsyst-sx-Lvirt--Cs2v-sx-Cv2v--':
     {
     'qubit_Ls_library':
@@ -501,7 +501,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
 
-# 14)    
+# 13)    
 'Lsyst-sx-Lvirt--Cs2v-sz-Cv2v--':
     {
     'qubit_Ls_library':
@@ -533,7 +533,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
 
-# 15)    
+# 14)    
 'Lsyst-sz-Lvirt--Cs2v-sz-Cv2v--':
     {
     'qubit_Ls_library':
@@ -565,7 +565,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
     
-# 16)
+# 15)
 'Lsyst-sz-Lvirt--Cs2v-sx,sy-Cv2v--':
 {
     'qubit_Ls_library':
@@ -597,7 +597,7 @@ specific_experiment_chain_hyperparams = {
           }
     },
 
-# 17)
+# 16)
 'Lsyst-sz-Lvirt--Cs2v-sx,sz-Cv2v--':
 {
     'qubit_Ls_library':
