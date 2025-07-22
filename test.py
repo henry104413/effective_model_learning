@@ -331,5 +331,108 @@ simulated_data = {'ts': ts,
                   'sz': sim_sz
                   }
 
-with open('simulated_data.pickle', 'wb') as filestream:
+with open('new_simulated_data.pickle', 'wb') as filestream:
     pickle.dump(simulated_data, filestream)
+
+
+#%%
+# bar plots of champion loss for different configurations (libraries)
+if True: 
+    
+    plt.rcParams["font.size"] = 16
+
+    configs = ['Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--', 
+               'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx-', 
+               'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v--', 
+               'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v-sx-',
+               'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx-Cv2v--',
+               'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx-Cv2v-sx-',
+               'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--',
+               'Lsyst-sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-',
+               'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v--',
+               'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-',
+               'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx,sy,sz-Cv2v--', 
+               'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-',
+               'Lsyst-sx-Lvirt--Cs2v-sx-Cv2v--',
+               'Lsyst-sx-Lvirt--Cs2v-sz-Cv2v--',
+               'Lsyst-sz-Lvirt--Cs2v-sz-Cv2v--',
+               'Lsyst-sz-Lvirt--Cs2v-sx,sy-Cv2v--',
+               'Lsyst-sz-Lvirt--Cs2v-sx,sz-Cv2v--'
+               ]
+    configs = [configs[x] for x in [0, 15, 16, 6, 7, 11]]
+    
+    experiment_base = '250621'
+    target_file = 'Wit-Fig4-6-0_025'
+    losses = {'sx': [], 'full': []}
+    labels = {'sx': [], 'full': []}
+    for config in configs: 
+        for regime in ['sx', 'full']:
+            experiment_name = regime + '_' + experiment_base + '_' + target_file + '_' + config 
+            for D in [2]: # tuple of Ds   
+                losses[regime].append(return_champion_loss(experiment_name, D))
+                labels[regime].append(config)
+                
+    def ops_label_dresser(ops: str, setname: str) -> str: # works
+        """
+        Argument is comma-delimiting string containing sx, sy, sz.
+        
+        Returns dressed string of operators to show in as processes of each class,
+        assuming setname containing "C" means it's symmetric coupling (ie. applied on both subsystems).
+        """
+        ops_list = [x for x in ops.split(',') if x] # separates by comma and eliminates empty strings
+        symbols = {'sx': r'$\sigma_x$',
+                   'sy': r'$\sigma_y$',
+                   'sz': r'$\sigma_z$'}
+        output = ''
+        for x in ops_list:
+            if output: output = output + ', '
+            output = output + symbols[x]
+            if 'C' in setname: output = output + r'$\otimes$' + symbols[x] 
+        return output
+        
+    def interpret_config(string: str) -> str:
+        """
+        Argument is configuration label string of form Lsyst-ops-Lvirt-ops-Cs2v-ops-Cv2v-ops-,
+        where ops is comma-delimited string containg any of sx, sy, sz.
+        
+        Returns dressed label of Ls and couplings as sets of operators;
+        each single operator taken as acting on both systems if coupling.
+        """
+        Lsyst_Lvirt_Cs2v_Cv2v = [string.split('-')[x] for x in (1,3,5,7)]
+        setnames = [r'$L_{syst}$', r'$L_{virt}$', r'$C_{s2v}$', r'$C_{v2v}$']
+        label = ''
+        for i, ops in enumerate(Lsyst_Lvirt_Cs2v_Cv2v):
+            if i>0: label = label + '\n'
+            label = label + setnames[i] + r'$\in\{$' + ops_label_dresser(ops, setnames[i]) + r'$\}$'
+        
+        return label    
+            
+    # A = ([interpret_config(x) for x in labels])
+            
+        
+        
+        
+  #%%  
+    #losses = [x/max(losses) for x in losses]
+    # just for sorting (I think):
+    # losses_arr = np.array(losses)
+    # order = losses_arr.argsort()
+    # labels_arr = np.array([interpret_config(x) for x in labels])
+    # losses_arr_sorted = losses_arr[order]
+    # labels_arr_sorted = labels_arr[order]
+    # colours = np.array(colours)[order]
+    # labels_sorted = [labels[i] for i in order]
+    
+    plt.figure(figsize=(10, 30))
+    plt.barh(np.arange(len(losses['sx'])), losses['sx'], color='r', alpha=0.5)
+    plt.barh(np.arange(len(losses['full'])), losses['full'], color='b', alpha=0.5)
+    #plt.xscale('log')
+    plt.yticks(ticks = np.arange(len(losses['sx'])), labels = label['sx'])
+    plt.title('D = 2')
+    plt.xlabel('lowest loss')#
+    ax=plt.gca()
+    #ax.axis["left"].major_ticklabels.set_ha("left")
+    #ax.set_xticklabels(ha='left')
+    plt.savefig('250621_loss_vs_configuration_full_vs_sx' + '.svg', dpi = 1000, bbox_inches='tight')
+  
+
