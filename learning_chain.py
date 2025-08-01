@@ -116,7 +116,6 @@ class LearningChain:
     
         
     
-    
     def complementary_step(self, step_type: str) -> str:
         """
         Returns step type that reverses argument step type.
@@ -232,21 +231,23 @@ class LearningChain:
                                  + '\n or integer number of defects, assuming qubit energy = 1')
             
         # chain step options check and sum for normalisation:
+        # note: priorities normalisation retained here for legacy reasons, however another normalisation added
+        # ...due to algorithm modification no rescale each priority by # possible modifications of that type (aka # ways)
         # note: run() method throws error if option not implemented - not checked here
         temp = 0 # 
         for option in (options := [x for x in self.chain_step_options]):
             if type(self.chain_step_options[option]) not in [int, float]:
-                raise RuntimeError('Chain step options need to have relative probabilities\n'
+                raise RuntimeError('Chain step options need to have relative priorities\n'
                                    +'specified by a single number')
             else:
                 temp += self.chain_step_options[option]
                 
-        # step labels, normalised dictionary, and list of just probabilities for later use:
+        # step labels, normalised dictionary, and list of just priorities for later use:
         self.next_step_labels = options # next step labels for use in run()
-        self.next_step_probabilities_dict = {option: self.chain_step_options[option]/temp 
+        self.next_step_priorities_dict = {option: self.chain_step_options[option]/temp 
                                   for option in options}
-        self.next_step_probabilities_list = [self.chain_step_options[option]/temp
-                                        for option in options]
+        self.next_step_priorities_list = [self.chain_step_options[option]/temp
+                                        for option in options] # actually unused as of algorithm of modification with #-ways-scaling
         
         # process and parameter objects to perform chain steps:
         # note: initialised at first call of methods that use them
@@ -268,6 +269,7 @@ class LearningChain:
         self.best_loss = self.current_loss
         self.explored_loss.append(self.current_loss)
         if self.store_all_proposals: self.explored_proposals.append(copy.deepcopy(self.initial))
+    
     
     
     def run(self, steps:int = False) -> learning_model.LearningModel:
@@ -329,6 +331,19 @@ class LearningChain:
             # new proposal container:
             proposal = copy.deepcopy(self.current)
             
+            # choose next step: CONTINUE HERE
+            # instead of choosing and only then considering how many ways there were to do this and reversal
+            # choose based on priority AND how many options there are
+            # make and normalise list of probabilities in order of self.next_step_labels
+            # note: product priority (normalised earlier but that is irrelevant) and number of possible modifications of step type (# ways) 
+            next_step_probabilities_list = [self.next_step_priorities_dict[step]*self.step(proposal, step, update = False)[1]
+                                            for step in self.next_step_labels]
+            next_step_probabilities_list = [x/sum(next_step_probabilities_list) for x in next_step_probabilities_list]     
+            
+            #proposal.disp()
+            #print(next_step_probabilities_list)
+
+            
             # choose next step:
             next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities_list)
             next_step = str(next_step)
@@ -353,8 +368,8 @@ class LearningChain:
             if not bool(possible_modifications_reverse_type): continue
             
             # overall probabilities of making this step and of then reversing it:
-            p_there = self.next_step_probabilities_dict[next_step]/possible_modifications_chosen_type
-            p_back = self.next_step_probabilities_dict[self.complementary_step(next_step)]/possible_modifications_reverse_type
+            p_there = self.next_step_priorities_dict[next_step]/possible_modifications_chosen_type
+            p_back = self.next_step_priorities_dict[self.complementary_step(next_step)]/possible_modifications_reverse_type
             # then multiply by back/there
             
             # evaluate new proposal (system evolution calculated here):

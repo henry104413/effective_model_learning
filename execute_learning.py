@@ -107,7 +107,8 @@ print(filename, flush = True)
 # and numberical entries on single row are x, y values
 
 # choose data:
-datafile = target_file + '.csv'
+if '.csv' not in target_file: datafile = target_file + '.csv'
+else: datafile = target_file
 dataset_no = 0 
 # note: 0 means first pair of columns
 # note: currently assuming first dataset in file is target now
