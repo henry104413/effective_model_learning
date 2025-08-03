@@ -436,3 +436,7 @@ if True:
     plt.savefig('250621_loss_vs_configuration_full_vs_sx' + '.svg', dpi = 1000, bbox_inches='tight')
   
 
+#%%
+
+A = [x
+ for x in (1,2)]

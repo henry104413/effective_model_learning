@@ -335,9 +335,10 @@ class LearningChain:
             # instead of choosing and only then considering how many ways there were to do this and reversal
             # choose based on priority AND how many options there are
             # make and normalise list of probabilities in order of self.next_step_labels
-            # note: product priority (normalised earlier but that is irrelevant) and number of possible modifications of step type (# ways) 
-            next_step_probabilities_list = [self.next_step_priorities_dict[step]*self.step(proposal, step, update = False)[1]
-                                            for step in self.next_step_labels]
+            # note: product priority (normalised earlier but that is irrelevant) and number of possible modifications of step type (# ways)
+            # note: 2nd element step() return is # ways
+            next_step_probabilities_list = [self.next_step_priorities_dict[x]*self.step(proposal, x, update = False)[1]
+                                            for x in self.next_step_labels]
             next_step_probabilities_list = [x/sum(next_step_probabilities_list) for x in next_step_probabilities_list]     
             
             #proposal.disp()
@@ -353,21 +354,44 @@ class LearningChain:
             
             # filter parameters below instance-level thresholds:
             # note: could go into step method; also might break reversibility?
-            self.process_handler.filter_params(proposal, self.params_thresholds)
+            # disabled now - to be taken care of with priors
+            # self.process_handler.filter_params(proposal, self.params_thresholds)
+            # TO DELETE
             
             # if no modifications of chosen type possible, skip straight to next proposal iteration:
             # note: this uses up an iteration with no real new proposal and no tracker record
+            # not possible anymore as step choice probability would then be 0
+            # TO DELETE
             if not bool(possible_modifications_chosen_type): continue
             
             # also save number of possible modifications of reverse type after performing chosen step:
             # note: proposal not modified by this
+            # will need to do this for multiple step types upon algorithm update
+            # so PROBABLY TO DELETE
             proposal, possible_modifications_reverse_type = self.step(proposal, self.complementary_step(next_step), update = False)
             
             # if no reversal possible, skip to next proposal iteration:
             # note: every step should be reversible - this should only ever be triggered when proposal gets killed by filter
+            # should no longer be an issue after algorithm update and filter removal
+            # TO DELETE
             if not bool(possible_modifications_reverse_type): continue
             
-            # overall probabilities of making this step and of then reversing it:
+            # overall probabilities of making this step and of afterwards reversing it:
+            if next_step == 'tweak all parameters':
+                pass
+                # here account for the assymetricity of the lindblad tweak... shouldn't be too hard
+                # or too important since it's only the lindblad rates?
+                # maybe DO THIS LATER but for now assume that tweaking is symmetrical...
+                
+            
+            else: # ie. a process addition or removal
+                p_there = (self.next_step_priorities_dict[next_step]
+                           / sum([self.next_step_priorities_dict[x] * self.step(self.current, x, update = False)[1]
+                                  for x in self.next_step_labels]))
+                p_back  = (self.next_step_priorities_dict[self.complementary_step(next_step)]
+                           / sum([self.next_step_priorities_dict[x] * self.step(proposal, x, update = False)[1]
+                                  for x in self.next_step_labels]))
+                                  
             p_there = self.next_step_priorities_dict[next_step]/possible_modifications_chosen_type
             p_back = self.next_step_priorities_dict[self.complementary_step(next_step)]/possible_modifications_reverse_type
             # then multiply by back/there
