@@ -358,23 +358,8 @@ class LearningChain:
             # self.process_handler.filter_params(proposal, self.params_thresholds)
             # TO DELETE
             
-            # if no modifications of chosen type possible, skip straight to next proposal iteration:
-            # note: this uses up an iteration with no real new proposal and no tracker record
-            # not possible anymore as step choice probability would then be 0
-            # TO DELETE
-            if not bool(possible_modifications_chosen_type): continue
             
-            # also save number of possible modifications of reverse type after performing chosen step:
-            # note: proposal not modified by this
-            # will need to do this for multiple step types upon algorithm update
-            # so PROBABLY TO DELETE
-            proposal, possible_modifications_reverse_type = self.step(proposal, self.complementary_step(next_step), update = False)
             
-            # if no reversal possible, skip to next proposal iteration:
-            # note: every step should be reversible - this should only ever be triggered when proposal gets killed by filter
-            # should no longer be an issue after algorithm update and filter removal
-            # TO DELETE
-            if not bool(possible_modifications_reverse_type): continue
             
             # overall probabilities of making this step and of afterwards reversing it:
             if next_step == 'tweak all parameters':
@@ -392,10 +377,6 @@ class LearningChain:
                            / sum([self.next_step_priorities_dict[x] * self.step(proposal, x, update = False)[1]
                                   for x in self.next_step_labels]))
                                   
-            p_there = self.next_step_priorities_dict[next_step]/possible_modifications_chosen_type
-            p_back = self.next_step_priorities_dict[self.complementary_step(next_step)]/possible_modifications_reverse_type
-            # then multiply by back/there
-            
             # evaluate new proposal (system evolution calculated here):
             proposal_loss = self.total_dev(proposal)
             self.explored_loss.append(proposal_loss)
