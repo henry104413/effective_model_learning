@@ -102,7 +102,7 @@ class Output:
                 # assumed times may differ for datasets but same across each dataset for all observables
                 for j, dataset in enumerate(dynamics_datasets):    
                     plt.plot(get_dynamics_times(j), dataset[i], line_formats[j], label = get_dynamics_dataset_label(j)
-                             ,markersize = 10, markeredgewidth = 2, linewidth = 6
+                             ,markersize = 10, markeredgewidth = 2, linewidth = 4
                              )
                             
                 plt.legend()

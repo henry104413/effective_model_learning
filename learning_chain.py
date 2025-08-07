@@ -346,27 +346,23 @@ class LearningChain:
 
             
             # choose next step:
-            next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities_list)
+            next_step = np.random.choice(self.next_step_labels, p = next_step_probabilities_list)
             next_step = str(next_step)
             
             # modify proposal accordingly and save number of possible modifications of chosen type:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
             
-            # filter parameters below instance-level thresholds:
-            # note: could go into step method; also might break reversibility?
-            # disabled now - to be taken care of with priors
-            # self.process_handler.filter_params(proposal, self.params_thresholds)
-            # TO DELETE
             
             
             
             
             # overall probabilities of making this step and of afterwards reversing it:
             if next_step == 'tweak all parameters':
-                pass
                 # here account for the assymetricity of the lindblad tweak... shouldn't be too hard
                 # or too important since it's only the lindblad rates?
                 # maybe DO THIS LATER but for now assume that tweaking is symmetrical...
+                p_there = 1
+                p_back = 1
                 
             
             else: # ie. a process addition or removal
