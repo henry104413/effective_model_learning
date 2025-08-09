@@ -264,11 +264,14 @@ class BasicModel():
         temp = 1
         for TLS in self.TLSs:
             if TLS.initial_state:
-                temp = T(temp, (TLS.initial_state).unit())
+                temp = T(temp, (TLS.initial_state))
+                # must be valied initial state
+                # don't use unit() of density matrices! it's operator norm, clearly does something else
             else:
                 if TLS.is_qubit:
-                    temp = T(temp, (ops['exc'] + ops['sigmay']).unit())
-                    # note: if changing this make sure this is normalised!
+                    temp = T(temp, ops['plus'])
+                    # note: default defined here if no other passed
+                    # make sure it is physical!!!
                 else:
                     temp = T(temp, ops['gnd'])
         self.initial_DM = temp

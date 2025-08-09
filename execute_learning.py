@@ -35,6 +35,8 @@ except:
     try:
         import os
         target_file = next(x for x in os.listdir() if '.csv' in x)
+        # temporary custom:
+        target_file = 'Wit-Fig4-6-0_025.csv'
     except:
         raise SystemExit('Unable to open any csv file - aborting')        
 
@@ -153,8 +155,8 @@ training_measurement_observables = ['sigmax']
 #%% perform learning:
 
 # if qubit initial state required:
-qubit_initial_state = definitions.ops['sigmax']
-    
+qubit_initial_state = False
+
 # shorthands for hyperparams definitions:
 couplings_shape_scale = (0.8, 1)
 Ls_shape_scale = (0.2, 0.5)

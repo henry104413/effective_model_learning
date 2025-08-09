@@ -54,7 +54,8 @@ ops = {#'sigma z' : q.sigmaz(),
        'id2' : q.identity(2),
        'gnd' : q.sigmam()*q.sigmap(),
        'exc' : q.sigmap()*q.sigmam(),
-       'plus': q.ket2dm(q.ket([1]) + q.ket([0])).unit() # careful - qutip uses possibly opposite convention for excited and ground state
+       'plus': q.ket2dm((q.ket([1]) + q.ket([0])).unit()), # careful - qutip uses possibly opposite convention for excited and ground state
+       'custom': q.Qobj([[0.5,0.5],[0.5,0.5]])
        }
 
 
