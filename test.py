@@ -437,6 +437,6 @@ if True:
   
 
 #%%
-
-A = [x
- for x in (1,2)]
+import pickle
+with open('250807-smaller-scale-for-smaller-tail_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_best.pickle', 'rb') as filestream:
+    A = pickle.load(filestream)

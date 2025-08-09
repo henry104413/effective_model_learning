@@ -10,6 +10,7 @@ from __future__ import annotations
 import typing
 import copy
 import numpy as np
+import scipy as sp
 import time
 
 import learning_model
@@ -353,19 +354,22 @@ class LearningChain:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
             
             
-            
-            
-            
             # overall probabilities of making this step and of afterwards reversing it:
             if next_step == 'tweak all parameters':
-                # here account for the assymetricity of the lindblad tweak... shouldn't be too hard
-                # or too important since it's only the lindblad rates?
-                # maybe DO THIS LATER but for now assume that tweaking is symmetrical...
-                p_there = 1
+                # cancel out except assymetricity of lindblad tweak due to truncation at zero:
+                # based on truncated gaussian distribution formulas    
+                p_there = 1 
                 p_back = 1
-                
-            
+                proposal_width = self.params_handler.jump_lengths['Ls']
+                for TLS in self.current.TLSs:
+                    for current_rate in TLS.Ls.values():
+                        p_there *= 1/(1-1/2*(1+sp.special.erf(-current_rate/proposal_width/np.sqrt(2))))
+                for TLS in proposal.TLSs:
+                    for proposed_rate in TLS.Ls.values():
+                        p_back *= 1/(1-1/2*(1+sp.special.erf(-proposed_rate/proposal_width/np.sqrt(2))))
             else: # ie. a process addition or removal
+                # priority of this normalised by sum off all priorities times their respective # ways
+                # in numerator # of ways here cancels with that in step choice probability, leaving only priority
                 p_there = (self.next_step_priorities_dict[next_step]
                            / sum([self.next_step_priorities_dict[x] * self.step(self.current, x, update = False)[1]
                                   for x in self.next_step_labels]))
