@@ -155,11 +155,12 @@ training_measurement_observables = ['sigmax']
 #%% perform learning:
 
 # if qubit initial state required:
-qubit_initial_state = False
+qubit_initial_state = definitions.ops['plus']
+defect_initial_state = definitions.ops['plus']
 
 # shorthands for hyperparams definitions:
-couplings_shape_scale = (0.8, 1)
-Ls_shape_scale = (0.2, 0.5)
+couplings_shape_scale = (2, 0.3)
+Ls_shape_scale = (2, 0.03)
 
 
 # instance of learning (quest for best model):
@@ -169,6 +170,7 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                       
                       initial = (1, defects_count), # (qubit energy, number of defects)
                       qubit_initial_state = qubit_initial_state,
+                      defect_initial_state = defect_initial_state,
                       
                       max_chain_steps = max_iterations,
                       

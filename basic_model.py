@@ -258,7 +258,7 @@ class BasicModel():
         Builds default initial state full density matrix.
         Assumes product state with:
         all defects as defined or ground if not,
-        all qubits as defined or excited if not.
+        all qubits as defined or equal superposition with positive coherence.
         Saves to this model's container, also returns it.
         """
         temp = 1

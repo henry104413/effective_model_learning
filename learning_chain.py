@@ -48,6 +48,7 @@ class LearningChain:
         
         initial = False # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
         qubit_initial_state = False # instance of Qobj for single qubit 
+        defect_initial_state = False # instance of Qobj for single qubit
         # note: only makes sense if product state initially 
         
         max_chain_steps = 10000
@@ -162,6 +163,7 @@ class LearningChain:
                  
                  initial: TYPE_MODEL | tuple | list = False,
                  qubit_initial_state: Qobj = False,
+                 defect_initial_state: Qobj = False,
                  # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
                  
                  # note: arguments below should have counterpart in class Defaults:
@@ -397,7 +399,7 @@ class LearningChain:
                     
                     # Ls:
                     shape, scale = self.params_priors['Ls']
-                    for x in TLS.Ls.vals():
+                    for x in TLS.Ls.values():
                         params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
                         
                     # couplings:
@@ -416,7 +418,7 @@ class LearningChain:
                     
                     # Ls:
                     shape, scale = self.params_priors['Ls']
-                    for x in TLS.Ls.vals():
+                    for x in TLS.Ls.values():
                         params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
                         
                     # couplings:
@@ -486,6 +488,7 @@ class LearningChain:
                              )
         for i in range(defects_number):
             initial_model.add_TLS(is_qubit = False,
+                                  initial_state = self.defect_initial_state,
                                   energy = qubit_energy,
                                   couplings = {},
                                   Ls = {}
