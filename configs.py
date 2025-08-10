@@ -72,9 +72,16 @@ default_chain_hyperparams = {
           },
         
         'params_thresholds': { # minimum values for parameters - if below then process dropped
-            # !!! does this break reversibility??                
+            # currently discontinued - sampling from distributions not heavy around zero seems to dispense with need
+            # also priors introduced decaying at zero and +inf                
             'Ls':  1e-7,
             'couplings': 1e-6
+            },
+        
+        'params_priors': { # (shape, scale) for gamma dristributions each for one parameter class
+            'couplings': (1.04, 30),
+            'energies': (1.05, 35),   
+            'Ls': (1.004, 23)
             },
         
         'custom_function_on_dynamics_return': False, #custom_func
