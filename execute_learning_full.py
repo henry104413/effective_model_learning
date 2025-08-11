@@ -11,6 +11,7 @@ import numpy as np
 import sys # for passing command line arguments
 import time
 import copy
+import pickle
 # note: import os also called below in case of an exception
 
 
@@ -35,8 +36,6 @@ except:
     try:
         import os
         target_file = next(x for x in os.listdir() if '.csv' in x)
-        # temporary custom:
-        target_file = 'Wit-Fig4-6-0_025.csv'
     except:
         raise SystemExit('Unable to open any csv file - aborting')        
 
@@ -67,7 +66,7 @@ try:
     if max_iterations == 0:
         raise Exception('Maximum iterations not specified by launcher, hence using default.')
 except:
-    max_iterations = 100
+    max_iterations = 1000
 
 # set proportion (ratio) of available data values to use for training:
 # note: currently taken from start and same for all data sets; 1 means use all
@@ -84,7 +83,14 @@ try:
     configuration_number = int(sys.argv[7])
 except:
     configuration_number = False
-    
+
+# set switch for training on full set:
+# if 1 (or other true) uses sx, sy, sz from imported simulated data pickle,
+# if 0 (false when boolified) uses just sx (equal to original data):
+try:
+    full_switch = bool(int(sys.argv[8]))
+except:
+    full_switch = True    
 
 # get subexperiment name and  corresponding chain configuration:    
 subexperiment_name = list(configs.specific_experiment_chain_hyperparams.keys())[configuration_number]
@@ -102,65 +108,49 @@ filename = (experiment_name + '_' + target_file + '_' + subexperiment_name + '_D
 print(filename, flush = True)
 
 
-#%% import target data:
+
+#%% prepare simulated multi-observable training datasets:
     
-# import data from CSV file with possible annotations skipped
-# assuming subsequent pairs of columns are different datasets 
-# and numberical entries on single row are x, y values
+# import dictionary of ts, sx, sy, sz observable values (sx equal to original and rest simulated with noise)    
+with open('simulated_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
+          'rb') as filestream:
+    simulated_data = pickle.load(filestream)    
+ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
+        
 
-# choose data:
-if '.csv' not in target_file: datafile = target_file + '.csv'
-else: datafile = target_file
-dataset_no = 0 
-# note: 0 means first pair of columns
-# note: currently assuming first dataset in file is target now
-# and not set by launcher
-
-# extract x and y values@
-contents = np.genfromtxt(datafile,delimiter=',')#,dtype=float) 
-dataset = contents[:,[2*dataset_no, 2*dataset_no + 1]]
-xs = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 0]     
-ys = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 1]   
-
-# sort by x:
-order = xs.argsort()
-xs = xs[order]
-ys = ys[order]
-
-# note: apparently has to be sorted else integrator fails
-# (both ascending and descending work, can be unevenly spaced)
-
-
-
-#%% data preparation:
-
-# rescaled measurement times:
-# note: proper scaling here avoids having to scale other hyperparameters
-ts = xs/1000
-
-# full measurement data:
+# measurement data:
 # (encapsulate into lists of datasets and corresponding observable lables)
-measurement_datasets = [ys]
-measurement_observables = ['sigmax']
-    
+if full_switch:
+    measurement_datasets = [sx, sy, sz]
+    measurement_observables = ['sigmax', 'sigmay', 'sigmaz']
+    print('using full observable set')
+else:
+    measurement_datasets = [sx]
+    measurement_observables = ['sigmax']
+    print('using single observable')
+            
 # times and measurement data to use for training:
 # (encapsulate into lists of datasets and corresponding observable lables:)
-training_ts = ts[:int(proportion_to_use*len(ts))]
-training_ys = ys[:int(proportion_to_use*len(ys))]
-training_measurement_datasets = [training_ys]
-training_measurement_observables = ['sigmax']
+# note: currently here not training on subset but can be implemented like below:
+# training_ts = ts[:int(proportion_to_use*len(ts))]
+training_ts = ts
+training_measurement_datasets = measurement_datasets
+training_measurement_observables = measurement_observables
 
 
+
+#%% AD HOC: load best to use as initial for testing:
+
+# with open('250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
+#           'rb') as filestream:
+#     initial_model = pickle.load(filestream)
 
 #%% perform learning:
 
 # if qubit initial state required:
 qubit_initial_state = definitions.ops['plus']
-defect_initial_state = definitions.ops['mm']
+defect_initial_state = definitions.ops['mm']    
 
-# shorthands for hyperparams definitions:
-couplings_shape_scale = (2, 0.3)
-Ls_shape_scale = (2, 0.03)
 
 
 # instance of learning (quest for best model):
@@ -169,9 +159,10 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                       target_observables = training_measurement_observables,
                       
                       initial = (1, defects_count), # (qubit energy, number of defects)
+                      #initial = initial_model,
                       qubit_initial_state = qubit_initial_state,
-                      defect_initial_state = defect_initial_state,
-                      
+                      defect_initial_state = definitions.ops['mm'],    
+
                       max_chain_steps = max_iterations,
                       
                       store_all_proposals = True,

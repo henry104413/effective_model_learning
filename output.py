@@ -27,6 +27,8 @@ K_to_eV = definitions.Constants.K_to_eV
 t_to_sec = definitions.Constants.t_to_sec
 # note: h_bar=1, e=1
 
+# fontsize in figures (default was 10)
+plt.rcParams["font.size"] = 20
 
 
 class Output:
@@ -48,6 +50,7 @@ class Output:
                  acceptance: list[float|int] = [],
                  models_to_save: list[BasicModel|LearningModel] = [],
                  model_names: list[str] = [],
+                 all_proposals: dict[str, list[float]|list[LearningModel]] = {},
                  chain_hyperparams: dict = False,
                  chain_name: str = False,
                  fontsize: float = False):
@@ -90,21 +93,27 @@ class Output:
             # plot comparison for each observables:
             for i, observable in enumerate(observable_labels):
                 plt.figure()
-                plt.ylabel(observable)
-                plt.xlabel('time (arbitrary)')
-                
+                plt.ylabel(definitions.observable_shorthand2pretty[observable])
+                #plt.ylabel(r'<$\sigma_x$>')
+                plt.xlabel(r'time ($\mu s$)')
+                plt.ylim([-1.1,1.1])
+                #r'Microstrain [$\mu \epsilon$]'
+                    
                 # plot all the datasets in the comparison for this observable:
                 # assumed times may differ for datasets but same across each dataset for all observables
                 for j, dataset in enumerate(dynamics_datasets):    
-                    plt.plot(get_dynamics_times(j), dataset[i], line_formats[j], label = get_dynamics_dataset_label(j))
+                    plt.plot(get_dynamics_times(j), dataset[i], line_formats[j], label = get_dynamics_dataset_label(j)
+                             ,markersize = 5, markeredgewidth = 1, linewidth = 2
+                             )
                             
-                plt.legend()
-                plt.text(0, plt.gca().get_ylim()[0] + (plt.gca().get_ylim()[1]-plt.gca().get_ylim()[0])/50,
-                     'best loss = ' + '{:.2e}'.format(best_loss))
-                plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000)
+                plt.legend(fontsize = 14)
+                if not False:
+                    plt.text(0, plt.gca().get_ylim()[0] + (plt.gca().get_ylim()[1]-plt.gca().get_ylim()[0])/50,
+                         'best loss = ' + '{:.2e}'.format(best_loss))
+                plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000, bbox_inches='tight')
                  
     
-        # plot loss progression over chain steps:
+        # plot loss progression over chain steps, also save list as pickle:
         if toggles.loss:     
             plt.figure()
             plt.plot(loss, 'm-', linewidth = 0.3, markersize = 0.1)
@@ -115,7 +124,9 @@ class Output:
                      10**(0.98*np.log10(plt.gca().get_ylim()[0])),
                      'best loss = ' + '{:.2e}'.format(best_loss))
             #plt.xlim([0, 10000])
-            plt.savefig(filename + '_loss.svg', dpi = 1000)
+            plt.savefig(filename + '_loss.svg', dpi = 1000, bbox_inches='tight')
+            with open(filename + '_loss.pickle', 'wb') as filestream:
+                pickle.dump(loss, filestream)
             
             
         # plot acceptance ratio evolution:
@@ -127,7 +138,7 @@ class Output:
             plt.ylabel('acceptance ratio')
             #plt.xlim([0, 10000])
             plt.ylim([-0.05,1.05])
-            plt.savefig(filename + '_acceptance.svg', dpi = 1000)
+            plt.savefig(filename + '_acceptance.svg', dpi = 1000, bbox_inches='tight')
         
     
         # save specified model instances (as text and/or pickle and/or graph):
@@ -151,7 +162,14 @@ class Output:
             if toggles.graphs:
                 self.create_model_graph(model, filename + get_model_name(i) + '_graph')
        
-                
+        
+        # save all proposals into single pickle - dictionary with keys 'loss' & 'proposal',
+        # where each proposal is an instance of LearningModel:
+        if toggles.all_proposals:
+            with open(filename + '_proposals.pickle', 'wb') as filestream:
+                pickle.dump(all_proposals, filestream)
+
+        
         # save chain hyperparameters dictionary as dictionary string and as pickle:
         # note: unfortunately JSON doesn't support tuples as keys
         # note: apparently string can be loaded back using ast.literal_eval
@@ -163,6 +181,8 @@ class Output:
                 filestream.write(pprint.pformat(chain_hyperparams))
             with open(filename + get_chain_name() + '_hyperparameters.pickle', 'wb') as filestream:
                 pickle.dump(chain_hyperparams,  filestream)
+                
+        
                 
                 
             
@@ -398,6 +418,6 @@ class Output:
         # import itertools as it
         # connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
         
-        plt.savefig(filename + '.svg')#, dpi=300)#, bbox_inches='tight')
+        plt.savefig(filename + '.svg', bbox_inches='tight')#, dpi=300)#, bbox_inches='tight')
 
         

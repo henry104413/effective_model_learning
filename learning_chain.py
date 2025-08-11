@@ -10,6 +10,7 @@ from __future__ import annotations
 import typing
 import copy
 import numpy as np
+import scipy as sp
 import time
 
 import learning_model
@@ -47,50 +48,60 @@ class LearningChain:
         
         initial = False # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
         qubit_initial_state = False # instance of Qobj for single qubit 
+        defect_initial_state = False # instance of Qobj for single qubit
         # note: only makes sense if product state initially 
         
-        max_chain_steps = 100
+        max_chain_steps = 10000
         chain_step_options = {
             'tweak all parameters': 10,
-            'add L': 0.1,
-            'remove L': 0.1,
-            'add qubit-defect coupling': 0.05, 
-            'remove qubit-defect coupling': 0.05,
-            'add defect-defect coupling': 0.025, 
-            'remove defect-defect coupling': 0.025
+            'add qubit L': 1,
+            'remove qubit L': 1,
+            'add defect L': 1,
+            'remove defect L': 1,
+            'add qubit-defect coupling': 1, 
+            'remove qubit-defect coupling': 1,
+            'add defect-defect coupling': 1, 
+            'remove defect-defect coupling': 1
             }
         
-        temperature_proposal = 0.00001 # or (0.05, 0.05) to sample gamma by default
+        temperature_proposal = 0.0005 # or (0.05, 0.05) to sample gamma by default
         
-        jump_length_rescaling_factor = 2 # for scaling up or down jump lengths of parameter handler
+        jump_length_rescaling_factor = 1 # for scaling up or down jump lengths of parameter handler
         
-        acceptance_window = 100
+        acceptance_window = 10
         acceptance_target = 0.4
         acceptance_band = 0.2
         
         params_handler_hyperparams = {
-            'initial_jump_lengths': {'couplings' : 0.001,
-                                     'energies' : 0.01,
-                                     'Ls' : 0.00001
+            'initial_jump_lengths': {'couplings' : 0.1,
+                                     'energies' : 0.1,
+                                     'Ls' : 0.01
                                      }
             }
         
-        Ls_library = { # sampled from gamma distribution with given (shape, scale)
-            'sigmax': (0.1, 0.5)
-           ,'sigmay': (0.1, 0.5)
-           ,'sigmaz': (0.1, 0.5)
+        qubit_Ls_library = { # sampled from gamma distribution with given (shape, scale)
+            'sigmax': (2, 0.03)
+           ,'sigmay': (2, 0.03)
+           ,'sigmaz': (2, 0.03)
+           }
+
+        defect_Ls_library = { # sampled from gamma distribution with given (shape, scale)
+            'sigmax': (2, 0.03)
+           ,'sigmay': (2, 0.03)
+           ,'sigmaz': (2, 0.03)
            }
 
         qubit2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-            (('sigmax', 'sigmax'),): (0.2, 0.5)
-           ,(('sigmay', 'sigmay'),): (0.2, 0.5)
-           ,(('sigmaz', 'sigmaz'),): (0.2, 0.5)
+                                          # (0.8, 1) currently seems to work well
+            (('sigmax', 'sigmax'),): (2, 0.3)
+           ,(('sigmay', 'sigmay'),): (2, 0.3)
+           ,(('sigmaz', 'sigmaz'),): (2, 0.3)
            }
         
         defect2defect_couplings_library = { # sampled from mirrored gamma distribution with given (shape, scale)
-            (('sigmax', 'sigmay'),): (0.2, 0.5)
-           ,(('sigmay', 'sigmay'),): (0.2, 0.5)
-           ,(('sigmaz', 'sigmay'),): (0.2, 0.5)
+            (('sigmax', 'sigmay'),): (2, 0.3)
+           ,(('sigmay', 'sigmay'),): (2, 0.3)
+           ,(('sigmaz', 'sigmay'),): (2, 0.3)
            }
         
         params_thresholds = { # minimum values for parameters - if below then process dropped
@@ -99,11 +110,19 @@ class LearningChain:
             'couplings': 1e-6
             }
         
+        params_priors = { # (shape, scale) for gamma dristributions each for one parameter class
+            'couplings': (1.04, 30),
+            'energies': (1.05, 35),   
+            'Ls': (1.004, 23)
+            },
+        
         custom_function_on_dynamics_return = False # optional function acting on model's dynamics calculation return
         
         iterations_till_progress_update = False # number of iterations before iteration number and time elapsed printed
     
+        store_all_proposals = False # switch to keep all proposed models
     
+        
     
     def complementary_step(self, step_type: str) -> str:
         """
@@ -113,10 +132,14 @@ class LearningChain:
         match step_type:
             case 'tweak all parameters':
                 return 'tweak all parameters'
-            case 'add L': 
-                return 'remove L'
-            case 'remove L':
-                return 'add L'
+            case 'add qubit L': 
+                return 'remove qubit L'
+            case 'remove qubit L':
+                return 'add qubit L'
+            case 'add defect L': 
+                return 'remove defect L'
+            case 'remove defect L':
+                return 'add defect L'
             case 'add qubit-defect coupling':
                 return 'remove qubit-defect coupling' 
             case 'remove qubit-defect coupling': 
@@ -140,6 +163,7 @@ class LearningChain:
                  
                  initial: TYPE_MODEL | tuple | list = False,
                  qubit_initial_state: Qobj = False,
+                 defect_initial_state: Qobj = False,
                  # instance of LearningModel or tuple/list of (qubit_energy, defects_number)
                  
                  # note: arguments below should have counterpart in class Defaults:
@@ -158,7 +182,9 @@ class LearningChain:
                  params_handler_hyperparams: dict[dict] = False,
                  # note: can contain lots of things - class to be simplified
                  
-                 Ls_library: dict[str, list | tuple] = False,
+                 qubit_Ls_library: dict[str, list | tuple] = False,
+                 
+                 defect_Ls_library: dict[str, list | tuple] = False,
       
                  qubit2defect_couplings_library: dict[str, list | tuple] = False,
                  
@@ -166,12 +192,18 @@ class LearningChain:
                  
                  params_thresholds: dict[str, float] = False,
                  # minimum values of parameters below which corresponding process is dropped
+                 # discontinued - no more need for filtering
+                 
+                 params_priors: dict[str, float] = False,
                  
                  custom_function_on_dynamics_return: callable = False,
                  # optional function acting on model's dynamics calculation return
                  
-                 iterations_till_progress_update: int = False
+                 iterations_till_progress_update: int = False,
                  # number of iterations before iteration number and time elapsed printed
+                 
+                 store_all_proposals: bool = False,
+                 
                  ):
         
         
@@ -211,21 +243,23 @@ class LearningChain:
                                  + '\n or integer number of defects, assuming qubit energy = 1')
             
         # chain step options check and sum for normalisation:
+        # note: priorities normalisation retained here for legacy reasons, however another normalisation added
+        # ...due to algorithm modification no rescale each priority by # possible modifications of that type (aka # ways)
         # note: run() method throws error if option not implemented - not checked here
         temp = 0 # 
         for option in (options := [x for x in self.chain_step_options]):
             if type(self.chain_step_options[option]) not in [int, float]:
-                raise RuntimeError('Chain step options need to have relative probabilities\n'
+                raise RuntimeError('Chain step options need to have relative priorities\n'
                                    +'specified by a single number')
             else:
                 temp += self.chain_step_options[option]
                 
-        # step labels, normalised dictionary, and list of just probabilities for later use:
+        # step labels, normalised dictionary, and list of just priorities for later use:
         self.next_step_labels = options # next step labels for use in run()
-        self.next_step_probabilities_dict = {option: self.chain_step_options[option]/temp 
+        self.next_step_priorities_dict = {option: self.chain_step_options[option]/temp 
                                   for option in options}
-        self.next_step_probabilities_list = [self.chain_step_options[option]/temp
-                                        for option in options]
+        self.next_step_priorities_list = [self.chain_step_options[option]/temp
+                                        for option in options] # actually unused as of algorithm of modification with #-ways-scaling
         
         # process and parameter objects to perform chain steps:
         # note: initialised at first call of methods that use them
@@ -233,7 +267,7 @@ class LearningChain:
         self.process_handler = None
         
         # chain progression containers:
-        self.explored_models = [] # repository of explored models - currently not saved
+        self.explored_proposals = [] # repository of explored models
         self.explored_loss = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.current)
@@ -246,6 +280,7 @@ class LearningChain:
         self.current_loss = self.total_dev(self.current)
         self.best_loss = self.current_loss
         self.explored_loss.append(self.current_loss)
+        if self.store_all_proposals: self.explored_proposals.append(copy.deepcopy(self.initial))
     
     
     
@@ -309,39 +344,100 @@ class LearningChain:
             proposal = copy.deepcopy(self.current)
             
             # choose next step:
-            next_step = np.random.choice(self.next_step_labels, p = self.next_step_probabilities_list)
+            # instead of choosing and only then considering how many ways there were to do this and reversal
+            # choose based on priority AND how many options there are
+            # make and normalise list of probabilities in order of self.next_step_labels
+            # note: product priority (normalised earlier but that is irrelevant) and number of possible modifications of step type (# ways)
+            # note: 2nd element step() return is # ways
+            next_step_probabilities_list = [self.next_step_priorities_dict[x]*self.step(proposal, x, update = False)[1]
+                                            for x in self.next_step_labels]
+            next_step_probabilities_list = [x/sum(next_step_probabilities_list) for x in next_step_probabilities_list]     
+            
+            # choose next step:
+            next_step = np.random.choice(self.next_step_labels, p = next_step_probabilities_list)
             next_step = str(next_step)
             
             # modify proposal accordingly and save number of possible modifications of chosen type:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
             
-            # filter parameters below instance-level thresholds:
-            # note: could go into step method; also might break reversibility?
-            self.process_handler.filter_params(proposal, self.params_thresholds)
+            # overall probabilities of making this step and of afterwards reversing it:
+            if next_step == 'tweak all parameters':
+                # cancel out except assymetricity of lindblad tweak due to truncation at zero:
+                # based on truncated gaussian distribution formulas    
+                p_there = 1 
+                p_back = 1
+                proposal_width = self.params_handler.jump_lengths['Ls']
+                for TLS in self.current.TLSs:
+                    for current_rate in TLS.Ls.values():
+                        p_there *= 1/(1-1/2*(1+sp.special.erf(-current_rate/proposal_width/np.sqrt(2))))
+                for TLS in proposal.TLSs:
+                    for proposed_rate in TLS.Ls.values():
+                        p_back *= 1/(1-1/2*(1+sp.special.erf(-proposed_rate/proposal_width/np.sqrt(2))))
+            else: # ie. a process addition or removal
+                # priority of this normalised by sum off all priorities times their respective # ways
+                # in numerator # of ways here cancels with that in step choice probability, leaving only priority
+                p_there = (self.next_step_priorities_dict[next_step]
+                           / sum([self.next_step_priorities_dict[x] * self.step(self.current, x, update = False)[1]
+                                  for x in self.next_step_labels]))
+                p_back  = (self.next_step_priorities_dict[self.complementary_step(next_step)]
+                           / sum([self.next_step_priorities_dict[x] * self.step(proposal, x, update = False)[1]
+                                  for x in self.next_step_labels]))
+                
+            # calculate priors ratio due to all paramteres of proposal and current if applying tweak step:
+            # note: not present when adding or removing processes (reversible jumps)
+            if next_step == 'tweak all parameters':
+                params_priors_ratio = 1
+                # go over existing parameters in proposal and current and multiply and divide respectively
+                # by probability density function given by each prior (currently based on process class)
+                
+                # current:
+                for TLS in self.current.TLSs:
+                    # energy:
+                    x = TLS.energy
+                    shape, scale = self.params_priors['energies']
+                    params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                    
+                    # Ls:
+                    shape, scale = self.params_priors['Ls']
+                    for x in TLS.Ls.values():
+                        params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                        
+                    # couplings:
+                    shape, scale = self.params_priors['couplings']
+                    for partner in TLS.couplings:
+                        for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
+                            x = coupling[0]
+                            params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                            
+                # proposal:
+                for TLS in proposal.TLSs:
+                    # energy:
+                    x = TLS.energy
+                    shape, scale = self.params_priors['energies']
+                    params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                    
+                    # Ls:
+                    shape, scale = self.params_priors['Ls']
+                    for x in TLS.Ls.values():
+                        params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                        
+                    # couplings:
+                    shape, scale = self.params_priors['couplings']
+                    for partner in TLS.couplings:
+                        for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
+                            x = coupling[0]
+                            params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+            else: # ie. a process addition or removal
+                params_priors_ratio = 1
             
-            # if no modifications of chosen type possible, skip straight to next proposal iteration:
-            # note: this uses up an iteration with no real new proposal and no tracker record
-            if not bool(possible_modifications_chosen_type): continue
-            
-            # also save number of possible modifications of reverse type after performing chosen step:
-            # note: proposal not modified by this
-            proposal, possible_modifications_reverse_type = self.step(proposal, self.complementary_step(next_step), update = False)
-            
-            # if no reversal possible, skip to next proposal iteration:
-            # note: every step should be reversible - this should only ever be triggered when proposal gets killed by filter
-            if not bool(possible_modifications_reverse_type): continue
-            
-            # overall probabilities of making this step and of then reversing it:
-            p_there = self.next_step_probabilities_dict[next_step]/possible_modifications_chosen_type
-            p_back = self.next_step_probabilities_dict[self.complementary_step(next_step)]/possible_modifications_reverse_type
-            # then multiply by back/there
-            
+                                  
             # evaluate new proposal (system evolution calculated here):
             proposal_loss = self.total_dev(proposal)
             self.explored_loss.append(proposal_loss)
             
             # Metropolis-Hastings acceptance:
-            acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back)
+            acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back, 
+                                                                 params_priors_ratio)
             if np.random.uniform() < acceptance_probability: # ie. accept proposal
                 # update current and also best if warranted:
                 self.current = proposal
@@ -350,6 +446,10 @@ class LearningChain:
                     self.best_loss = proposal_loss
                     self.best = copy.deepcopy(proposal)
                 self.run_acceptance_tracker.append(True)
+                # save accepted proposal for statistical analysis of chain - temporarily burn-in cutoff is set here
+                if self.store_all_proposals and i >= 10000:
+                    self.explored_proposals.append(copy.deepcopy(proposal))
+                
             else: # ie. reject proposal
                 self.run_acceptance_tracker.append(False)
                 
@@ -358,6 +458,12 @@ class LearningChain:
             print('\n\nChain run completed.\n'
                   +'_________________________\n\n', flush = True)
         self.best.final_loss = self.best_loss
+        
+        self.all_proposals = {'proposals': self.explored_proposals,
+                              'loss': self.explored_loss,
+                              'acceptance': self.run_acceptance_tracker
+                             } 
+        
         return self.best
     
     
@@ -382,6 +488,7 @@ class LearningChain:
                              )
         for i in range(defects_number):
             initial_model.add_TLS(is_qubit = False,
+                                  initial_state = self.defect_initial_state,
                                   energy = qubit_energy,
                                   couplings = {},
                                   Ls = {}
@@ -424,10 +531,14 @@ class LearningChain:
                     return (self.params_handler.tweak_all_parameters(model), 1)
                 if not update:
                     return (model, 1)
-            case 'add L': 
-                return self.process_handler.add_random_L(model, update = update)
-            case 'remove L':
-                return self.process_handler.remove_random_L(model, update = update)
+            case 'add qubit L': 
+                return self.process_handler.add_random_qubit_L(model, update = update)
+            case 'add defect L': 
+                return self.process_handler.add_random_defect_L(model, update = update)
+            case 'remove qubit L':
+                return self.process_handler.remove_random_qubit_L(model, update = update)
+            case 'remove defect L':
+                return self.process_handler.remove_random_defect_L(model, update = update)
             case 'add qubit-defect coupling':
                 return self.process_handler.add_random_qubit2defect_coupling(model, update = update)
             case 'remove qubit-defect coupling': 
@@ -479,12 +590,14 @@ class LearningChain:
                    proposal: TYPE_MODEL | tuple[TYPE_MODEL, int | float], 
                    there: float | int,
                    back: float | int,
+                   params_priors_ratio: float = 1
                    ) -> float:
         """
         Calculates the Metropolis-Hastings acceptance probability, given:
         current as model or (model, loss), proposal as model or (model, loss),
         probability of moving from current to proposal ("there"),
-        probability of reversing that move ("back").
+        probability of reversing that move ("back"),
+        prior multiplier factor as a function of parameters - currently taken from run method.
         
         Also  accesses instance-level attributes:
         Metropolis-Hastings temperature - MH_temperature: int|float,
@@ -499,6 +612,10 @@ class LearningChain:
         Loss calculated here if only model references passed, otherwise passed value used.
         Note: Purpose is to avoid expensive loss recalculation,
         since loss values commonly used and stored outside this method.
+        
+        Note: in current setup the prior method only depends on model complexity;
+        - as step type held locally within run method and parameter prior factor formulation depends on it,
+        it is evaluated therein and ratio passed here by value.
         """
         
         # terms for formula:
@@ -507,12 +624,18 @@ class LearningChain:
         current, current_loss = self.process_argument_model(current)
         proposal, proposal_loss = self.process_argument_model(proposal)
         
-        # formula (f stands for prior):
+        # formula (f stands for prior of model):
         #                                 f(prop) * back
-        # exp(-1/T*(MSE(prop)-MSE(curr)))*-------------
+        # exp(-1/T*(MSE(prop)-MSE(curr)))*---------------
         #                                 f(curr) * there
+        # note: function calls currently only incorporate complexity,
+        # reversible jump has no further prior beyond proposal distribution,
+        # parameters-tweak prior ratio is evaluated in run method and passed here as value
         
-        return np.exp(-1/T * (proposal_loss-current_loss)) * prior(proposal) / prior(current) * back / there
+        return (np.exp(-1/T * (proposal_loss-current_loss)) 
+                * prior(proposal) / prior(current) 
+                * back / there 
+                * params_priors_ratio)
     
 
 
@@ -639,7 +762,8 @@ class LearningChain:
         self.process_handler = process_handling.ProcessHandler(self,
                                               qubit2defect_couplings_library = self.qubit2defect_couplings_library,
                                               defect2defect_couplings_library = self.defect2defect_couplings_library,
-                                              Ls_library = self.Ls_library)
+                                              qubit_Ls_library = self.qubit_Ls_library,
+                                              defect_Ls_library = self.defect_Ls_library)
         
         
         

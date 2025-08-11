@@ -8,7 +8,7 @@ Effective model learning
 
 import numpy as np
 import scipy as sp
-
+import typing
 import qutip
 
 import definitions
@@ -258,17 +258,20 @@ class BasicModel():
         Builds default initial state full density matrix.
         Assumes product state with:
         all defects as defined or ground if not,
-        all qubits as defined or excited if not.
+        all qubits as defined or equal superposition with positive coherence.
         Saves to this model's container, also returns it.
         """
         temp = 1
         for TLS in self.TLSs:
             if TLS.initial_state:
-                temp = T(temp, (TLS.initial_state).unit())
+                temp = T(temp, (TLS.initial_state))
+                # must be valied initial state
+                # don't use unit() of density matrices! it's operator norm, clearly does something else
             else:
                 if TLS.is_qubit:
-                    temp = T(temp, (ops['exc'] + ops['sigmay']).unit())
-                    # note: if changing this make sure this is normalised!
+                    temp = T(temp, ops['plus'])
+                    # note: default defined here if no other passed
+                    # make sure it is physical!!!
                 else:
                     temp = T(temp, ops['gnd'])
         self.initial_DM = temp
@@ -563,7 +566,202 @@ class BasicModel():
                           )
         # build operators: 
         self.build_operators()
+       
         
+       
+    def vectorise_under_library(self, hyperparameters:dict, model:typing.Self = False
+                                ) -> (list[float], list[str], list[str]):
+        """
+        Returns tuple of lists: values, shorthand labels, latex labels, 
+        with entry for each possible parameter given library of available processes.
+        (Values is fixed-length vectorised representation of model,
+         with labels indicating what process each element belongs to.)
+        
+        Argument hyperparameters should be dictionary containing following entries (string keys):
+            qubit2defect_couplings_library
+            defect2defect_couplings_library
+            qubit_Ls_library
+            defect_Ls_library
+        
+        Couplings libraries' keys should be tuples of tuples of operator strings
+        (multiple tuples of operators admissible under one coupling),
+        Ls libraries' keys should be single strings.
+            
+        Argument model is any instance of this class, or if not passed, this (calling) instance is taken. 
+        
+        For each process from library, value is set to corresponding parameter if process found in model,
+        or else to zero if absent.
+        
+        Order of parameters:
+            energy splittings (Hamiltonian sigma z term) in order of defects
+            qubit-defect (aka s2v) couplings in order of pairs and then operators
+            defect-defect couplings (aka v2v) in order of pairs and then operators
+            qubit (aka syst) Ls in order of qubits and then operators
+            defect (aka virt) Ls in order of defects and then operators
+        """
+        
+        if not model: model = self
+        
+        def make_op_label(op: str, tex: bool = False)->str:
+            """
+            For select operator name strings returns a shorthand or latex symbol if tex passed as true.
+            """
+            match op:
+                case 'sigmax':
+                    if tex: return r'$\sigma_x$'
+                    else: return 'sx'
+                case 'sigmay':
+                    if tex: return r'$\sigma_y$'
+                    else: return 'sy'
+                case 'sigmaz':
+                    if tex: return r'$\sigma_z$'
+                    else: return 'sz'
+                case 'sigmap':
+                    if tex: return r'$\sigma_+$'
+                    else: return 'sp'
+                case 'sigmam':
+                    if tex: return r'$\sigma_-$'
+                    else: return 'sm'
+
+
+        # gather all qubits, all defects, qubit-defect pairs, and defect-defect pairs,
+        # as well as corresponding labels using the system (S) and virtual systems (V) nomenclature
+
+        qubits = [x for x in model.TLSs if x.is_qubit]
+        qubits_labels = ['S' + str(i+1) for i in range(len(qubits))] 
+
+        defects = [x for x in model.TLSs if not x.is_qubit]
+        defects_labels = ['V' + str(i+1) for i in range(len(defects))]
+          
+        q2d_pairs = [(q, d) for q in qubits for d in defects]
+        q2d_pairs_labels = [qubits_labels[qubits.index(q)] + ',' + defects_labels[defects.index(d)]
+                            for q, d in q2d_pairs] 
+
+        d2d_pairs = []
+        for d1 in defects:
+            for d2 in defects:
+                if d1 != d2 and (d2, d1) not in d2d_pairs:
+                    d2d_pairs.append((d1, d2))
+        d2d_pairs_labels = [defects_labels[defects.index(d1)] + ',' + defects_labels[defects.index(d2)]
+                            for d1, d2 in d2d_pairs] 
+
+
+        # initialise lists for labels, labels with latex symbols, and parameter values
+        labels = []
+        labels_latex = []
+        values = []
+            
+        
+        # populate all:
+        
+        # defect splittings:
+        for defect, label in zip(defects, defects_labels):
+            labels.append(label + '-E-')
+            labels_latex.append(label + r'$\ E$')
+            values.append(defect.energy)
+            
+        # q2d in order of pairs and then library operators:
+        # note: coupling information stored on one of the pair hence check both! 
+        for pair, pair_label in zip(q2d_pairs, q2d_pairs_labels):
+            for coupling in list(hyperparameters['qubit2defect_couplings_library'].keys()):
+                # go over all types of coupling in library, check if present on either of this pair with other as partner:
+                # note: learning methods should allow it to only exist on one of pair at a time,
+                # otherwise it would be duplicate... 
+                # but for completenes and assuming linearity can just add together all rates potential instances of that coupling
+                
+                ops_label = ''
+                ops_label_latex = ''
+                for i, op_pair in enumerate(coupling): # coupling is TUPLE of tuples!!
+                    if i == 0: ops_label_latex += ' '
+                    if i>0: ops_label_latex += '+'
+                    ops_label += '-' + make_op_label(op_pair[0]) + '-' + make_op_label(op_pair[1])
+                    ops_label_latex += make_op_label(op_pair[0], tex=True) + r'$\otimes$' + make_op_label(op_pair[1], tex=True)
+                
+                # labels for this process between these pairs
+                labels.append(pair_label + ops_label)
+                labels_latex.append(pair_label + ops_label_latex)
+                
+                # note: couplings stored as:
+                # TLS.couplings = {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+                
+                # check if exists, then populate rate, otherwise leave as zero:
+                value = float(0)
+                for TLS1, TLS2 in [pair, tuple(reversed(pair))]:
+                    # note: takes TLS1 as either of the pair with TLS2 being the other to avoid repetition
+                    if TLS2 in TLS1.couplings:
+                        for existing_coupling in TLS1.couplings[TLS2]:
+                            # go over all existing ones
+                            # if matching one from library ie. "coupling", add its rate to value
+                            # existing_coupling is tuple (rate, [(op_self, op_partner), (op_self, op_partner), ...])
+                            # coupling is tuple of tuples for operators (from library)
+                            if set(existing_coupling[1]) == set(coupling): # ie. type is present
+                                value += existing_coupling[0]
+                values.append(value)
+                
+        # d2d in order of pairs and then library operators:
+        # note: coupling information stored on one of the pair hence check both! 
+        for pair, pair_label in zip(d2d_pairs, d2d_pairs_labels):
+            for coupling in list(hyperparameters['defect2defect_couplings_library'].keys()):
+                # go over all types of coupling in library, check if present on either of this pair with other as partner:
+                # note: learning methods should allow it to only exist on one of pair at a time,
+                # otherwise it would be duplicate... 
+                # but for completenes and assuming linearity can just add together all rates potential instances of that coupling
+                
+                ops_label = ''
+                ops_label_latex = ''
+                for i, op_pair in enumerate(coupling): # coupling is TUPLE of tuples!!
+                    if i == 0: ops_label_latex += ' '
+                    if i>0: ops_label_latex += '+'
+                    ops_label += '-' + make_op_label(op_pair[0]) + '-' + make_op_label(op_pair[1])
+                    ops_label_latex += make_op_label(op_pair[0], tex=True) + r'$\otimes$' + make_op_label(op_pair[1], tex=True)
+                
+                # labels for this process between these pairs
+                labels.append(pair_label + ops_label)
+                labels_latex.append(pair_label + ops_label_latex)
+                
+                # note: couplings stored as:
+                # TLS.couplings = {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+                
+                # check if exists, then populate rate, otherwise leave as zero:
+                value = float(0)
+                for TLS1, TLS2 in [pair, tuple(reversed(pair))]:
+                    # note: takes TLS1 as either of the pair with TLS2 being the other to avoid repetition
+                    if TLS2 in TLS1.couplings:
+                        for existing_coupling in TLS1.couplings[TLS2]:
+                            # go over all existing ones
+                            # if matching one from library ie. "coupling", add its rate to value
+                            # existing_coupling is tuple (rate, [(op_self, op_partner), (op_self, op_partner), ...])
+                            # coupling is tuple of tuples for operators (from library)
+                            if set(existing_coupling[1]) == set(coupling): # ie. type is present
+                                value += existing_coupling[0]
+                values.append(value)
+         
+        # qubit Ls in order of qubits and then ops from library:
+        # note: only assuming one value of each type present
+        for qubit, qubit_label in zip(qubits, qubits_labels):
+            for L in list(hyperparameters['qubit_Ls_library'].keys()):
+                labels.append(qubit_label + '-' + make_op_label(L) + '-')
+                labels_latex.append(qubit_label + r'$\ $' + make_op_label(L, tex=True))
+                if L in qubit.Ls:
+                    values.append(qubit.Ls[L])
+                else:
+                    values.append(float(0))
+                
+        # defect Ls in order of defects and then ops from library:
+        # note: only assuming one value of each type present
+        for defect, defect_label in zip(defects, defects_labels):
+            for L in list(hyperparameters['defect_Ls_library'].keys()):
+                labels.append(defect_label + '-' + make_op_label(L) + '-')
+                labels_latex.append(defect_label + r'$\ $' + make_op_label(L, tex=True))
+                if L in defect.Ls:
+                    values.append(defect.Ls[L])
+                else:
+                    values.append(float(0))
+                    
+        
+        return values, labels, labels_latex            
+            
+         
         
         
         
