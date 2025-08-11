@@ -112,7 +112,8 @@ print(filename, flush = True)
 #%% prepare simulated multi-observable training datasets:
     
 # import dictionary of ts, sx, sy, sz observable values (sx equal to original and rest simulated with noise)    
-with open('simulated_data.pickle', 'rb') as filestream:
+with open('simulated_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
+          'rb') as filestream:
     simulated_data = pickle.load(filestream)    
 ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
         
@@ -138,14 +139,18 @@ training_measurement_observables = measurement_observables
 
 
 
+#%% AD HOC: load best to use as initial for testing:
+
+# with open('250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
+#           'rb') as filestream:
+#     initial_model = pickle.load(filestream)
+
 #%% perform learning:
 
 # if qubit initial state required:
-qubit_initial_state = definitions.ops['sigmax']
-    
-# shorthands for hyperparams definitions:
-couplings_shape_scale = (0.8, 1)
-Ls_shape_scale = (0.2, 0.5)
+qubit_initial_state = definitions.ops['plus']
+defect_initial_state = definitions.ops['mm']    
+
 
 
 # instance of learning (quest for best model):
@@ -154,8 +159,10 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                       target_observables = training_measurement_observables,
                       
                       initial = (1, defects_count), # (qubit energy, number of defects)
+                      #initial = initial_model,
                       qubit_initial_state = qubit_initial_state,
-                      
+                      defect_initial_state = definitions.ops['mm'],    
+
                       max_chain_steps = max_iterations,
                       
                       store_all_proposals = True,

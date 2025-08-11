@@ -156,7 +156,7 @@ training_measurement_observables = ['sigmax']
 
 # if qubit initial state required:
 qubit_initial_state = definitions.ops['plus']
-defect_initial_state = definitions.ops['plus']
+defect_initial_state = definitions.ops['mm']
 
 # shorthands for hyperparams definitions:
 couplings_shape_scale = (2, 0.3)

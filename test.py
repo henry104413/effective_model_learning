@@ -293,45 +293,49 @@ dataset_no = 0 # means first pair of columns
 contents = np.genfromtxt(data_file, delimiter=',')#,dtype=float) 
 dataset = contents[:,[2*dataset_no, 2*dataset_no + 1]]
 ts = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 0]     
-sx = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 1]   
+og_sx = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 1]   
 order = ts.argsort() # sort by t in case of unsorted:
 ts = ts[order]
-sx = sx[order]
+og_sx = og_sx[order] # original sx measurements - currently using all simulated
 ts = ts/1000 # convert from ns to us
 
 
 # import a model (would have been trained on ts, sx):
-model_file = 'correlation_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R5_best'
+model_file = '250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best'
 with open(model_file + '.pickle', 'rb') as filestream:
     best = pickle.load(filestream)
     
 
 # random noise shift for sy, sz, and simulated measurements of sy, sz:
-noise_sy = np.random.normal(loc = 0, scale = 0.02, size = len(ts))
-noise_sz = np.random.normal(loc = 0, scale = 0.02, size = len(ts))
-sy, sz = best.calculate_dynamics(ts, observable_ops = ['sigmay', 'sigmaz'],
+noise_sy = np.random.normal(loc = 0, scale = 0.01, size = len(ts))
+noise_sz = np.random.normal(loc = 0, scale = 0.01, size = len(ts))
+noise_sx = np.random.normal(loc = 0, scale = 0.01, size = len(ts))
+sy, sz, sx = best.calculate_dynamics(ts, observable_ops = ['sigmay', 'sigmaz', 'sigmax'],
                                         custom_function_on_return = False)
 sim_sy = sy + noise_sy
 sim_sz = sz + noise_sz
+sim_sx = sx + noise_sx
 
 # plot:
 plt.figure()
-plt.plot(ts, sx, 'b.', label = r'$\sigma_x$', alpha = 0.5, markersize = 5)
+plt.plot(ts, og_sx, 'r.', label = r'og $\langle\sigma_x\rangle}$', alpha = 0.4, markersize = 5)
+plt.plot(ts, sx, 'b-', label = r'_$\sigma_x\>$', alpha = 0.5, markersize = 5)
+plt.plot(ts, sim_sx, 'b.', label = r'sim $\langle\sigma_x\rangle$', alpha = 0.5, markersize = 5)
 plt.plot(ts, sy, 'm-', label = '_hidden', alpha = 0.4)
-plt.plot(ts, sim_sy, 'm.', label = r'$\sigma_y$', alpha = 0.5, markersize = 5)
+plt.plot(ts, sim_sy, 'm.', label = r'sim $\langle\sigma_y\rangle$', alpha = 0.5, markersize = 5)
 plt.plot(ts, sz, 'g-', label = '_hidden', alpha = 0.4)
-plt.plot(ts, sim_sz, 'g.', label = r'$\sigma_z$', alpha = 0.5, markersize = 5)
-plt.legend()
+plt.plot(ts, sim_sz, 'g.', label = r'sim $\langle\sigma_z\rangle$', alpha = 0.5, markersize = 5)
+plt.legend(fontsize = 14)
 plt.xlabel(r'$time\ (\mu s)$') 
 plt.savefig('simulated_' + model_file + '.svg', dpi = 1000, bbox_inches='tight')
 
 simulated_data = {'ts': ts,
-                  'sx': sx,
+                  'sx': sim_sx,
                   'sy': sim_sy,
                   'sz': sim_sz
                   }
 
-with open('new_simulated_data.pickle', 'wb') as filestream:
+with open('simulated_' + model_file + '.pickle', 'wb') as filestream:
     pickle.dump(simulated_data, filestream)
 
 
@@ -438,5 +442,5 @@ if True:
 
 #%%
 import pickle
-with open('250810-priors-test1_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_best.pickle', 'rb') as filestream:
+with open('250810-priors-test1_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_loss.pickle', 'rb') as filestream:
     A = pickle.load(filestream)

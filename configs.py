@@ -21,7 +21,7 @@ Ls_shape_scale = (2, 0.03)
 
 default_chain_hyperparams = {    
         'chain_step_options': {
-            'tweak all parameters': 32,
+            'tweak all parameters': 18,
             'add qubit L': 1,
             'remove qubit L': 1,
             'add defect L': 1,
@@ -41,9 +41,9 @@ default_chain_hyperparams = {
         'acceptance_band': 0.2,
         
         'params_handler_hyperparams': { 
-            'initial_jump_lengths': {'couplings' : 0.10,
-                                     'energies' : 0.10,
-                                     'Ls' : 0.010
+            'initial_jump_lengths': {'couplings' : 0.05,
+                                     'energies' : 0.05,
+                                     'Ls' : 0.005 # halved these now
                                      }
             },
         

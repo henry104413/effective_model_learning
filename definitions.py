@@ -55,7 +55,9 @@ ops = {#'sigma z' : q.sigmaz(),
        'gnd' : q.sigmam()*q.sigmap(),
        'exc' : q.sigmap()*q.sigmam(),
        'plus': q.ket2dm((q.ket([1]) + q.ket([0])).unit()), # careful - qutip uses possibly opposite convention for excited and ground state
-       'custom': q.Qobj([[0.5,0.5],[0.5,0.5]])
+       '2e+1g': q.ket2dm((2*q.ket([1]) + 1*q.ket([0])).unit()),
+       'custom': q.Qobj([[0.5,0.5],[0.5,0.5]]),
+       'mm': q.maximally_mixed_dm(2)
        }
 
 
@@ -68,6 +70,18 @@ ops_labels = {'defects energies' : 'energy (eV)',
               'sigma plus' : r'$\sigma_+$' + ' rate (eV)',
               'sigma minus' : r'$\sigma_-$' + ' rate (eV)'
               }
+
+observable_shorthand2pretty = {'sx': r'$\langle\sigma_x\rangle$',
+                               'sy': r'$\langle\sigma_y\rangle$',
+                               'sz': r'$\langle\sigma_z\rangle$',
+                               'sp': r'$\langle\sigma_+\rangle$',
+                               'sm': r'$\langle\sigma_-\rangle$',
+                               'sigmax': r'$\langle\sigma_x\rangle$',
+                               'sigmay': r'$\langle\sigma_y\rangle$',
+                               'sigmaz': r'$\langle\sigma_z\rangle$',
+                               'sigmap': r'$\langle\sigma_+\rangle$',
+                               'sigmam': r'$\langle\sigma_-\rangle$'
+                               }
 
 
 # currently unused: 

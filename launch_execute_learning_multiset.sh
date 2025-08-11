@@ -22,10 +22,10 @@
 # !! but in each case must be arrays!  
 declare -a target_csvs=("Wit-Fig4-6-0_025")
 # "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
-experiment_name="250810-priors-test-defects-superposition"
+experiment_name="250810-2e+1g"
 defects_numbers=(2)
-repetitions_numbers=(3)
-iterations_numbers=(10000)
+repetitions_numbers=(5)
+iterations_numbers=(60000)
 proportion_training=1
 configs=(11)
 
