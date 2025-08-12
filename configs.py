@@ -635,40 +635,8 @@ specific_experiment_chain_hyperparams = {
           #,(('sigmaz', 'sigmaz'),): couplings_shape_scale
           }
     },
-    
-# 17)    
-'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx-Cv2v--': # lindblads instead of couplings?
-{
-    'qubit_Ls_library':
-        { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale
-          ,'sigmay': Ls_shape_scale
-          ,'sigmaz': Ls_shape_scale
-          },
-
-    'defect_Ls_library':
-        { # sampled from mirrored gamma distribution with given (shape, scale)
-          'sigmax': Ls_shape_scale
-          'sigmay': Ls_shape_scale
-          'sigmaz': Ls_shape_scale
-          },
-
-    'qubit2defect_couplings_library':
-        { # sampled from mirrored gamma distribution with given (shape, scale)
-          (('sigmax', 'sigmax'),): couplings_shape_scale
-          #,(('sigmay', 'sigmay'),): couplings_shape_scale
-          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale
-          },
-
-    'defect2defect_couplings_library':
-        { # sampled from mirrored gamma distribution with given (shape, scale)
-          #(('sigmax', 'sigmax'),): couplings_shape_scale
-          #,(('sigmay', 'sigmay'),): couplings_shape_scale
-          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale
-          }
-    },
-	
-# 18)               
+    	
+# 17)               
 'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx,sy,sz-': # couplings between virtuals instead of sys-virt?
 {
     'qubit_Ls_library':

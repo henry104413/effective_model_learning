@@ -232,7 +232,8 @@ import configs
 import seaborn
 import matplotlib.pyplot as plt
 
-experiment_name = 'correlation-fixed-E_Wit-Fig4-6-0_025'
+experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
+#experiment_name = '250811-ogdata_Wit-Fig4-6-0_025' # including experiment base and source file name
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 2
 Rs = [1, 2, 3, 4, 5]
@@ -276,7 +277,7 @@ pdCM = data.corr()
 plt.figure(figsize=(10,10))
 seaborn.heatmap(pdCM, annot=False, cmap="PiYG", fmt=".2f", linewidths=0.5, vmin = -1, vmax = 1)
 # colormaps: coolwarm, PiYG
-plt.savefig('correlation_corrected_fixed_E_wE.svg', dpi = 1000, bbox_inches='tight')
+plt.savefig(experiment_name + '_correlation.svg', dpi = 1000, bbox_inches='tight')
 
 
 

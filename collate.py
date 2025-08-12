@@ -544,8 +544,8 @@ if True:
                'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx-Cv2v--', # lindblads instead of couplings?
                'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx,sy,sz-', # couplings between virtuals instead of sys-virt?
                ]
-    #configs = [configs[x] for x in [0, 16, 15, 6, 7, 11]]
-    configs = [configs[x] for x in [17, 18]]
+    configs = [configs[x] for x in [0, 16, 15, 6, 7, 11, 4, 17]] # just pull rest
+    #configs = [configs[x] for x in [17, 18]]
     
     # 250811-config-sim_Wit-Fig4-6-0_025_conf6_D2_R5_prog.txt
     experiment_base = '250811-config'
