@@ -519,6 +519,8 @@ if not True: # bar plots of champion loss for different configurations (librarie
 #%%
 # bar plots of champion loss for different configurations (libraries)
 if True: 
+    import matplotlib.pyplot as plt
+
     
     plt.rcParams["font.size"] = 16
 
@@ -538,17 +540,23 @@ if True:
                'Lsyst-sx-Lvirt--Cs2v-sz-Cv2v--',
                'Lsyst-sz-Lvirt--Cs2v-sz-Cv2v--',
                'Lsyst-sz-Lvirt--Cs2v-sx,sy-Cv2v--',
-               'Lsyst-sz-Lvirt--Cs2v-sx,sz-Cv2v--'
+               'Lsyst-sz-Lvirt--Cs2v-sx,sz-Cv2v--',
+               'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx-Cv2v--', # lindblads instead of couplings?
+               'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx,sy,sz-', # couplings between virtuals instead of sys-virt?
                ]
-    configs = [configs[x] for x in [0, 16, 15, 6, 7, 11]]
+    #configs = [configs[x] for x in [0, 16, 15, 6, 7, 11]]
+    configs = [configs[x] for x in [17, 18]]
     
-    experiment_base = '250621'
+    # 250811-config-sim_Wit-Fig4-6-0_025_conf6_D2_R5_prog.txt
+    experiment_base = '250811-config'
     target_file = 'Wit-Fig4-6-0_025'
     losses = {'sx': [], 'full': []}
     labels = {'sx': [], 'full': []}
+    file_naming = {'sx': 'og', 'full': 'sim'}
     for config in configs: 
         for regime in ['sx', 'full']:
-            experiment_name = regime + '_' + experiment_base + '_' + target_file + '_' + config 
+            experiment_name = experiment_base + '-' + file_naming[regime] + '_' + target_file + '_' + config 
+            print(experiment_name, flush=True)
             for D in [2]: # tuple of Ds   
                 losses[regime].append(return_champion_loss(experiment_name, D))
                 labels[regime].append(config)
@@ -592,8 +600,7 @@ if True:
             
         
         
-        
-  #%%  
+       
     #losses = [x/max(losses) for x in losses]
     # just for sorting (I think):
     # losses_arr = np.array(losses)
@@ -616,5 +623,5 @@ if True:
     ax=plt.gca()
     #ax.axis["left"].major_ticklabels.set_ha("left")
     #ax.set_xticklabels(ha='left')
-    plt.savefig('250621_loss_vs_configuration_full_vs_sx' + '.svg', dpi = 1000, bbox_inches='tight')
+    plt.savefig(experiment_base + '_configurations_full_vs_sx' + '.svg', dpi = 1000, bbox_inches='tight')
   
