@@ -524,7 +524,8 @@ if True:
     
     plt.rcParams["font.size"] = 16
 
-    configs = ['Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--', 
+    configs_names = [
+               'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--', 
                'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx-', 
                'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v--', 
                'Lsyst-sx,sy,sz-Lvirt--Cs2v-sx-Cv2v-sx-',
@@ -540,12 +541,11 @@ if True:
                'Lsyst-sx-Lvirt--Cs2v-sz-Cv2v--',
                'Lsyst-sz-Lvirt--Cs2v-sz-Cv2v--',
                'Lsyst-sz-Lvirt--Cs2v-sx,sy-Cv2v--',
-               'Lsyst-sz-Lvirt--Cs2v-sx,sz-Cv2v--',
                'Lsyst-sx,sy,sz-Lvirt-sx,sy,sz-Cs2v-sx-Cv2v--', # lindblads instead of couplings?
-               'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx,sy,sz-', # couplings between virtuals instead of sys-virt?
+               'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx,sy,sz-' # couplings between virtuals instead of sys-virt?
                ]
-    configs = [configs[x] for x in [0, 16, 15, 6, 7, 11, 4, 17]] # just pull rest
-    #configs = [configs[x] for x in [17, 18]]
+    configs_names = [configs_names[x] for x in [0, 16, 4, 17, 15, 6, 11, 7]] # just pull rest
+    print(configs_names)
     
     # 250811-config-sim_Wit-Fig4-6-0_025_conf6_D2_R5_prog.txt
     experiment_base = '250811-config'
@@ -553,7 +553,7 @@ if True:
     losses = {'sx': [], 'full': []}
     labels = {'sx': [], 'full': []}
     file_naming = {'sx': 'og', 'full': 'sim'}
-    for config in configs: 
+    for config in configs_names: 
         for regime in ['sx', 'full']:
             experiment_name = experiment_base + '-' + file_naming[regime] + '_' + target_file + '_' + config 
             print(experiment_name, flush=True)
@@ -611,14 +611,18 @@ if True:
     # colours = np.array(colours)[order]
     # labels_sorted = [labels[i] for i in order]
     
+    # normalisation:
+    for regime in ['sx', 'full']:
+        losses[regime] = [x/max(losses[regime]) for x in losses[regime]]
+    #%%    
     width = 0.5
     plt.figure(figsize=(10, 15))
     plt.barh(np.arange(len(losses['sx'])), losses['sx'], color='r', alpha=0.5, height = width, label = r'$\sigma_x$')
-    plt.barh(np.arange(len(losses['full'])), losses['full'], color='b', alpha=0.5, height = width/2, label = r'$\sigma_x, \sigma_y, \sigma_z$')
+    plt.barh(np.arange(len(losses['full'])), losses['full'], color='b', alpha=0.6, height = width/2, label = r'$\sigma_x, \sigma_y, \sigma_z$')
     #plt.xscale('log')
     plt.yticks(ticks = np.arange(len(losses['sx'])), labels = labels)
-    plt.title(r'$D=2$')
-    plt.xlabel('lowest loss')#
+    # plt.title(r'$D=2$')
+    plt.xlabel('champion loss (relative to max)')#
     plt.legend(title = 'measurement basis')
     ax=plt.gca()
     #ax.axis["left"].major_ticklabels.set_ha("left")

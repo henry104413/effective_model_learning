@@ -232,11 +232,13 @@ import configs
 import seaborn
 import matplotlib.pyplot as plt
 
-experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
-#experiment_name = '250811-ogdata_Wit-Fig4-6-0_025' # including experiment base and source file name
+cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
+# experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
+experiment_name = '250811-ogdata_Wit-Fig4-6-0_025' # including experiment base and source file name
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 2
-Rs = [1, 2, 3, 4, 5]
+Rs = [1 + i for i in range(5)]
+burn = int(7000)
 hyperparams = configs.get_hyperparams(config_name)
 
 setup_done = False
@@ -254,7 +256,7 @@ for R in Rs:
     
     # clearly all proposals were saved now despite condition on burn-in... ok then
     
-    proposals = proposals[:]
+    proposals = proposals[burn:]
     
     if not setup_done:
         first_proposal = proposals[0]
@@ -275,9 +277,46 @@ data = pd.DataFrame(data = parameter_lists, columns = labels[:]) # columns! - no
 pdCM = data.corr()
 
 plt.figure(figsize=(10,10))
-seaborn.heatmap(pdCM, annot=False, cmap="PiYG", fmt=".2f", linewidths=0.5, vmin = -1, vmax = 1)
+seaborn.heatmap(pdCM, annot=False, cmap=cmap, fmt=".2f", linewidths=0.5, vmin = -1, vmax = 1)
 # colormaps: coolwarm, PiYG
-plt.savefig(experiment_name + '_correlation.svg', dpi = 1000, bbox_inches='tight')
+plt.savefig(experiment_name + '_correlation_unclustered.svg', dpi = 1000, bbox_inches='tight')
+
+
+# try hierarchical clustering:
+correlations = pdCM
+
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+from scipy.spatial.distance import squareform
+import numpy as np
+
+plt.figure(figsize=(10,5))
+dissimilarity = 1 - abs(correlations)
+Z = linkage(squareform(dissimilarity), 'complete')
+dendrogram(Z, labels=data.columns, orientation='top', 
+           leaf_rotation=90);
+plt.savefig(experiment_name + '_burn' + str(burn) + '_dendrogram.svg', dpi = 1000, bbox_inches='tight')
+#%%
+
+# Clusterize the data
+threshold = 0.7
+labels = fcluster(Z, threshold, criterion='distance')
+
+# Keep the indices to sort labels
+labels_order = np.argsort(labels)
+
+# Build a new dataframe with the sorted columns
+for idx, i in enumerate(data.columns[labels_order]):
+    if idx == 0:
+        clustered = pd.DataFrame(data[i])
+    else:
+        df_to_append = pd.DataFrame(data[i])
+        clustered = pd.concat([clustered, df_to_append], axis=1)
+        
+plt.figure(figsize=(10,10))
+correlations = clustered.corr()
+# seaborn.heatmap(round(correlations,2), cmap='RdBu', annot=True, annot_kws={"size": 7}, vmin=-1, vmax=1);
+seaborn.heatmap(correlations, cmap=cmap, annot=False, annot_kws={"size": 7}, vmin=-1, vmax=1);
+plt.savefig(experiment_name + '_burn' + str(burn) + '_thresh' + str(threshold) + '_correlation_clustered.svg', dpi = 1000, bbox_inches='tight')
 
 
 
