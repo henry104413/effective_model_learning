@@ -234,11 +234,11 @@ import matplotlib.pyplot as plt
 
 cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
 # experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
-experiment_name = '250811-ogdata_Wit-Fig4-6-0_025' # including experiment base and source file name
+experiment_name = '250815-sim_Wit-Fig4-6-0_025' # including experiment base and source file name
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 2
 Rs = [1 + i for i in range(5)]
-burn = int(7000)
+burn = int(100000)
 hyperparams = configs.get_hyperparams(config_name)
 
 setup_done = False
@@ -381,7 +381,7 @@ with open('simulated_' + model_file + '.pickle', 'wb') as filestream:
 
 #%%
 # bar plots of champion loss for different configurations (libraries)
-if True: 
+if not True: 
     
     plt.rcParams["font.size"] = 16
 
