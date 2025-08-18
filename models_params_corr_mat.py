@@ -1,5 +1,11 @@
 #%%
 # CORRELATION
+"""
+creates corellation matrix from lists of accepted models from one or multiple chains
+vectorises models given parameter labels
+performs hierarchical clustering
+also outputs rearranged correlation matrices given clustering dissimilatiry threshold thresholds
+"""
 
 import pandas as pd
 import pickle
