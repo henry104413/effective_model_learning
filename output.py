@@ -127,6 +127,22 @@ class Output:
             plt.savefig(filename + '_loss.svg', dpi = 1000, bbox_inches='tight')
             with open(filename + '_loss.pickle', 'wb') as filestream:
                 pickle.dump(loss, filestream)
+                
+            # also loss of just accepted models:    
+            accepted_loss = [x for (x, y) in zip(all_proposals['loss'][1:], all_proposals['acceptance']) if y]
+            best_loss = min(accepted_loss)
+            plt.figure()
+            plt.plot(accepted_loss, '-', c = 'orange', linewidth = 0.3, markersize = 0.1)
+            plt.yscale('log')
+            plt.xlabel('accepted proposal no.')
+            plt.ylabel('loss')
+            plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
+                     10**(0.98*np.log10(plt.gca().get_ylim()[0])),
+                     'best loss = ' + '{:.2e}'.format(best_loss))
+            plt.savefig(filename + '_accepted_loss.svg', dpi = 1000, bbox_inches='tight')
+            with open(filename + '_accepted_loss.pickle', 'wb') as filestream:
+                      pickle.dump(accepted_loss, filestream)
+                
             
             
         # plot acceptance ratio evolution:

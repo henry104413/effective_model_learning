@@ -8,10 +8,10 @@ import numpy as np
 
 cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
 # experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
-experiment_name = '250818-og_Wit-Fig4-6-0_025' # including experiment base and source file name
+experiment_name = '250818-sim-1T-4JL-2tweak_Wit-Fig4-6-0_025' # including experiment base and source file name
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-D = 1
-Rs = [1,2,3,4,5]
+D = 2
+Rs = [2]#,3,4,5,6,7]
 burn = 0 #int(100000)
 hyperparams = configs.get_hyperparams(config_name)
 
@@ -45,19 +45,28 @@ for R in Rs:
         for j, value in enumerate(vector):
             parameter_lists[labels[j]].append(vector[j])
         
-    accepted_loss = [x for (x, y) in zip(proposals_dict['loss'][1:], proposals_dict['acceptance']) if y]
-    best_loss = min(accepted_loss)
-    
-    plt.figure()
-    plt.plot(accepted_loss, '-', c = 'orange', linewidth = 0.3, markersize = 0.1)
-    plt.yscale('log')
-    plt.xlabel('accepted proposal no.')
-    plt.ylabel('loss')
-    plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
-             10**(0.98*np.log10(plt.gca().get_ylim()[0])),
-             'best loss = ' + '{:.2e}'.format(best_loss))
-    plt.savefig(experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R) + '_accepted_loss.svg', dpi = 1000, bbox_inches='tight')
-    
-    with open(experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R) + '_accepted_loss.pickle', 'wb') as filestream:
-        pickle.dump(accepted_loss, filestream)
-        
+    # plot loss:
+    if True:
+        accepted_loss = [x for (x, y) in zip(proposals_dict['loss'][1:], proposals_dict['acceptance']) if y]
+        best_loss = min(accepted_loss)
+        plt.figure()
+        plt.plot(accepted_loss, '-', c = 'orange', linewidth = 0.3, markersize = 0.1)
+        plt.yscale('log')
+        plt.xlabel('accepted proposal no.')
+        plt.ylabel('loss')
+        plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
+                 10**(0.98*np.log10(plt.gca().get_ylim()[0])),
+                 'best loss = ' + '{:.2e}'.format(best_loss))
+        plt.savefig(experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R) + '_accepted_loss.svg', dpi = 1000, bbox_inches='tight')
+        with open(experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R) + '_accepted_loss.pickle', 'wb') as filestream:
+                  pickle.dump(accepted_loss, filestream)
+   
+    # extract and save accepted proposals:    
+    if True:
+        accepted_proposals = proposals_dict['proposals'] # only accepted ones are stored!
+        with open(experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R) + '_accepted_proposals.pickle', 'wb') as filestream:
+                  pickle.dump(accepted_proposals, filestream)
+                  
+    # extract sub threshold models and show loss on top of overall loss!
+    # to use for analysing SECTIONS of chain!!!
+            

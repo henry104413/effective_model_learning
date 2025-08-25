@@ -21,7 +21,7 @@ Ls_shape_scale = (2, 0.03)
 
 default_chain_hyperparams = {    
         'chain_step_options': {
-            'tweak all parameters': 18,
+            'tweak all parameters': 72,
             'add qubit L': 1,
             'remove qubit L': 1,
             'add defect L': 1,
@@ -32,7 +32,7 @@ default_chain_hyperparams = {
             'remove defect-defect coupling': 1
             },
         
-        'temperature_proposal': 0.0005, # either value or (shape, scale) of gamma to sample
+        'temperature_proposal': 0.00025, # either value or (shape, scale) of gamma to sample
         
         'jump_length_rescaling_factor': 1.0, # for scaling up or down jump lengths of parameter handler
         
@@ -41,9 +41,9 @@ default_chain_hyperparams = {
         'acceptance_band': 0.2,
         
         'params_handler_hyperparams': { 
-            'initial_jump_lengths': {'couplings' : 0.05,
-                                     'energies' : 0.05,
-                                     'Ls' : 0.005 # halved these now
+            'initial_jump_lengths': {'couplings' : 0.4,
+                                     'energies' : 0.4,
+                                     'Ls' : 0.04 # halved these now
                                      }
             },
         
@@ -86,7 +86,7 @@ default_chain_hyperparams = {
         
         'custom_function_on_dynamics_return': False, #custom_func
         
-        'iterations_till_progress_update': 100
+        'iterations_till_progress_update': 1000
 }        
         
 

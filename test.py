@@ -482,10 +482,105 @@ if not True:
 
 #%%
 import pickle
-with open('250810-priors-test1_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_loss.pickle', 'rb') as filestream:
+with open('/home/henry/Code/effective_model_learning/250822-sim-small_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle', 'rb') as filestream:
     A = pickle.load(filestream)
     
-#%%
+#%% 
+# plot selected different proportion learning on top of target data
+# very ad hoc
+
+import matplotlib.pyplot as plt
+import pickle
+import numpy as np
+
+plt.rcParams["font.size"] = 16    
+dataset_no = 0
+
+if True:    
+    
+    
+    # target data:
+    contents = np.genfromtxt('Wit-Fig4-6-0_025.csv',delimiter=',')#,dtype=float) 
+    dataset = contents[:,[2*dataset_no, 2*dataset_no + 1]]
+    xs = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 0]     
+    ys = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 1]   
+
+    # sort by x and rescale to us:
+    order = xs.argsort()
+    xs = xs[order]
+    ts = xs/1000
+    ys = ys[order]
+    
+    # plot setup:
+    plt.figure()
+    plt.ylabel(r'<$\sigma_x$>')
+    plt.xlabel(r'time ($\mu s$)')
+    plt.ylim([-0.5, 1.05])
+    plt.xlim([-0.05, 2.55])
+    
+    # colours and labels for models in order:
+    colours = (x for x in ['green' for y in range(3)]
+                         +['purple' for y in range(3)]
+                         +['red' for y in range(3)])
+    
+    alphas = (x for x in [0.3 for y in range(3)]
+                        +[0.5 for y in range(3)]
+                        +[0.7 for y in range(3)])
+    
+    labels = (x for x in ['prediction', '_', '_',
+                           'prediction', '_', '_',
+                           'prediction', '_', '_'])
+    styles = (x for x in ['--', '--', '--',
+                          '--', '--', '--',
+                          ':', ':', ':'])
+    cutoffs = (x for x in [([0.625, 0.625],[-0.5,1]) for y in range(1)]
+                         +[([1.25, 1.25],[-0.5,1]) for y in range(1)]
+                         +[([1.875, 1.875],[-0.5,1]) for y in range(1)])
+    
+    
+    # import model files, calculate their dynamics: 
+    model_files = [# 0.25 proportion:
+                   '250825-pred-frac0_25_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_best.pickle',
+                   '250825-pred-frac0_25_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R5_best.pickle',
+                   '250825-pred-frac0_25_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R4_best.pickle',
+                   # 0.5 proportion:
+                   '250825-pred-frac0_5_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_best.pickle',
+                   '250825-pred-frac0_5_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R3_best.pickle',
+                   '250825-pred-frac0_5_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R5_best.pickle',
+                   # 0.75 proportion:
+                   '250825-pred-frac0_75_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R5_best.pickle',
+                   '250825-pred-frac0_75_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R4_best.pickle',
+                   '250825-pred-frac0_75_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R3_best.pickle'
+                   ]
+    models = []
+    for model_file in model_files:
+        with open(model_file, 'rb') as filestream:
+            models.append(pickle.load(filestream))
+    evolutions = [model.calculate_dynamics(ts, observable_ops = ['sigmax'])[0] for model in models]
+    evolutions_gen = (x for x in evolutions)
+
+    # plot predicted dynamics, target data, and save:
+
+    for x in range(3):
+        plt.figure()
+        plt.ylabel(r'<$\sigma_x$>')
+        plt.xlabel(r'time ($\mu s$)')
+        plt.ylim([-0.5, 1.05])
+        plt.xlim([-0.05, 2.55])
+        plt.plot(ts, ys, 'b.', label = 'target',  markersize = 10, markeredgewidth = 0.5, markerfacecolor='None', alpha = 0.5)
+        plt.plot(*next(cutoffs), '-', c='orange', label='training cutoff')
+        for y in range(3):
+            plt.plot(ts, next(evolutions_gen), next(styles), c = next(colours)
+                    ,label = next(labels)
+                    ,alpha = next(alphas), 
+                    )
+            
+        # plot target data:
+        legend = plt.legend()#title = r'$D=' + str(candidate_set.defects_number) + '$' + ', ' + varying)
+        plt.savefig('250525_proportion_comparison' + str(x)
+                    +'.svg', dpi = 1000, bbox_inches='tight')
+        
+ 
 
 
 #%%
