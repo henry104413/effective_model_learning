@@ -446,8 +446,8 @@ class LearningChain:
                     self.best_loss = proposal_loss
                     self.best = copy.deepcopy(proposal)
                 self.run_acceptance_tracker.append(True)
-                # save accepted proposal for statistical analysis of chain - temporarily burn-in cutoff is set here
-                if self.store_all_proposals and i >= 10000:
+                # save accepted proposal for statistical analysis of chain
+                if self.store_all_proposals:
                     self.explored_proposals.append(copy.deepcopy(proposal))
                 
             else: # ie. reject proposal
