@@ -16,12 +16,14 @@ and entris are hyperparams dictionaries that overwrite (supersede) given default
 """
 import copy
 
-couplings_shape_scale = (2, 0.3)
-Ls_shape_scale = (2, 0.03)
+#couplings_shape_scale = (2, 0.3) - old
+#Ls_shape_scale = (2, 0.03) - old
+couplings_shape_scale = (1.1, 10)
+Ls_shape_scale = (1.02, 4)
 
 default_chain_hyperparams = {    
         'chain_step_options': {
-            'tweak all parameters': 72,
+            'tweak all parameters': 36,
             'add qubit L': 1,
             'remove qubit L': 1,
             'add defect L': 1,
@@ -32,7 +34,7 @@ default_chain_hyperparams = {
             'remove defect-defect coupling': 1
             },
         
-        'temperature_proposal': 0.00025, # either value or (shape, scale) of gamma to sample
+        'temperature_proposal': 0.001, # either value or (shape, scale) of gamma to sample
         
         'jump_length_rescaling_factor': 1.0, # for scaling up or down jump lengths of parameter handler
         
@@ -79,9 +81,9 @@ default_chain_hyperparams = {
             },
         
         'params_priors': { # (shape, scale) for gamma dristributions each for one parameter class
-            'couplings': (1.04, 30),
-            'energies': (1.05, 35),   
-            'Ls': (1.004, 23)
+            'couplings': (1.1, 10),
+            'energies': (1.1, 10),   
+            'Ls': (1.02, 4)
             },
         
         'custom_function_on_dynamics_return': False, #custom_func

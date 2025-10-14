@@ -26,15 +26,23 @@ config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 2
 R = 2
 hyperparams = configs.get_hyperparams(config_name)
-output_name = experiment_name + '_clustering_profiling_test3'
+output_name = experiment_name + '_clustering_profiling_test6LLN'
 min_clusters = 2
 max_clusters = 10
 loss_threshold = 0.002
 bounds = []
 verbosity = 0
 
-Ns = [100, 500, 1000, 5000, 10000]#100, 1000, 10000]
+Ns = [100, 500, 1000, 5000]#, 10000]#100, 1000, 10000]
 times = [] # entry for each N is list of times for different k's of that N
+
+vectorisation = 'Liouvillian'
+#vectorisation = 'parameters'
+
+if vectorisation == 'parameters':
+    config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
+    hyperparams = configs.get_hyperparams(config_name)
+
 
 
 for N in Ns:
@@ -115,14 +123,20 @@ for N in Ns:
         for region in bounds:
             working_proposals.extend(accepted_proposals[region[0]:region[1]])
     
-    for new_model in working_proposals:
-        # build Liouvillian, turn into 1D vector, separate real and imaginary parts and concatenate:
-        # note: scikit-learn cannot work with complex vectors
-        Liouvillian_mat = new_model.build_Liouvillian()
-        Liouvillian_vect_complex = Liouvillian_mat.ravel()
-        Liouvillian_vect_separated = np.concatenate((Liouvillian_vect_complex.real, Liouvillian_vect_complex.imag))
-        points.append(Liouvillian_vect_separated)
-        
+    if vectorisation == 'Liouvillian': # use Liouvillian
+        for new_model in working_proposals:
+            # build Liouvillian, turn into 1D vector, separate real and imaginary parts and concatenate:
+            # note: scikit-learn cannot work with complex vectors
+            Liouvillian_mat = new_model.build_Liouvillian()
+            Liouvillian_vect_complex = Liouvillian_mat.ravel()
+            Liouvillian_vect_separated = np.concatenate((Liouvillian_vect_complex.real, Liouvillian_vect_complex.imag))
+            points.append(Liouvillian_vect_separated)
+    
+    elif vectorisation == 'parameters': # use model vector
+        for new_model in working_proposals:
+            points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
+            
+    
     # final array to feed into clusterer 
     # note: each row a different model:
     points_array = np.stack(points)
