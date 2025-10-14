@@ -646,3 +646,73 @@ for R in Rs:
     with open(experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R) + '_accepted_loss.pickle', 'wb') as filestream:
         pickle.dump(accepted_loss, filestream)
         
+#%%
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn
+datafile = '250818-sim-1T-4JL-2tweak_Wit-Fig4-6-0_025_clust_regions5_clustering_assignments.csv'
+A = np.genfromtxt(datafile,delimiter=',', skip_header=1)
+
+# fig = plt.figure()
+# #plot = plt.imshow(A, cmap='hot', interpolation='nearest')
+# #fig.colorbar(plot, orientation='horizontal', fraction=.1)
+# plt.show()
+# cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
+# seaborn.heatmap(A, annot=False, cmap=cmap, fmt=".2f", linewidths=0.5, vmin = -1, vmax = 1)
+# plt.ylabel('model')
+# plt.xlabel('cluster')
+# # colormaps: coolwarm, PiYG
+# plt.savefig(datafile[:-4] + '.svg', dpi = 1000, bbox_inches='tight')
+# plt.show()
+
+# paste bounds here:
+bounds = [(40000, 41500),
+          (52000, 56000),
+          (62000, 64000),
+          (74000, 75000),
+          (83000, 85000)
+          ]
+window_widths = [y - x for (x, y) in bounds]
+window_edges = [sum(window_widths[:i]) for i in range(len(window_widths))]
+
+for k in [2, 3, 4, 5]:
+    B = A[k-2,:]
+    fig = plt.figure()
+    ax = fig.gca()
+    ax.set_yticks(list(set(B)))
+    plt.plot(range(len(B)), B, linewidth = 0.5, c = 'teal')
+    plt.title(r'$k=$' + str(k))
+    plt.xlabel('model label')
+    plt.ylabel('cluster label')
+    for edge in window_edges:
+        plt.plot([edge, edge], [min(B), max(B)], '--', c = 'orange')
+    plt.savefig(datafile[:-4] + '_k' + str(k) + '.svg', dpi = 1000, bbox_inches='tight')
+
+#%%
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+Ns = [100, 500, 1000, 5000, 10000]
+min_clusters = 2
+max_clusters = 10
+clusters_counts = list(range(min_clusters, max_clusters + 1))
+filename = '250818-sim-1T-4JL-2tweak_Wit-Fig4-6-0_025_clustering_profiling_test4clustering_profiling'
+times = np.genfromtxt(filename + '.txt', delimiter = ',')
+avgs_each_N = np.mean(times, axis=0)
+
+plt.figure(tight_layout = True)
+plt.matshow(times)
+plt.xlabel(r'$N$')
+plt.ylabel(r'$k$')
+plt.xticks(ticks = range(len(Ns)), labels = [str(x) for x in Ns])
+plt.yticks(ticks = range(len(clusters_counts)), labels = clusters_counts)
+plt.colorbar(fraction = 0.1, label = r'$time\ \mathrm{(s)}$')
+plt.savefig(filename + '_profiling_checkerboard.svg', bbox_inches='tight')
+
+plt.figure(tight_layout = True)
+plt.xlabel(r'$N$')
+plt.ylabel(r'$\sqrt{time\ \mathrm{(s)}}$')
+Y = np.sqrt(avgs_each_N)
+plt.plot(Ns, Y, ':+', linewidth = 1, markeredgewidth = 2, c='firebrick')
+plt.savefig(filename + '_profiling_t_vs_N_plot.svg', bbox_inches='tight')
