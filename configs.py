@@ -44,7 +44,7 @@ default_chain_hyperparams = {
         
         'params_handler_hyperparams': { 
             'initial_jump_lengths': {'couplings' : 0.4,
-                                     'energies' : 0.4,
+                                     'energies' : 0.04,
                                      'Ls' : 0.04 # halved these now
                                      }
             },

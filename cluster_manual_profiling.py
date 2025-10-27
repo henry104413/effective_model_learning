@@ -33,11 +33,11 @@ loss_threshold = 0.002
 bounds = []
 verbosity = 0
 
-Ns = [100, 500, 1000, 5000]#, 10000]#100, 1000, 10000]
+Ns = [1000] #[100, 500, 1000, 5000]#, 10000]#100, 1000, 10000]
 times = [] # entry for each N is list of times for different k's of that N
 
-vectorisation = 'Liouvillian'
-#vectorisation = 'parameters'
+#vectorisation = 'Liouvillian'
+vectorisation = 'parameters'
 
 if vectorisation == 'parameters':
     config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'

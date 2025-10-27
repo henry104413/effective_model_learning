@@ -489,7 +489,7 @@ class LearningChain:
         for i in range(defects_number):
             initial_model.add_TLS(is_qubit = False,
                                   initial_state = self.defect_initial_state,
-                                  energy = qubit_energy,
+                                  energy = 0.1, # !!! AD HOC - maybe move this to configs 
                                   couplings = {},
                                   Ls = {}
                                   )

@@ -33,6 +33,14 @@ loss_threshold = 0.002
 bounds = []
 verbosity = 0
 
+# clustering choice (by Liouvllians or parameter vectors)
+vectorisation = 'Liouvillian'
+#vectorisation = 'parameters'
+if vectorisation == 'parameters':
+    #config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
+    hyperparams = configs.get_hyperparams(config_name)
+
+
 # container for points to cluster:
 # i.e. vectorised and decomplexified Liouvillians for all models
 points = []
@@ -107,14 +115,20 @@ if True:
     for region in bounds:
         working_proposals.extend(accepted_proposals[region[0]:region[1]])
 
-for new_model in working_proposals:
-    # build Liouvillian, turn into 1D vector, separate real and imaginary parts and concatenate:
-    # note: scikit-learn cannot work with complex vectors
-    Liouvillian_mat = new_model.build_Liouvillian()
-    Liouvillian_vect_complex = Liouvillian_mat.ravel()
-    Liouvillian_vect_separated = np.concatenate((Liouvillian_vect_complex.real, Liouvillian_vect_complex.imag))
-    points.append(Liouvillian_vect_separated)
+if vectorisation == 'Liouvillian': # use Liouvillian
+    for new_model in working_proposals:
+        # build Liouvillian, turn into 1D vector, separate real and imaginary parts and concatenate:
+        # note: scikit-learn cannot work with complex vectors
+        Liouvillian_mat = new_model.build_Liouvillian()
+        Liouvillian_vect_complex = Liouvillian_mat.ravel()
+        Liouvillian_vect_separated = np.concatenate((Liouvillian_vect_complex.real, Liouvillian_vect_complex.imag))
+        points.append(Liouvillian_vect_separated)
+
+elif vectorisation == 'parameters': # use model vector
+    for new_model in working_proposals:
+        points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
     
+
 # final array to feed into clusterer 
 # note: each row a different model:
 points_array = np.stack(points)
