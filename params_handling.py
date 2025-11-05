@@ -32,7 +32,8 @@ class ParamsHandler:
 
     def __init__(self,
                  chain: LearningChain,
-                 hyperparams: dict = False
+                 hyperparams: dict = False,
+                 bounds: dict = False
                  ) -> None:
         
         # configuration flag for optimisation method:
@@ -46,6 +47,9 @@ class ParamsHandler:
             
         # reference to "mother" chain:
         self.chain = chain
+        
+        # bounds for parameter classes - False when no rejection sampling required:
+        self.bounds = bounds
     
     
     
@@ -130,7 +134,7 @@ class ParamsHandler:
         if not self.config_done:
             raise RuntimeError('Parameter handler hyperparameters need to be specified!')
         else:
-            model.change_params(self.jump_lengths)
+            model.change_params(self.jump_lengths, bounds = self.bounds)
             
         return model
         

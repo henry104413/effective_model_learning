@@ -34,7 +34,7 @@ default_chain_hyperparams = {
             'remove defect-defect coupling': 1
             },
         
-        'temperature_proposal': 0.001, # either value or (shape, scale) of gamma to sample
+        'temperature_proposal': 0.0002, # either value or (shape, scale) of gamma to sample
         
         'jump_length_rescaling_factor': 1.0, # for scaling up or down jump lengths of parameter handler
         
@@ -84,6 +84,12 @@ default_chain_hyperparams = {
             'couplings': (1.1, 10),
             'energies': (1.1, 10),   
             'Ls': (1.02, 4)
+            },
+        
+        'params_bounds': { # (lower, upper) bounds when using rejection sampling - False means no rejection sampling to take place
+            'couplings': (0.1, 10),
+            'energies': (0.01, 1),   
+            'Ls': (0.01, 1)
             },
         
         'custom_function_on_dynamics_return': False, #custom_func

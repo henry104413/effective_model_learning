@@ -116,6 +116,12 @@ class LearningChain:
             'Ls': (1.004, 23)
             },
         
+        params_bounds = { # (lower, upper) bounds when using rejection sampling - False means no rejection sampling to take place
+            'couplings': (0.1, 10),
+            'energies': (0.01, 1),   
+            'Ls': (0.01, 1)
+            },
+        
         custom_function_on_dynamics_return = False # optional function acting on model's dynamics calculation return
         
         iterations_till_progress_update = False # number of iterations before iteration number and time elapsed printed
@@ -196,6 +202,8 @@ class LearningChain:
                  
                  params_priors: dict[str, float] = False,
                  
+                 params_bounds: dict[str, tuple[float]] = False,
+                 
                  custom_function_on_dynamics_return: callable = False,
                  # optional function acting on model's dynamics calculation return
                  
@@ -269,6 +277,7 @@ class LearningChain:
         # chain progression containers:
         self.explored_proposals = [] # repository of explored models
         self.explored_loss = []
+        self.explored_acceptance_probability = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.current)
         self.chain_windows_acceptance_log = []
@@ -281,7 +290,12 @@ class LearningChain:
         self.best_loss = self.current_loss
         self.explored_loss.append(self.current_loss)
         if self.store_all_proposals: self.explored_proposals.append(copy.deepcopy(self.initial))
-    
+        
+        # counters for overall acceptance tracking (separate for reversible-jump type steps and for value tweak)
+        self.tot_RJ_steps = 0
+        self.acc_RJ_steps = 0
+        self.tot_tweak_steps = 0
+        self.acc_tweak_steps = 0
     
     
     def run(self, steps:int = False) -> learning_model.LearningModel:
@@ -356,6 +370,12 @@ class LearningChain:
             # choose next step:
             next_step = np.random.choice(self.next_step_labels, p = next_step_probabilities_list)
             next_step = str(next_step)
+            
+            # update total counter for appropriate step type:
+            if next_step == 'tweak all parameters':
+                self.tot_tweak_steps += 1
+            else: # ie. reversible-jump type step
+                self.tot_RJ_steps += 1
             
             # modify proposal accordingly and save number of possible modifications of chosen type:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
@@ -438,6 +458,7 @@ class LearningChain:
             # Metropolis-Hastings acceptance:
             acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back, 
                                                                  params_priors_ratio)
+            self.explored_acceptance_probability.append(acceptance_probability)
             if np.random.uniform() < acceptance_probability: # ie. accept proposal
                 # update current and also best if warranted:
                 self.current = proposal
@@ -449,6 +470,11 @@ class LearningChain:
                 # save accepted proposal for statistical analysis of chain
                 if self.store_all_proposals:
                     self.explored_proposals.append(copy.deepcopy(proposal))
+                # update accepted step counter:
+                if next_step == 'tweak all parameters':
+                    self.acc_tweak_steps += 1
+                else: # ie. reversible-jump type step
+                    self.acc_RJ_steps += 1
                 
             else: # ie. reject proposal
                 self.run_acceptance_tracker.append(False)
@@ -461,7 +487,8 @@ class LearningChain:
         
         self.all_proposals = {'proposals': self.explored_proposals,
                               'loss': self.explored_loss,
-                              'acceptance': self.run_acceptance_tracker
+                              'acceptance': self.run_acceptance_tracker,
+                              'acceptance_probability': self.explored_acceptance_probability
                              } 
         
         return self.best

@@ -212,6 +212,10 @@ if True:
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        best_loss = quest.best_loss,
+       # !!! TO DO: two lines below are new -- add elsewhere too!
+       acceptance_probability = quest.explored_acceptance_probability,
+       overall_acceptance = {'parameters tweak': quest.acc_tweak_steps/quest.tot_tweak_steps,
+                             'reversible jump': quest.acc_RJ_steps/quest.tot_RJ_steps},
        acceptance = quest.chain_windows_acceptance_log,
        models_to_save = [best],
        model_names = ['best'],

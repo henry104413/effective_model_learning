@@ -53,13 +53,18 @@ class LearningModel(basic_model.BasicModel):
         
     
     
-    def change_params(self, passed_jump_lengths: dict[str, float|int] = False) -> None:
+    def change_params(self, passed_jump_lengths: dict[str, float|int] = False,
+                      bounds: dict[str, tuple[float|int]] = False
+                      ) -> None:
         
         """
         Changes all existing parameters of this model except qubit energies,
         each by amount from normal distribution around zero,
         with variance given for each class of parameters (current split: energy, couplings, Ls)
         by jump lengths dictionary if passed or instance variable if not.
+        
+        Rejection sampling performed if outside of bounds specified as tuples for each parameter class,
+        if False then only performed to avoid negative Lindblad rates.
         """
         
         # check jump lengths specified:
