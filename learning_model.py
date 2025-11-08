@@ -53,11 +53,13 @@ class LearningModel(basic_model.BasicModel):
         
     
     
-    def change_params(self, passed_jump_lengths: dict[str, float|int] = False,
+    def old_change_params(self, passed_jump_lengths: dict[str, float|int] = False,
                       bounds: dict[str, tuple[float|int]] = False
                       ) -> None:
         
         """
+        Legacy version before implementing rejection sampling with bounds.
+        
         Changes all existing parameters of this model except qubit energies,
         each by amount from normal distribution around zero,
         with variance given for each class of parameters (current split: energy, couplings, Ls)
@@ -102,8 +104,86 @@ class LearningModel(basic_model.BasicModel):
         # remake operators (to update with new parameters):
         self.build_operators()
         
+    
         
+    def change_params(self, passed_jump_lengths: dict[str, float|int] = False,
+                      bounds: dict[str, tuple[float|int]] = False
+                      ) -> None:
+        
+        """
+        Changes all existing parameters of this model except qubit energies,
+        each by amount from normal distribution around zero,
+        with variance given for each class of parameters (current split: energy, couplings, Ls)
+        by jump lengths dictionary if passed or instance variable if not.
+        
+        Rejection sampling performed if outside of bounds specified as tuples for each parameter class,
+        if False then only performed to avoid negative Lindblad rates.
+        """
+        
+        # check jump lengths specified:
+        if (type(passed_jump_lengths) == bool and not passed_jump_lengths):
+            if (type(self.jump_lengths) == bool and not self.jump_lengths):
+                raise RuntimeError('need to specify jump lengths for the operators present')
+        else:
+            self.jump_lengths = passed_jump_lengths
+        
+        # set max attempts for rejection sampling and infinite bounds if none set to enable comparison:
+        # (except  Ls >= 0)
+        # (alternatively TO DO: can implement conditional for bounds checking rather than this shortcut)
+        max_attempts = 10
+        if not bounds: # type validity otherwise not checked
+            bounds = {'energies': (-np.inf, np.inf),
+                      'couplings': (-np.inf, np.inf),
+                      'Ls': (0, np.inf)}
+            
+        # take each TLS:    
+        for TLS in self.TLSs:
+                    
+            # modify its energy if not qubit:
+            if not TLS.is_qubit:
+                for _ in range(max_attempts):
+                    candidate = TLS.energy + np.random.normal(0, self.jump_lengths['energies'])
+                    if candidate >= bounds['energies'][0] and candidate <= bounds['energies'][1]:
+                        # within bounds hence update
+                        TLS.energy = candidate
+                        break
+                    else:
+                        continue
                 
+            # modify all its couplings to each partner:
+            # {partner: [(rate, [(op_on_self, op_on_partner)])]}
+            for partner in TLS.couplings: # partner is key and value is list of tuples
+                this_partner_couplings = TLS.couplings[partner] # list of couplings to current partner
+                for i, coupling in enumerate(TLS.couplings[partner]): # coupling now (rate, [(op_on_self, op_on_partner), ...])
+                    strength, op_pairs = coupling
+                    for _ in range(max_attempts):
+                        candidate = strength + np.random.normal(0, self.jump_lengths['couplings'])
+                        if candidate >= bounds['couplings'][0] and candidate <= bounds['couplings'][1]:
+                            # within bounds hence update
+                            TLS.couplings[partner][i] = (candidate, op_pairs)
+                            break
+                        else:
+                            continue
+            
+            # modify all its Lindblad ops:
+            for L in TLS.Ls:
+                # make up to specified number of proposals ensuring result positive
+                for _ in range(max_attempts):    
+                    candidate = TLS.Ls[L] + np.random.normal(0, self.jump_lengths['Ls'])
+                    if candidate >= bounds['Ls'][0] and candidate <= bounds['Ls'][1]:
+                        TLS.Ls[L] = candidate
+                        break
+                    else:
+                        continue
+                    
+        # remake operators (to update with new parameters):
+        self.build_operators()
+    
+    
+    
+    
+
+        
                         
             
         
