@@ -66,7 +66,7 @@ try:
     if max_iterations == 0:
         raise Exception('Maximum iterations not specified by launcher, hence using default.')
 except:
-    max_iterations = 1000
+    max_iterations = 10
 
 # set proportion (ratio) of available data values to use for training:
 # note: currently taken from start and same for all data sets; 1 means use all
@@ -214,8 +214,8 @@ if True:
        best_loss = quest.best_loss,
        # !!! TO DO: two lines below are new -- add elsewhere too!
        acceptance_probability = quest.explored_acceptance_probability,
-       overall_acceptance = {'parameters tweak': quest.acc_tweak_steps/quest.tot_tweak_steps,
-                             'reversible jump': quest.acc_RJ_steps/quest.tot_RJ_steps},
+       overall_acceptance = {'parameters tweak': quest.acc_tweak_steps/max(quest.tot_tweak_steps, 1), # avoiding div by 0
+                             'reversible jump': quest.acc_RJ_steps/max(quest.tot_RJ_steps, 1)}, # avoiding div by 0
        acceptance = quest.chain_windows_acceptance_log,
        models_to_save = [best],
        model_names = ['best'],

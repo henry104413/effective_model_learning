@@ -132,6 +132,7 @@ class LearningModel(basic_model.BasicModel):
         # (alternatively TO DO: can implement conditional for bounds checking rather than this shortcut)
         max_attempts = 10
         if not bounds: # type validity otherwise not checked
+            #print('Bounds not passed to learning model')        
             bounds = {'energies': (-np.inf, np.inf),
                       'couplings': (-np.inf, np.inf),
                       'Ls': (0, np.inf)}
@@ -146,8 +147,10 @@ class LearningModel(basic_model.BasicModel):
                     if candidate >= bounds['energies'][0] and candidate <= bounds['energies'][1]:
                         # within bounds hence update
                         TLS.energy = candidate
+                        #print('Energy: accepted ' + str(candidate))
                         break
                     else:
+                        #print('Energy: rejected ' + str(candidate))
                         continue
                 
             # modify all its couplings to each partner:
@@ -158,11 +161,14 @@ class LearningModel(basic_model.BasicModel):
                     strength, op_pairs = coupling
                     for _ in range(max_attempts):
                         candidate = strength + np.random.normal(0, self.jump_lengths['couplings'])
-                        if candidate >= bounds['couplings'][0] and candidate <= bounds['couplings'][1]:
+                        if abs(candidate) >= bounds['couplings'][0] and candidate <= bounds['couplings'][1]:
                             # within bounds hence update
+                            # note: couplings allowed negative hence absolute value checked
                             TLS.couplings[partner][i] = (candidate, op_pairs)
+                            #print('Coupling: accepted ' + str(candidate))
                             break
                         else:
+                            #print('Coupling: rejected ' + str(candidate))
                             continue
             
             # modify all its Lindblad ops:
@@ -172,8 +178,10 @@ class LearningModel(basic_model.BasicModel):
                     candidate = TLS.Ls[L] + np.random.normal(0, self.jump_lengths['Ls'])
                     if candidate >= bounds['Ls'][0] and candidate <= bounds['Ls'][1]:
                         TLS.Ls[L] = candidate
+                        #print('L: accepted ' + str(candidate))
                         break
                     else:
+                        #print('L: rejected ' + str(candidate))
                         continue
                     
         # remake operators (to update with new parameters):

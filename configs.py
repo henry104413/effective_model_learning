@@ -43,9 +43,9 @@ default_chain_hyperparams = {
         'acceptance_band': 0.2,
         
         'params_handler_hyperparams': { 
-            'initial_jump_lengths': {'couplings' : 0.4,
-                                     'energies' : 0.04,
-                                     'Ls' : 0.04 # halved these now
+            'initial_jump_lengths': {'couplings' : 1,#0.4,
+                                     'energies' : 1,#0.04,
+                                     'Ls' : 1#0.04 # halved these now
                                      }
             },
         

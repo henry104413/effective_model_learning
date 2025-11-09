@@ -89,6 +89,18 @@ class ParamsHandler:
         # mark done:
         self.config_done = True
         
+        
+        
+    def set_bounds(self, bounds: dict[str, float|int]) -> None:
+        
+        """
+        Sets bounds for parameters when requiring rejection samplings.
+        If set to false, tweak method (which calls learning model method) perform no rejection sampling
+        except for negative Ls.
+        """
+        
+        self.bounds = bounds
+        
     
     
     def output_hyperparams_init(self) -> dict:
@@ -126,6 +138,9 @@ class ParamsHandler:
         Calls model method which currently adds to each existing model parameter
         a value sampled from normal distribution around zero
         with variance based on parameter-handler jump length for that type of parameter.
+        
+        Currently called without explicit argument for bounds,
+        which are instead set at instance level of params handler.
         """
     
         if not isinstance(model, learning_model.LearningModel):

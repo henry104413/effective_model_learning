@@ -778,6 +778,7 @@ class LearningChain:
 
         self.params_handler = params_handling.ParamsHandler(self)
         self.params_handler.set_hyperparams(self.params_handler_hyperparams)
+        self.params_handler.set_bounds(self.params_bounds)
 
 
     
