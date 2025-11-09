@@ -410,43 +410,52 @@ class LearningChain:
                 # go over existing parameters in proposal and current and multiply and divide respectively
                 # by probability density function given by each prior (currently based on process class)
                 
-                # current:
-                for TLS in self.current.TLSs:
-                    # energy:
-                    x = TLS.energy
-                    shape, scale = self.params_priors['energies']
-                    params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                if not self.bounds:    
+                # using gamma priors if no bounds specified:
                     
-                    # Ls:
-                    shape, scale = self.params_priors['Ls']
-                    for x in TLS.Ls.values():
+                    # current:
+                    for TLS in self.current.TLSs:
+                        # energy:
+                        x = TLS.energy
+                        shape, scale = self.params_priors['energies']
                         params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
                         
-                    # couplings:
-                    shape, scale = self.params_priors['couplings']
-                    for partner in TLS.couplings:
-                        for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
-                            x = coupling[0]
+                        # Ls:
+                        shape, scale = self.params_priors['Ls']
+                        for x in TLS.Ls.values():
                             params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
                             
-                # proposal:
-                for TLS in proposal.TLSs:
-                    # energy:
-                    x = TLS.energy
-                    shape, scale = self.params_priors['energies']
-                    params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
-                    
-                    # Ls:
-                    shape, scale = self.params_priors['Ls']
-                    for x in TLS.Ls.values():
+                        # couplings:
+                        shape, scale = self.params_priors['couplings']
+                        for partner in TLS.couplings:
+                            for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
+                                x = coupling[0]
+                                params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                                
+                    # proposal:
+                    for TLS in proposal.TLSs:
+                        # energy:
+                        x = TLS.energy
+                        shape, scale = self.params_priors['energies']
                         params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
                         
-                    # couplings:
-                    shape, scale = self.params_priors['couplings']
-                    for partner in TLS.couplings:
-                        for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
-                            x = coupling[0]
+                        # Ls:
+                        shape, scale = self.params_priors['Ls']
+                        for x in TLS.Ls.values():
                             params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                            
+                        # couplings:
+                        shape, scale = self.params_priors['couplings']
+                        for partner in TLS.couplings:
+                            for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
+                                x = coupling[0]
+                                params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                                
+                else:   
+                # otherwise (ie. bounds specified) asume uniform distribution and everything cancels:
+                    params_priors_ratio *= 1
+                    
+                    
             else: # ie. a process addition or removal
                 params_priors_ratio = 1
             
@@ -454,6 +463,7 @@ class LearningChain:
             # evaluate new proposal (system evolution calculated here):
             proposal_loss = self.total_dev(proposal)
             self.explored_loss.append(proposal_loss)
+            proposal.disp()
             
             # Metropolis-Hastings acceptance:
             acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back, 
@@ -788,6 +798,7 @@ class LearningChain:
         """    
         
         self.process_handler = process_handling.ProcessHandler(self,
+                                              bounds = self.params_bounds,                 
                                               qubit2defect_couplings_library = self.qubit2defect_couplings_library,
                                               defect2defect_couplings_library = self.defect2defect_couplings_library,
                                               qubit_Ls_library = self.qubit_Ls_library,

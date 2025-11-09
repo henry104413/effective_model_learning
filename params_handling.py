@@ -91,7 +91,7 @@ class ParamsHandler:
         
         
         
-    def set_bounds(self, bounds: dict[str, float|int]) -> None:
+    def set_bounds(self, bounds: dict[str, tuple[float|int]]) -> None:
         
         """
         Sets bounds for parameters when requiring rejection samplings.

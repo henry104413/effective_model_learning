@@ -38,10 +38,14 @@ class ProcessHandler:
                  qubit_Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
                  defect_Ls_library: TYPE_LS_LIBRARY = False, # {'op label': (shape, scale)}
                  qubit2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,
-                 defect2defect_couplings_library: TYPE_COUPLING_LIBRARY = False
-                 # coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
+                 defect2defect_couplings_library: TYPE_COUPLING_LIBRARY = False,
+                 # note: coupling libraries: { ((op_here, op_there), ...) : (shape, scale)}
+                 bounds: dict[str, tuple[int|float]] = False
+                 # bounds on values for each parameter class key;
+                 # if specified, then process addition samples from uniform distribution between bounds instead
                  ):
 
+        self.bounds = bounds
         self.qubit_Ls_library = qubit_Ls_library
         self.initial_qubit_Ls_library = copy.deepcopy(qubit_Ls_library)
         self.defect_Ls_library = defect_Ls_library
@@ -91,7 +95,12 @@ class ProcessHandler:
             TLS, operator = possible_additions[np.random.choice(len(possible_additions))]
             
             # sample rate from distribution of type specified here and properties in library
-            new_rate = np.random.gamma(*qubit_Ls_library[operator])
+            if not self.bounds:
+                # sample from gamma as per library if no bounds
+                new_rate = np.random.gamma(*qubit_Ls_library[operator])
+            else:
+                # sample from uniform distribution between bounds if specified
+                new_rate = np.random.uniform(*self.bounds['Ls'])
             
             # update model:
             TLS.Ls[operator] = new_rate
@@ -140,7 +149,12 @@ class ProcessHandler:
             TLS, operator = possible_additions[np.random.choice(len(possible_additions))]
             
             # sample rate from distribution of type specified here and properties in library
-            new_rate = np.random.gamma(*defect_Ls_library[operator])
+            if not self.bounds:
+                # sample from gamma as per library if no bounds
+                new_rate = np.random.gamma(*defect_Ls_library[operator])
+            else:
+                # sample from uniform distribution between bounds if specified
+                new_rate = np.random.uniform(*self.bounds['Ls'])
             
             # update model:
             TLS.Ls[operator] = new_rate
@@ -244,7 +258,12 @@ class ProcessHandler:
             
             # format and incorporate into model:
             # note: put on 1st TLS in list with 2nd one as partner
-            new_strength = np.random.gamma(*new_strength_properties)
+            if not self.bounds:
+                # sample from gamma as per process library if bounds not specified
+                new_strength = np.random.gamma(*new_strength_properties)
+            else:
+                # sample from uniform distribution between bounds if specified
+                new_strength = np.random.uniform(*self.bounds['couplings'])
             if new_pair[1] not in new_pair[0].couplings:
                 new_pair[0].couplings[new_pair[1]] = [] 
             new_pair[0].couplings[new_pair[1]].append((new_strength, new_ops))
@@ -349,7 +368,12 @@ class ProcessHandler:
             
             # format and incorporate into model:
             # note: put on 1st TLS in list with 2nd one as partner
-            new_strength = np.random.gamma(*new_strength_properties)
+            if not self.bounds:
+                # sample from gamma as per process library if bounds not specified
+                new_strength = np.random.gamma(*new_strength_properties)
+            else:
+                # sample from uniform distribution between bounds if specified
+                new_strength = np.random.uniform(*self.bounds['couplings'])
             if new_pair[1] not in new_pair[0].couplings:
                 new_pair[0].couplings[new_pair[1]] = [] 
             new_pair[0].couplings[new_pair[1]].append((new_strength, new_ops))
