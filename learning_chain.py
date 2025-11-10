@@ -380,19 +380,40 @@ class LearningChain:
             # modify proposal accordingly and save number of possible modifications of chosen type:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
             
+            
             # overall probabilities of making this step and of afterwards reversing it:
             if next_step == 'tweak all parameters':
-                # cancel out except assymetricity of lindblad tweak due to truncation at zero:
                 # based on truncated gaussian distribution formulas    
                 p_there = 1 
                 p_back = 1
-                proposal_width = self.params_handler.jump_lengths['Ls']
-                for TLS in self.current.TLSs:
-                    for current_rate in TLS.Ls.values():
-                        p_there *= 1/(1-1/2*(1+sp.special.erf(-current_rate/proposal_width/np.sqrt(2))))
-                for TLS in proposal.TLSs:
-                    for proposed_rate in TLS.Ls.values():
-                        p_back *= 1/(1-1/2*(1+sp.special.erf(-proposed_rate/proposal_width/np.sqrt(2))))
+                
+                if not self.params_bounds:
+                # no bounds set hence only parameter restriction L positivity    
+                    proposal_width = self.params_handler.jump_lengths['Ls']
+                    for TLS in self.current.TLSs:
+                        for current_rate in TLS.Ls.values():
+                            p_there *= 1/(1-1/2*(1+sp.special.erf(-current_rate/proposal_width/np.sqrt(2))))
+                    for TLS in proposal.TLSs:
+                        for proposed_rate in TLS.Ls.values():
+                            p_back *= 1/(1-1/2*(1+sp.special.erf(-proposed_rate/proposal_width/np.sqrt(2))))
+                
+                
+                else:
+                # bounds set hence rejection sampling applies to all parameters;
+                # go over all existing parameters in self.current and in proposal to build there and back terms
+                # note: bounds and jump width set for each parameter class
+                
+                # self.current:
+                # energies:
+                # Ls:
+                # couplings:
+                
+                # proposal:
+                # energies:
+                # Ls:
+                # couplings:
+                    CONTINUE HERE
+                    
             else: # ie. a process addition or removal
                 # priority of this normalised by sum off all priorities times their respective # ways
                 # in numerator # of ways here cancels with that in step choice probability, leaving only priority
@@ -402,6 +423,7 @@ class LearningChain:
                 p_back  = (self.next_step_priorities_dict[self.complementary_step(next_step)]
                            / sum([self.next_step_priorities_dict[x] * self.step(proposal, x, update = False)[1]
                                   for x in self.next_step_labels]))
+                
                 
             # calculate priors ratio due to all paramteres of proposal and current if applying tweak step:
             # note: not present when adding or removing processes (reversible jumps)
@@ -820,3 +842,43 @@ class LearningChain:
             case int() | float(): return self.temperature_proposal
             case (int()|float(), int()|float()): return np.random.gamma(*self.temperature_proposal)
             case _: raise RuntimeError('Metropolis-Hastings temperature proposal failed')
+
+
+
+    def trunc_gaus(self, x, m, s, a, b):
+        """
+        Returns probability density function at x
+        of normal distribution with stdev s and mean m,
+        if truncated at bounds a and b, a < b.
+        """
+        
+        # shorthands:
+        def psi(y):
+            return 1/np.sqrt(2*np.pi)*np.exp(-1/2*y**2)
+        def phi(y):
+            return 1/2*(1 + sp.special.erf(y/np.sqrt(2)))
+        
+        return 1/s * (psi((x-m)/s)) / (phi((b-m)/s) - phi((a-m)/s))
+    
+    
+    
+    def xi(self, m:float|int,
+           s: float|int,
+           a: float|int = -np.inf,
+           b: float|int = np.inf):
+        """
+        Returns value of denominator expression in truncated normal distribution probability density.
+        In the ratio when assuming stdev s, lower bound a, higher bound b all constant throughout the chain,
+        the numerators and the 1/s factors cancel, leaving only dependence on a, b, s,
+        as well as mean m (old or current parameter value before making change).
+        """
+        
+        # shorthands:
+        def phi(y):
+            return 1/2*(1 + sp.special.erf(y/np.sqrt(2)))
+        
+        return phi((b-m)/s) - phi((a-m)/s)
+    
+    
+    
+    
