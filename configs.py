@@ -43,9 +43,9 @@ default_chain_hyperparams = {
         'acceptance_band': 0.2,
         
         'params_handler_hyperparams': { 
-            'initial_jump_lengths': {'couplings' : 1,#0.4,
-                                     'energies' : 1,#0.04,
-                                     'Ls' : 1#0.04 # halved these now
+            'initial_jump_lengths': {'couplings' : 0.4, #0.4,
+                                     'energies' : 0.04, #0.04,
+                                     'Ls' : 0.04 #0.04 # halved these now
                                      }
             },
         
@@ -87,9 +87,9 @@ default_chain_hyperparams = {
             },
         
         'params_bounds': { # (lower, upper) bounds when using rejection sampling - False means no rejection sampling to take place
-            'couplings': (0.1, 10),
-            'energies': (0.01, 1),   
-            'Ls': (0.01, 1)
+            'couplings': (0.1, 5),
+            'energies': (0.01, 0.5),   
+            'Ls': (0.01, 0.5)
             },
         
         'custom_function_on_dynamics_return': False, #custom_func

@@ -513,7 +513,7 @@ class LearningChain:
             # evaluate new proposal (system evolution calculated here):
             proposal_loss = self.total_dev(proposal)
             self.explored_loss.append(proposal_loss)
-            proposal.disp()
+            # proposal.disp() # enabled when testing
             
             # Metropolis-Hastings acceptance:
             acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back, 
