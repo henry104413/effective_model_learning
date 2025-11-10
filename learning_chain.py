@@ -388,7 +388,7 @@ class LearningChain:
                 p_back = 1
                 
                 if not self.params_bounds:
-                # no bounds set hence only parameter restriction L positivity    
+                # no bounds specified hence only parameter restriction L positivity    
                     proposal_width = self.params_handler.jump_lengths['Ls']
                     for TLS in self.current.TLSs:
                         for current_rate in TLS.Ls.values():
@@ -397,22 +397,50 @@ class LearningChain:
                         for proposed_rate in TLS.Ls.values():
                             p_back *= 1/(1-1/2*(1+sp.special.erf(-proposed_rate/proposal_width/np.sqrt(2))))
                 
-                
                 else:
-                # bounds set hence rejection sampling applies to all parameters;
+                # bounds specified hence rejection sampling applies to all parameters;
                 # go over all existing parameters in self.current and in proposal to build there and back terms
                 # note: bounds and jump width set for each parameter class
                 
-                # self.current:
-                # energies:
-                # Ls:
-                # couplings:
-                
-                # proposal:
-                # energies:
-                # Ls:
-                # couplings:
-                    CONTINUE HERE
+                    # note: have to use something mutable in zip loop below!!! 
+                    # e. g.: for key, n in zip(holder, Ns): holder[key] *= 2,
+                    # with holder = {'key1': 1, 'key2': 5}
+                    # multiply by: xi(parameter, width, low bound, high bound)
+                    # i. e.: holder[key] *= self.xi(m = , s = , a = , b = )
+                    holder = {'p_there': p_there, 'p_back': p_back}
+                    for model, key in zip([proposal, self.current], holder):
+                        # build products in holder[key] using all parameters in model 
+                        # note:
+                        # back = product of xi(current)
+                        # there = product of xi(proposal)
+                        for TLS in model:
+                            # energy:
+                            m = TLS.energy
+                            s = self.params_handler.jump_lengths['energies']
+                            a = self.params_bounds['energies'][0]
+                            b = self.params_bounds['energies'][1]
+                            holder[key] *= self.xi(m, s, a, b)
+                            # note: this should cancel out if qubit as currently not tweaking their energies
+                            
+                            # Ls:
+                            s = self.params_handler.jump_lengths['Ls']
+                            a = self.params_bounds['Ls'][0]
+                            b = self.params_bounds['Ls'][1]
+                            for m in TLS.Ls.values():
+                                holder[key] *= self.xi(m, s, a, b)
+                                
+                            # couplings:
+                            s = self.params_handler.jump_lengths['couplings']
+                            a = self.params_bounds['couplings'][0]
+                            b = self.params_bounds['couplings'][1]
+                            for partner in TLS.couplings:
+                                for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
+                                    m = coupling[0]
+                                    holder[key] *= self.xi(m, s, a, b)
+                                          
+                    p_there = holder['p_there']
+                    p_back = holder['p_back']
+                                     
                     
             else: # ie. a process addition or removal
                 # priority of this normalised by sum off all priorities times their respective # ways
