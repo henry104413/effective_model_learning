@@ -132,7 +132,8 @@ class Output:
                 
             # also loss of just accepted models:    
             accepted_loss = [x for (x, y) in zip(all_proposals['loss'][1:], all_proposals['acceptance']) if y]
-            best_loss = min(accepted_loss)
+            if accepted_loss: best_loss = min(accepted_loss) # check for empty sequence
+            else: best_loss = 0
             plt.figure()
             plt.plot(accepted_loss, '-', c = 'orange', linewidth = 0.3, markersize = 0.1)
             plt.yscale('log')

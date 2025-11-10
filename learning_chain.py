@@ -401,7 +401,7 @@ class LearningChain:
                 # bounds specified hence rejection sampling applies to all parameters;
                 # go over all existing parameters in self.current and in proposal to build there and back terms
                 # note: bounds and jump width set for each parameter class
-                
+                    # AD HOC - tracing error
                     # note: have to use something mutable in zip loop below!!! 
                     # e. g.: for key, n in zip(holder, Ns): holder[key] *= 2,
                     # with holder = {'key1': 1, 'key2': 5}
@@ -415,19 +415,20 @@ class LearningChain:
                         # there = product of xi(proposal)
                         for TLS in model.TLSs:
                             # energy:
-                            m = TLS.energy
-                            s = self.params_handler.jump_lengths['energies']
-                            a = self.params_bounds['energies'][0]
-                            b = self.params_bounds['energies'][1]
-                            holder[key] *= self.xi(m, s, a, b)
-                            # note: this should cancel out if qubit as currently not tweaking their energies
-                            
+                            if not TLS.is_qubit:
+                                # note: bounds not enforced on qubit energy hence could get 0/0!!
+                                m = TLS.energy
+                                s = self.params_handler.jump_lengths['energies']
+                                a = self.params_bounds['energies'][0]
+                                b = self.params_bounds['energies'][1]
+                                holder[key] *= (factor := self.xi(m, s, a, b))
+                                
                             # Ls:
                             s = self.params_handler.jump_lengths['Ls']
                             a = self.params_bounds['Ls'][0]
                             b = self.params_bounds['Ls'][1]
                             for m in TLS.Ls.values():
-                                holder[key] *= self.xi(m, s, a, b)
+                                holder[key] *= (factor := self.xi(m, s, a, b))
                                 
                             # couplings:
                             s = self.params_handler.jump_lengths['couplings']
@@ -436,7 +437,7 @@ class LearningChain:
                             for partner in TLS.couplings:
                                 for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
                                     m = coupling[0]
-                                    holder[key] *= self.xi(m, s, a, b)
+                                    holder[key] *= (factor := self.xi(m, s, a, b))
                                           
                     p_there = holder['p_there']
                     p_back = holder['p_back']
@@ -571,14 +572,23 @@ class LearningChain:
                              initial_state = self.qubit_initial_state,
                              energy = qubit_energy,
                              couplings = {},
-                             Ls = {}
+                             Ls = {
+                                 'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
+                                 }
                              )
         for i in range(defects_number):
             initial_model.add_TLS(is_qubit = False,
                                   initial_state = self.defect_initial_state,
                                   energy = 0.1, # !!! AD HOC - maybe move this to configs 
-                                  couplings = {},
-                                  Ls = {}
+                                  couplings = {'qubit': [
+                                      (1, [('sigmax','sigmax')]),
+                                      (1, [('sigmaz','sigmaz')]),
+                                      (1, [('sigmay','sigmay')])
+                                      ]},
+                                  #{partner: [(rate, [(op_on_self, op_on_partner)])]}
+                                  Ls = {
+                                      'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
+                                      }
                                   )
         initial_model.build_operators()
         
