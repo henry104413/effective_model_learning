@@ -232,10 +232,13 @@ import configs
 import seaborn
 import matplotlib.pyplot as plt
 
-experiment_name = 'correlation-fixed-E_Wit-Fig4-6-0_025'
+cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
+# experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
+experiment_name = '250815-sim_Wit-Fig4-6-0_025' # including experiment base and source file name
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 2
-Rs = [1, 2, 3, 4, 5]
+Rs = [1 + i for i in range(5)]
+burn = int(100000)
 hyperparams = configs.get_hyperparams(config_name)
 
 setup_done = False
@@ -253,7 +256,7 @@ for R in Rs:
     
     # clearly all proposals were saved now despite condition on burn-in... ok then
     
-    proposals = proposals[:]
+    proposals = proposals[burn:]
     
     if not setup_done:
         first_proposal = proposals[0]
@@ -274,9 +277,46 @@ data = pd.DataFrame(data = parameter_lists, columns = labels[:]) # columns! - no
 pdCM = data.corr()
 
 plt.figure(figsize=(10,10))
-seaborn.heatmap(pdCM, annot=False, cmap="PiYG", fmt=".2f", linewidths=0.5, vmin = -1, vmax = 1)
+seaborn.heatmap(pdCM, annot=False, cmap=cmap, fmt=".2f", linewidths=0.5, vmin = -1, vmax = 1)
 # colormaps: coolwarm, PiYG
-plt.savefig('correlation_corrected_fixed_E_wE.svg', dpi = 1000, bbox_inches='tight')
+plt.savefig(experiment_name + '_correlation_unclustered.svg', dpi = 1000, bbox_inches='tight')
+
+
+# try hierarchical clustering:
+correlations = pdCM
+
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+from scipy.spatial.distance import squareform
+import numpy as np
+
+plt.figure(figsize=(10,5))
+dissimilarity = 1 - abs(correlations)
+Z = linkage(squareform(dissimilarity), 'complete')
+dendrogram(Z, labels=data.columns, orientation='top', 
+           leaf_rotation=90);
+plt.savefig(experiment_name + '_burn' + str(burn) + '_dendrogram.svg', dpi = 1000, bbox_inches='tight')
+#%%
+
+# Clusterize the data
+threshold = 0.7
+labels = fcluster(Z, threshold, criterion='distance')
+
+# Keep the indices to sort labels
+labels_order = np.argsort(labels)
+
+# Build a new dataframe with the sorted columns
+for idx, i in enumerate(data.columns[labels_order]):
+    if idx == 0:
+        clustered = pd.DataFrame(data[i])
+    else:
+        df_to_append = pd.DataFrame(data[i])
+        clustered = pd.concat([clustered, df_to_append], axis=1)
+        
+plt.figure(figsize=(10,10))
+correlations = clustered.corr()
+# seaborn.heatmap(round(correlations,2), cmap='RdBu', annot=True, annot_kws={"size": 7}, vmin=-1, vmax=1);
+seaborn.heatmap(correlations, cmap=cmap, annot=False, annot_kws={"size": 7}, vmin=-1, vmax=1);
+plt.savefig(experiment_name + '_burn' + str(burn) + '_thresh' + str(threshold) + '_correlation_clustered.svg', dpi = 1000, bbox_inches='tight')
 
 
 
@@ -341,7 +381,7 @@ with open('simulated_' + model_file + '.pickle', 'wb') as filestream:
 
 #%%
 # bar plots of champion loss for different configurations (libraries)
-if True: 
+if not True: 
     
     plt.rcParams["font.size"] = 16
 
@@ -442,5 +482,237 @@ if True:
 
 #%%
 import pickle
-with open('250810-priors-test1_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_loss.pickle', 'rb') as filestream:
+with open('/home/henry/Code/effective_model_learning/250822-sim-small_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle', 'rb') as filestream:
     A = pickle.load(filestream)
+    
+#%% 
+# plot selected different proportion learning on top of target data
+# very ad hoc
+
+import matplotlib.pyplot as plt
+import pickle
+import numpy as np
+
+plt.rcParams["font.size"] = 16    
+dataset_no = 0
+
+if True:    
+    
+    
+    # target data:
+    contents = np.genfromtxt('Wit-Fig4-6-0_025.csv',delimiter=',')#,dtype=float) 
+    dataset = contents[:,[2*dataset_no, 2*dataset_no + 1]]
+    xs = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 0]     
+    ys = dataset[np.isfinite(dataset[:,0]) + np.isfinite(dataset[:,1]), 1]   
+
+    # sort by x and rescale to us:
+    order = xs.argsort()
+    xs = xs[order]
+    ts = xs/1000
+    ys = ys[order]
+    
+    # plot setup:
+    plt.figure()
+    plt.ylabel(r'<$\sigma_x$>')
+    plt.xlabel(r'time ($\mu s$)')
+    plt.ylim([-0.5, 1.05])
+    plt.xlim([-0.05, 2.55])
+    
+    # colours and labels for models in order:
+    colours = (x for x in ['green' for y in range(3)]
+                         +['purple' for y in range(3)]
+                         +['red' for y in range(3)])
+    
+    alphas = (x for x in [0.3 for y in range(3)]
+                        +[0.5 for y in range(3)]
+                        +[0.7 for y in range(3)])
+    
+    labels = (x for x in ['prediction', '_', '_',
+                           'prediction', '_', '_',
+                           'prediction', '_', '_'])
+    styles = (x for x in ['--', '--', '--',
+                          '--', '--', '--',
+                          ':', ':', ':'])
+    cutoffs = (x for x in [([0.625, 0.625],[-0.5,1]) for y in range(1)]
+                         +[([1.25, 1.25],[-0.5,1]) for y in range(1)]
+                         +[([1.875, 1.875],[-0.5,1]) for y in range(1)])
+    
+    
+    # import model files, calculate their dynamics: 
+    model_files = [# 0.25 proportion:
+                   '250825-pred-frac0_25_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_best.pickle',
+                   '250825-pred-frac0_25_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R5_best.pickle',
+                   '250825-pred-frac0_25_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R4_best.pickle',
+                   # 0.5 proportion:
+                   '250825-pred-frac0_5_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_best.pickle',
+                   '250825-pred-frac0_5_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R3_best.pickle',
+                   '250825-pred-frac0_5_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R5_best.pickle',
+                   # 0.75 proportion:
+                   '250825-pred-frac0_75_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R5_best.pickle',
+                   '250825-pred-frac0_75_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R4_best.pickle',
+                   '250825-pred-frac0_75_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R3_best.pickle'
+                   ]
+    models = []
+    for model_file in model_files:
+        with open(model_file, 'rb') as filestream:
+            models.append(pickle.load(filestream))
+    evolutions = [model.calculate_dynamics(ts, observable_ops = ['sigmax'])[0] for model in models]
+    evolutions_gen = (x for x in evolutions)
+
+    # plot predicted dynamics, target data, and save:
+
+    for x in range(3):
+        plt.figure()
+        plt.ylabel(r'<$\sigma_x$>')
+        plt.xlabel(r'time ($\mu s$)')
+        plt.ylim([-0.5, 1.05])
+        plt.xlim([-0.05, 2.55])
+        plt.plot(ts, ys, 'b.', label = 'target',  markersize = 10, markeredgewidth = 0.5, markerfacecolor='None', alpha = 0.5)
+        plt.plot(*next(cutoffs), '-', c='orange', label='training cutoff')
+        for y in range(3):
+            plt.plot(ts, next(evolutions_gen), next(styles), c = next(colours)
+                    ,label = next(labels)
+                    ,alpha = next(alphas), 
+                    )
+            
+        # plot target data:
+        legend = plt.legend()#title = r'$D=' + str(candidate_set.defects_number) + '$' + ', ' + varying)
+        plt.savefig('250525_proportion_comparison' + str(x)
+                    +'.svg', dpi = 1000, bbox_inches='tight')
+        
+ 
+
+
+#%%
+# output loss of just accepted models (plot and pickle of list)
+
+import pickle
+import configs
+import matplotlib.pyplot as plt
+import numpy as np
+
+cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
+# experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
+experiment_name = '250818-sim_Wit-Fig4-6-0_025' # including experiment base and source file name
+config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
+D = 1
+Rs = [1,2,3,4,5]
+burn = 0 #int(100000)
+hyperparams = configs.get_hyperparams(config_name)
+
+setup_done = False
+
+# go over all chains to be included:
+for R in Rs:
+    filename = experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R) + '_proposals.pickle'
+    with open(filename,
+              'rb') as filestream:
+        proposals_dict = pickle.load(filestream)
+        
+    proposals = proposals_dict['proposals']
+    
+    print(len(proposals))
+    
+    # accepted proposals after "burn" 
+    # proposals = proposals[burn:]
+    
+    if not setup_done:
+        first_proposal = proposals[0]
+        _, labels, labels_latex = first_proposal.vectorise_under_library(hyperparameters = hyperparams)
+        labels = labels_latex # currently using the latex labels for labels
+        parameter_lists = {name: [] for name in labels}
+        setup_done = True
+        
+    for i, proposal in enumerate(proposals):
+    # here proposal is an instance of model with vectorisation method
+        vector = proposal.vectorise_under_library(hyperparameters = hyperparams)[0]
+        # vectorised in order of labels, hence take n-th entry corresponds to n-th label model parameter
+        for j, value in enumerate(vector):
+            parameter_lists[labels[j]].append(vector[j])
+        
+    accepted_loss = [x for (x, y) in zip(proposals_dict['loss'][1:], proposals_dict['acceptance']) if y]
+    best_loss = min(accepted_loss)
+    
+    plt.figure()
+    plt.plot(accepted_loss, ' .', c = 'orange', linewidth = 0.3, markersize = 0.1)
+    plt.yscale('log')
+    plt.xlabel('accepted proposal no.')
+    plt.ylabel('loss')
+    plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
+             10**(0.98*np.log10(plt.gca().get_ylim()[0])),
+             'best loss = ' + '{:.2e}'.format(best_loss))
+    plt.savefig(experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R) + '_accepted_loss.svg', dpi = 1000, bbox_inches='tight')
+    
+    with open(experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R) + '_accepted_loss.pickle', 'wb') as filestream:
+        pickle.dump(accepted_loss, filestream)
+        
+#%%
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn
+datafile = '250818-sim-1T-4JL-2tweak_Wit-Fig4-6-0_025_clust_regions5_clustering_assignments.csv'
+A = np.genfromtxt(datafile,delimiter=',', skip_header=1)
+
+# fig = plt.figure()
+# #plot = plt.imshow(A, cmap='hot', interpolation='nearest')
+# #fig.colorbar(plot, orientation='horizontal', fraction=.1)
+# plt.show()
+# cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
+# seaborn.heatmap(A, annot=False, cmap=cmap, fmt=".2f", linewidths=0.5, vmin = -1, vmax = 1)
+# plt.ylabel('model')
+# plt.xlabel('cluster')
+# # colormaps: coolwarm, PiYG
+# plt.savefig(datafile[:-4] + '.svg', dpi = 1000, bbox_inches='tight')
+# plt.show()
+
+# paste bounds here:
+bounds = [(40000, 41500),
+          (52000, 56000),
+          (62000, 64000),
+          (74000, 75000),
+          (83000, 85000)
+          ]
+window_widths = [y - x for (x, y) in bounds]
+window_edges = [sum(window_widths[:i]) for i in range(len(window_widths))]
+
+for k in [2, 3, 4, 5]:
+    B = A[k-2,:]
+    fig = plt.figure()
+    ax = fig.gca()
+    ax.set_yticks(list(set(B)))
+    plt.plot(range(len(B)), B, linewidth = 0.5, c = 'teal')
+    plt.title(r'$k=$' + str(k))
+    plt.xlabel('model label')
+    plt.ylabel('cluster label')
+    for edge in window_edges:
+        plt.plot([edge, edge], [min(B), max(B)], '--', c = 'orange')
+    plt.savefig(datafile[:-4] + '_k' + str(k) + '.svg', dpi = 1000, bbox_inches='tight')
+
+#%%
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+Ns = [100, 500, 1000, 5000, 10000]
+min_clusters = 2
+max_clusters = 10
+clusters_counts = list(range(min_clusters, max_clusters + 1))
+filename = '250818-sim-1T-4JL-2tweak_Wit-Fig4-6-0_025_clustering_profiling_test4clustering_profiling'
+times = np.genfromtxt(filename + '.txt', delimiter = ',')
+avgs_each_N = np.mean(times, axis=0)
+
+plt.figure(tight_layout = True)
+plt.matshow(times)
+plt.xlabel(r'$N$')
+plt.ylabel(r'$k$')
+plt.xticks(ticks = range(len(Ns)), labels = [str(x) for x in Ns])
+plt.yticks(ticks = range(len(clusters_counts)), labels = clusters_counts)
+plt.colorbar(fraction = 0.1, label = r'$time\ \mathrm{(s)}$')
+plt.savefig(filename + '_profiling_checkerboard.svg', bbox_inches='tight')
+
+plt.figure(tight_layout = True)
+plt.xlabel(r'$N$')
+plt.ylabel(r'$\sqrt{time\ \mathrm{(s)}}$')
+Y = np.sqrt(avgs_each_N)
+plt.plot(Ns, Y, ':+', linewidth = 1, markeredgewidth = 2, c='firebrick')
+plt.savefig(filename + '_profiling_t_vs_N_plot.svg', bbox_inches='tight')

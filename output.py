@@ -46,8 +46,10 @@ class Output:
                  dynamics_formatting: list[str] = False,
                  observable_labels: list[str] = [],
                  loss: list[float|int] = [],
+                 acceptance_probability: list[float|int] = [],
                  best_loss: float = None,
                  acceptance: list[float|int] = [],
+                 overall_acceptance: dict[str,float] = False,
                  models_to_save: list[BasicModel|LearningModel] = [],
                  model_names: list[str] = [],
                  all_proposals: dict[str, list[float]|list[LearningModel]] = {},
@@ -127,6 +129,46 @@ class Output:
             plt.savefig(filename + '_loss.svg', dpi = 1000, bbox_inches='tight')
             with open(filename + '_loss.pickle', 'wb') as filestream:
                 pickle.dump(loss, filestream)
+                
+            # also loss of just accepted models:    
+            accepted_loss = [x for (x, y) in zip(all_proposals['loss'][1:], all_proposals['acceptance']) if y]
+            best_loss = min(accepted_loss)
+            plt.figure()
+            plt.plot(accepted_loss, '-', c = 'orange', linewidth = 0.3, markersize = 0.1)
+            plt.yscale('log')
+            plt.xlabel('accepted proposal no.')
+            plt.ylabel('loss')
+            plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
+                     10**(0.98*np.log10(plt.gca().get_ylim()[0])),
+                     'best loss = ' + '{:.2e}'.format(best_loss))
+            plt.savefig(filename + '_accepted_loss.svg', dpi = 1000, bbox_inches='tight')
+            with open(filename + '_accepted_loss.pickle', 'wb') as filestream:
+                      pickle.dump(accepted_loss, filestream)
+                      
+                      
+        # plot acceptance probability progression:
+        if toggles.loss and acceptance_probability:
+            plt.figure()
+            plt.plot(acceptance_probability, 'b-', linewidth = 0.3, markersize = 0.1)
+            plt.xlabel('iteration')
+            plt.ylabel('acceptance probability')
+            plt.ylim([0,2])
+            plt.savefig(filename + '_AP.svg', dpi = 1000, bbox_inches='tight')
+            with open(filename + '_AP.pickle', 'wb') as filestream:
+                pickle.dump(acceptance_probability, filestream)
+            
+            # also acceptance_probability of just accepted models:    
+            accepted_AP = [x for (x, y) in zip(all_proposals['acceptance_probability'][:], all_proposals['acceptance']) if y]
+            plt.figure()
+            plt.plot(accepted_AP, '-', c = 'orange', linewidth = 0.3, markersize = 0.1)
+            plt.xlabel('accepted proposal no.')
+            plt.ylabel('acceptance probability')
+            plt.ylim([0,2])
+            plt.savefig(filename + '_accepted_AP.svg', dpi = 1000, bbox_inches='tight')
+            with open(filename + '_accepted_AP.pickle', 'wb') as filestream:
+                      pickle.dump(accepted_AP, filestream)
+            
+                
             
             
         # plot acceptance ratio evolution:
@@ -139,6 +181,12 @@ class Output:
             #plt.xlim([0, 10000])
             plt.ylim([-0.05,1.05])
             plt.savefig(filename + '_acceptance.svg', dpi = 1000, bbox_inches='tight')
+            
+        
+        # save as json overall acceptance for different step types
+        if overall_acceptance:
+            with open(filename + '_overall_acceptance.json', 'w') as filestream:
+                json.dump(overall_acceptance, filestream)
         
     
         # save specified model instances (as text and/or pickle and/or graph):

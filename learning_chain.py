@@ -116,6 +116,12 @@ class LearningChain:
             'Ls': (1.004, 23)
             },
         
+        params_bounds = { # (lower, upper) bounds when using rejection sampling - False means no rejection sampling to take place
+            'couplings': (0.1, 10),
+            'energies': (0.01, 1),   
+            'Ls': (0.01, 1)
+            },
+        
         custom_function_on_dynamics_return = False # optional function acting on model's dynamics calculation return
         
         iterations_till_progress_update = False # number of iterations before iteration number and time elapsed printed
@@ -196,6 +202,8 @@ class LearningChain:
                  
                  params_priors: dict[str, float] = False,
                  
+                 params_bounds: dict[str, tuple[float]] = False,
+                 
                  custom_function_on_dynamics_return: callable = False,
                  # optional function acting on model's dynamics calculation return
                  
@@ -269,6 +277,7 @@ class LearningChain:
         # chain progression containers:
         self.explored_proposals = [] # repository of explored models
         self.explored_loss = []
+        self.explored_acceptance_probability = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.current)
         self.chain_windows_acceptance_log = []
@@ -281,7 +290,12 @@ class LearningChain:
         self.best_loss = self.current_loss
         self.explored_loss.append(self.current_loss)
         if self.store_all_proposals: self.explored_proposals.append(copy.deepcopy(self.initial))
-    
+        
+        # counters for overall acceptance tracking (separate for reversible-jump type steps and for value tweak)
+        self.tot_RJ_steps = 0
+        self.acc_RJ_steps = 0
+        self.tot_tweak_steps = 0
+        self.acc_tweak_steps = 0
     
     
     def run(self, steps:int = False) -> learning_model.LearningModel:
@@ -357,22 +371,77 @@ class LearningChain:
             next_step = np.random.choice(self.next_step_labels, p = next_step_probabilities_list)
             next_step = str(next_step)
             
+            # update total counter for appropriate step type:
+            if next_step == 'tweak all parameters':
+                self.tot_tweak_steps += 1
+            else: # ie. reversible-jump type step
+                self.tot_RJ_steps += 1
+            
             # modify proposal accordingly and save number of possible modifications of chosen type:
             proposal, possible_modifications_chosen_type = self.step(proposal, next_step, update = True)
             
+            
             # overall probabilities of making this step and of afterwards reversing it:
             if next_step == 'tweak all parameters':
-                # cancel out except assymetricity of lindblad tweak due to truncation at zero:
                 # based on truncated gaussian distribution formulas    
                 p_there = 1 
                 p_back = 1
-                proposal_width = self.params_handler.jump_lengths['Ls']
-                for TLS in self.current.TLSs:
-                    for current_rate in TLS.Ls.values():
-                        p_there *= 1/(1-1/2*(1+sp.special.erf(-current_rate/proposal_width/np.sqrt(2))))
-                for TLS in proposal.TLSs:
-                    for proposed_rate in TLS.Ls.values():
-                        p_back *= 1/(1-1/2*(1+sp.special.erf(-proposed_rate/proposal_width/np.sqrt(2))))
+                
+                if not self.params_bounds:
+                # no bounds specified hence only parameter restriction L positivity    
+                    proposal_width = self.params_handler.jump_lengths['Ls']
+                    for TLS in self.current.TLSs:
+                        for current_rate in TLS.Ls.values():
+                            p_there *= 1/(1-1/2*(1+sp.special.erf(-current_rate/proposal_width/np.sqrt(2))))
+                    for TLS in proposal.TLSs:
+                        for proposed_rate in TLS.Ls.values():
+                            p_back *= 1/(1-1/2*(1+sp.special.erf(-proposed_rate/proposal_width/np.sqrt(2))))
+                
+                else:
+                # bounds specified hence rejection sampling applies to all parameters;
+                # go over all existing parameters in self.current and in proposal to build there and back terms
+                # note: bounds and jump width set for each parameter class
+                
+                    # note: have to use something mutable in zip loop below!!! 
+                    # e. g.: for key, n in zip(holder, Ns): holder[key] *= 2,
+                    # with holder = {'key1': 1, 'key2': 5}
+                    # multiply by: xi(parameter, width, low bound, high bound)
+                    # i. e.: holder[key] *= self.xi(m = , s = , a = , b = )
+                    holder = {'p_there': p_there, 'p_back': p_back}
+                    for model, key in zip([proposal, self.current], holder):
+                        # build products in holder[key] using all parameters in model 
+                        # note:
+                        # back = product of xi(current)
+                        # there = product of xi(proposal)
+                        for TLS in model.TLSs:
+                            # energy:
+                            m = TLS.energy
+                            s = self.params_handler.jump_lengths['energies']
+                            a = self.params_bounds['energies'][0]
+                            b = self.params_bounds['energies'][1]
+                            holder[key] *= self.xi(m, s, a, b)
+                            # note: this should cancel out if qubit as currently not tweaking their energies
+                            
+                            # Ls:
+                            s = self.params_handler.jump_lengths['Ls']
+                            a = self.params_bounds['Ls'][0]
+                            b = self.params_bounds['Ls'][1]
+                            for m in TLS.Ls.values():
+                                holder[key] *= self.xi(m, s, a, b)
+                                
+                            # couplings:
+                            s = self.params_handler.jump_lengths['couplings']
+                            a = self.params_bounds['couplings'][0]
+                            b = self.params_bounds['couplings'][1]
+                            for partner in TLS.couplings:
+                                for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
+                                    m = coupling[0]
+                                    holder[key] *= self.xi(m, s, a, b)
+                                          
+                    p_there = holder['p_there']
+                    p_back = holder['p_back']
+                                     
+                    
             else: # ie. a process addition or removal
                 # priority of this normalised by sum off all priorities times their respective # ways
                 # in numerator # of ways here cancels with that in step choice probability, leaving only priority
@@ -383,6 +452,7 @@ class LearningChain:
                            / sum([self.next_step_priorities_dict[x] * self.step(proposal, x, update = False)[1]
                                   for x in self.next_step_labels]))
                 
+                
             # calculate priors ratio due to all paramteres of proposal and current if applying tweak step:
             # note: not present when adding or removing processes (reversible jumps)
             if next_step == 'tweak all parameters':
@@ -390,43 +460,52 @@ class LearningChain:
                 # go over existing parameters in proposal and current and multiply and divide respectively
                 # by probability density function given by each prior (currently based on process class)
                 
-                # current:
-                for TLS in self.current.TLSs:
-                    # energy:
-                    x = TLS.energy
-                    shape, scale = self.params_priors['energies']
-                    params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                if not self.params_bounds:    
+                # using gamma priors if no bounds specified:
                     
-                    # Ls:
-                    shape, scale = self.params_priors['Ls']
-                    for x in TLS.Ls.values():
+                    # current:
+                    for TLS in self.current.TLSs:
+                        # energy:
+                        x = TLS.energy
+                        shape, scale = self.params_priors['energies']
                         params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
                         
-                    # couplings:
-                    shape, scale = self.params_priors['couplings']
-                    for partner in TLS.couplings:
-                        for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
-                            x = coupling[0]
+                        # Ls:
+                        shape, scale = self.params_priors['Ls']
+                        for x in TLS.Ls.values():
                             params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
                             
-                # proposal:
-                for TLS in proposal.TLSs:
-                    # energy:
-                    x = TLS.energy
-                    shape, scale = self.params_priors['energies']
-                    params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
-                    
-                    # Ls:
-                    shape, scale = self.params_priors['Ls']
-                    for x in TLS.Ls.values():
+                        # couplings:
+                        shape, scale = self.params_priors['couplings']
+                        for partner in TLS.couplings:
+                            for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
+                                x = coupling[0]
+                                params_priors_ratio /= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                                
+                    # proposal:
+                    for TLS in proposal.TLSs:
+                        # energy:
+                        x = TLS.energy
+                        shape, scale = self.params_priors['energies']
                         params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
                         
-                    # couplings:
-                    shape, scale = self.params_priors['couplings']
-                    for partner in TLS.couplings:
-                        for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
-                            x = coupling[0]
+                        # Ls:
+                        shape, scale = self.params_priors['Ls']
+                        for x in TLS.Ls.values():
                             params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                            
+                        # couplings:
+                        shape, scale = self.params_priors['couplings']
+                        for partner in TLS.couplings:
+                            for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
+                                x = coupling[0]
+                                params_priors_ratio *= sp.stats.gamma.pdf(x, a=shape, scale=scale)
+                                
+                else:   
+                # otherwise (ie. bounds specified) asume uniform distribution and everything cancels:
+                    params_priors_ratio *= 1
+                    
+                    
             else: # ie. a process addition or removal
                 params_priors_ratio = 1
             
@@ -434,10 +513,12 @@ class LearningChain:
             # evaluate new proposal (system evolution calculated here):
             proposal_loss = self.total_dev(proposal)
             self.explored_loss.append(proposal_loss)
+            # proposal.disp() # enabled when testing
             
             # Metropolis-Hastings acceptance:
             acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back, 
                                                                  params_priors_ratio)
+            self.explored_acceptance_probability.append(acceptance_probability)
             if np.random.uniform() < acceptance_probability: # ie. accept proposal
                 # update current and also best if warranted:
                 self.current = proposal
@@ -446,9 +527,14 @@ class LearningChain:
                     self.best_loss = proposal_loss
                     self.best = copy.deepcopy(proposal)
                 self.run_acceptance_tracker.append(True)
-                # save accepted proposal for statistical analysis of chain - temporarily burn-in cutoff is set here
-                if self.store_all_proposals and i >= 10000:
+                # save accepted proposal for statistical analysis of chain
+                if self.store_all_proposals:
                     self.explored_proposals.append(copy.deepcopy(proposal))
+                # update accepted step counter:
+                if next_step == 'tweak all parameters':
+                    self.acc_tweak_steps += 1
+                else: # ie. reversible-jump type step
+                    self.acc_RJ_steps += 1
                 
             else: # ie. reject proposal
                 self.run_acceptance_tracker.append(False)
@@ -461,7 +547,8 @@ class LearningChain:
         
         self.all_proposals = {'proposals': self.explored_proposals,
                               'loss': self.explored_loss,
-                              'acceptance': self.run_acceptance_tracker
+                              'acceptance': self.run_acceptance_tracker,
+                              'acceptance_probability': self.explored_acceptance_probability
                              } 
         
         return self.best
@@ -489,7 +576,7 @@ class LearningChain:
         for i in range(defects_number):
             initial_model.add_TLS(is_qubit = False,
                                   initial_state = self.defect_initial_state,
-                                  energy = qubit_energy,
+                                  energy = 0.1, # !!! AD HOC - maybe move this to configs 
                                   couplings = {},
                                   Ls = {}
                                   )
@@ -751,6 +838,7 @@ class LearningChain:
 
         self.params_handler = params_handling.ParamsHandler(self)
         self.params_handler.set_hyperparams(self.params_handler_hyperparams)
+        self.params_handler.set_bounds(self.params_bounds)
 
 
     
@@ -760,6 +848,7 @@ class LearningChain:
         """    
         
         self.process_handler = process_handling.ProcessHandler(self,
+                                              bounds = self.params_bounds,                 
                                               qubit2defect_couplings_library = self.qubit2defect_couplings_library,
                                               defect2defect_couplings_library = self.defect2defect_couplings_library,
                                               qubit_Ls_library = self.qubit_Ls_library,
@@ -781,3 +870,43 @@ class LearningChain:
             case int() | float(): return self.temperature_proposal
             case (int()|float(), int()|float()): return np.random.gamma(*self.temperature_proposal)
             case _: raise RuntimeError('Metropolis-Hastings temperature proposal failed')
+
+
+
+    def trunc_gaus(self, x, m, s, a, b):
+        """
+        Returns probability density function at x
+        of normal distribution with stdev s and mean m,
+        if truncated at bounds a and b, a < b.
+        """
+        
+        # shorthands:
+        def psi(y):
+            return 1/np.sqrt(2*np.pi)*np.exp(-1/2*y**2)
+        def phi(y):
+            return 1/2*(1 + sp.special.erf(y/np.sqrt(2)))
+        
+        return 1/s * (psi((x-m)/s)) / (phi((b-m)/s) - phi((a-m)/s))
+    
+    
+    
+    def xi(self, m:float|int,
+           s: float|int,
+           a: float|int = -np.inf,
+           b: float|int = np.inf):
+        """
+        Returns value of denominator expression in truncated normal distribution probability density.
+        In the ratio when assuming stdev s, lower bound a, higher bound b all constant throughout the chain,
+        the numerators and the 1/s factors cancel, leaving only dependence on a, b, s,
+        as well as mean m (old or current parameter value before making change).
+        """
+        
+        # shorthands:
+        def phi(y):
+            return 1/2*(1 + sp.special.erf(y/np.sqrt(2)))
+        
+        return phi((b-m)/s) - phi((a-m)/s)
+    
+    
+    
+    

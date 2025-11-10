@@ -16,12 +16,14 @@ and entris are hyperparams dictionaries that overwrite (supersede) given default
 """
 import copy
 
-couplings_shape_scale = (2, 0.3)
-Ls_shape_scale = (2, 0.03)
+#couplings_shape_scale = (2, 0.3) - old
+#Ls_shape_scale = (2, 0.03) - old
+couplings_shape_scale = (1.1, 10)
+Ls_shape_scale = (1.02, 4)
 
 default_chain_hyperparams = {    
         'chain_step_options': {
-            'tweak all parameters': 18,
+            'tweak all parameters': 36,
             'add qubit L': 1,
             'remove qubit L': 1,
             'add defect L': 1,
@@ -32,7 +34,7 @@ default_chain_hyperparams = {
             'remove defect-defect coupling': 1
             },
         
-        'temperature_proposal': 0.0005, # either value or (shape, scale) of gamma to sample
+        'temperature_proposal': 0.0002, # either value or (shape, scale) of gamma to sample
         
         'jump_length_rescaling_factor': 1.0, # for scaling up or down jump lengths of parameter handler
         
@@ -41,9 +43,9 @@ default_chain_hyperparams = {
         'acceptance_band': 0.2,
         
         'params_handler_hyperparams': { 
-            'initial_jump_lengths': {'couplings' : 0.05,
-                                     'energies' : 0.05,
-                                     'Ls' : 0.005 # halved these now
+            'initial_jump_lengths': {'couplings' : 0.4, #0.4,
+                                     'energies' : 0.04, #0.04,
+                                     'Ls' : 0.04 #0.04 # halved these now
                                      }
             },
         
@@ -79,14 +81,20 @@ default_chain_hyperparams = {
             },
         
         'params_priors': { # (shape, scale) for gamma dristributions each for one parameter class
-            'couplings': (1.04, 30),
-            'energies': (1.05, 35),   
-            'Ls': (1.004, 23)
+            'couplings': (1.1, 10),
+            'energies': (1.1, 10),   
+            'Ls': (1.02, 4)
+            },
+        
+        'params_bounds': { # (lower, upper) bounds when using rejection sampling - False means no rejection sampling to take place
+            'couplings': (0.1, 5),
+            'energies': (0.01, 0.5),   
+            'Ls': (0.01, 0.5)
             },
         
         'custom_function_on_dynamics_return': False, #custom_func
         
-        'iterations_till_progress_update': 100
+        'iterations_till_progress_update': 1000
 }        
         
 
@@ -634,9 +642,39 @@ specific_experiment_chain_hyperparams = {
           #,(('sigmay', 'sigmay'),): couplings_shape_scale
           #,(('sigmaz', 'sigmaz'),): couplings_shape_scale
           }
-    }
+    },
+    	
+# 17)               
+'Lsyst-sz-Lvirt--Cs2v-sx-Cv2v-sx,sy,sz-': # couplings between virtuals instead of sys-virt?
+{
+    'qubit_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #'sigmax': Ls_shape_scale
+          #,'sigmay': Ls_shape_scale
+          'sigmaz': Ls_shape_scale
+          },
 
-   
+    'defect_Ls_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          #'sigmax': Ls_shape_scale
+          #,'sigmay': Ls_shape_scale
+          #,'sigmaz': Ls_shape_scale
+          },
+
+    'qubit2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          (('sigmax', 'sigmax'),): couplings_shape_scale
+          #,(('sigmay', 'sigmay'),): couplings_shape_scale
+          #,(('sigmaz', 'sigmaz'),): couplings_shape_scale
+          },
+
+    'defect2defect_couplings_library':
+        { # sampled from mirrored gamma distribution with given (shape, scale)
+          (('sigmax', 'sigmax'),): couplings_shape_scale
+          ,(('sigmay', 'sigmay'),): couplings_shape_scale
+          ,(('sigmaz', 'sigmaz'),): couplings_shape_scale
+          }
+    }   
 }
 
     

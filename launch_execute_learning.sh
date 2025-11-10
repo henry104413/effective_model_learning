@@ -20,7 +20,7 @@
 # or length 1 if same settings to be used for each defect number
 # but in each case must be arrays!  
 target_csv="Wit-Fig4-6-0_025.csv"
-experiment_name="250619-test3-"
+experiment_name="250825-"
 defects_numbers=(2)
 repetitions_numbers=(1)
 iterations_numbers=(5000)

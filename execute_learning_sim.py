@@ -83,14 +83,7 @@ try:
     configuration_number = int(sys.argv[7])
 except:
     configuration_number = False
-
-# set switch for training on full set:
-# if 1 (or other true) uses sx, sy, sz from imported simulated data pickle,
-# if 0 (false when boolified) uses just sx (equal to original data):
-try:
-    full_switch = bool(int(sys.argv[8]))
-except:
-    full_switch = True    
+    
 
 # get subexperiment name and  corresponding chain configuration:    
 subexperiment_name = list(configs.specific_experiment_chain_hyperparams.keys())[configuration_number]
@@ -108,49 +101,44 @@ filename = (experiment_name + '_' + target_file + '_' + subexperiment_name + '_D
 print(filename, flush = True)
 
 
-
-#%% prepare simulated multi-observable training datasets:
+#%% import simulated multi-observable datasets:
     
-# import dictionary of ts, sx, sy, sz observable values (sx equal to original and rest simulated with noise)    
-with open('simulated_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
-          'rb') as filestream:
-    simulated_data = pickle.load(filestream)    
+with open('simulated_data.pickle', 'rb') as filestream:
+    simulated_data = pickle.load(filestream)
+    
 ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
-        
+    
+    
 
-# measurement data:
+
+#%% data preparation:
+
+# rescaled measurement times:
+# note: proper scaling here avoids having to scale other hyperparameters
+ts = xs/1000
+
+# full measurement data:
 # (encapsulate into lists of datasets and corresponding observable lables)
-if full_switch:
-    measurement_datasets = [sx, sy, sz]
-    measurement_observables = ['sigmax', 'sigmay', 'sigmaz']
-    print('using full observable set')
-else:
-    measurement_datasets = [sx]
-    measurement_observables = ['sigmax']
-    print('using single observable')
-            
+measurement_datasets = [ys]
+measurement_observables = ['sigmax']
+    
 # times and measurement data to use for training:
 # (encapsulate into lists of datasets and corresponding observable lables:)
-# note: currently here not training on subset but can be implemented like below:
-# training_ts = ts[:int(proportion_to_use*len(ts))]
-training_ts = ts
-training_measurement_datasets = measurement_datasets
-training_measurement_observables = measurement_observables
+training_ts = ts[:int(proportion_to_use*len(ts))]
+training_ys = ys[:int(proportion_to_use*len(ys))]
+training_measurement_datasets = [training_ys]
+training_measurement_observables = ['sigmax']
 
 
-
-#%% AD HOC: load best to use as initial for testing:
-
-# with open('250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
-#           'rb') as filestream:
-#     initial_model = pickle.load(filestream)
 
 #%% perform learning:
 
 # if qubit initial state required:
-qubit_initial_state = definitions.ops['plus']
-defect_initial_state = definitions.ops['mm']    
-
+qubit_initial_state = definitions.ops['sigmax']
+    
+# shorthands for hyperparams definitions:
+couplings_shape_scale = (0.8, 1)
+Ls_shape_scale = (0.2, 0.5)
 
 
 # instance of learning (quest for best model):
@@ -159,10 +147,8 @@ quest = learning_chain.LearningChain(target_times = training_ts,
                       target_observables = training_measurement_observables,
                       
                       initial = (1, defects_count), # (qubit energy, number of defects)
-                      #initial = initial_model,
                       qubit_initial_state = qubit_initial_state,
-                      defect_initial_state = definitions.ops['mm'],    
-
+                      
                       max_chain_steps = max_iterations,
                       
                       store_all_proposals = True,
@@ -212,10 +198,6 @@ if True:
        observable_labels = measurement_observables,
        loss = quest.explored_loss,
        best_loss = quest.best_loss,
-       # !!! TO DO: two lines below are new -- add elsewhere too!
-       acceptance_probability = quest.explored_acceptance_probability,
-       overall_acceptance = {'parameters tweak': quest.acc_tweak_steps/max(quest.tot_tweak_steps, 1), # avoiding div by 0
-                             'reversible jump': quest.acc_RJ_steps/max(quest.tot_RJ_steps, 1)}, # avoiding div by 0
        acceptance = quest.chain_windows_acceptance_log,
        models_to_save = [best],
        model_names = ['best'],
