@@ -413,7 +413,7 @@ class LearningChain:
                         # note:
                         # back = product of xi(current)
                         # there = product of xi(proposal)
-                        for TLS in model:
+                        for TLS in model.TLSs:
                             # energy:
                             m = TLS.energy
                             s = self.params_handler.jump_lengths['energies']
@@ -460,7 +460,7 @@ class LearningChain:
                 # go over existing parameters in proposal and current and multiply and divide respectively
                 # by probability density function given by each prior (currently based on process class)
                 
-                if not self.bounds:    
+                if not self.params_bounds:    
                 # using gamma priors if no bounds specified:
                     
                     # current:
