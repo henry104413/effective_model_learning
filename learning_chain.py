@@ -573,21 +573,23 @@ class LearningChain:
                              energy = qubit_energy,
                              couplings = {},
                              Ls = {
-                                 'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
+                                 #'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
                                  }
                              )
         for i in range(defects_number):
             initial_model.add_TLS(is_qubit = False,
                                   initial_state = self.defect_initial_state,
                                   energy = 0.1, # !!! AD HOC - maybe move this to configs 
-                                  couplings = {'qubit': [
-                                      (1, [('sigmax','sigmax')]),
-                                      (1, [('sigmaz','sigmaz')]),
-                                      (1, [('sigmay','sigmay')])
-                                      ]},
+                                  couplings = {
+                                      # 'qubit': [
+                                      # (1, [('sigmax','sigmax')]),
+                                      # (1, [('sigmaz','sigmaz')]),
+                                      # (1, [('sigmay','sigmay')])
+                                      # ]
+                                      },
                                   #{partner: [(rate, [(op_on_self, op_on_partner)])]}
                                   Ls = {
-                                      'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
+                                      #'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
                                       }
                                   )
         initial_model.build_operators()
