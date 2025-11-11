@@ -21,17 +21,18 @@ import numpy as np
 import time
 
 # settings and source data: # '250818-sim-1T-4JL-2tweak' is nice fit
-experiment_name = '250818-sim-1T-4JL-2tweak' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+experiment_name = '251110-1M-narrower' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 2
 Rs = [2]
 hyperparams = configs.get_hyperparams(config_name)
-output_name = experiment_name + '_clustering_mixning_test'
+output_name = experiment_name + '_clustering_mixing_test_1'
 min_clusters = 2
 max_clusters = 10
 loss_threshold = 0.002
 bounds = []
 verbosity = 0
+burn = 200
 
 # clustering choice (by Liouvllians or parameter vectors)
 # vectorisation = 'Liouvillian'
@@ -59,6 +60,8 @@ time_last = new_time
 #           'rb') as filestream:
 #     accepted_losses = pickle.load(filestream)
 
+taken_from_each_R = []
+
 for R in Rs:
     
     # import accepted loss values and accepted proposals from same output dictionary:
@@ -66,20 +69,19 @@ for R in Rs:
     with open(filename + '_proposals.pickle',
               'rb') as filestream:
         proposals = pickle.load(filestream)
-    accepted_proposals = proposals['proposals'][-10000:] # TEMP
+    accepted_proposals = proposals['proposals'][burn:] # TEMP
     
     accepted_losses = [x for (x, y) in zip(proposals['loss'][1:], proposals['acceptance'])  if y == True]
-    
     # remove losses that have no proposal saved 
     # note: (old version of code skipped saving proposals over some initial chain steps)
-    accepted_losses = accepted_losses[len(accepted_losses) - len(accepted_proposals) :]
+    accepted_losses = accepted_losses[len(accepted_losses) - len(accepted_proposals) + 1 :]
     
     print('no. proposals: ' + str(len(accepted_proposals)))
     print('no. losses: ' + str(len(accepted_losses)))
     
     
     # collect all points:
-    
+    taken_from_each_R.append((len(accepted_losses)))
     indices = list(range(len(accepted_losses)))
     #%%
     
@@ -154,6 +156,7 @@ silhouette_scores = [] # higher is better
 
 # go over all cluster numbers:
 time_last = time.time()
+outputs_each_k = {}
 for k in clusters_counts:
 
     # perform k-means clustering:
@@ -168,12 +171,21 @@ for k in clusters_counts:
         )
     kmeans.fit(points_array)
     
-    # save outputs for this k:
+    # save outputs for latest k:
+    # note: rewritten when looping over multiple k's
     SSEs.append(kmeans.inertia_)
     centres.append(kmeans.cluster_centers_)
     assignments.append(kmeans.labels_)
     iters_required.append(kmeans.n_iter_)
     silhouette_scores.append(sklearn.metrics.silhouette_score(points_array, kmeans.labels_))
+    
+    # save outputs for this k:
+    outputs_each_k[k] = {}    
+    outputs_each_k[k]['SSEs'] = kmeans.inertia_
+    outputs_each_k[k]['centres'] = kmeans.cluster_centers_
+    outputs_each_k[k]['assignments'] = kmeans.labels_
+    outputs_each_k[k]['iters_required'] = kmeans.n_iter_
+    outputs_each_k[k]['silhouette_scores'] = sklearn.metrics.silhouette_score(points_array, kmeans.labels_)
 
     # profiling:
     if verbosity > 0 or True:
@@ -183,7 +195,7 @@ for k in clusters_counts:
 
 
 
-#%% results:
+#%% metrics to find k:
 
 # automatically find knee/elbow aka maximum curvature point:
 knee_finder = kneed.KneeLocator(clusters_counts,
@@ -212,17 +224,6 @@ np.savetxt(output_name + '_clustering_silhouette_scores.csv',
            np.transpose([clusters_counts, silhouette_scores]),
            header = 'clusters,silhouettes',
            delimiter = ',', comments = '')
-           
-# save cluster assignment for each point and also cluster centres (latter probably not very useful as it's the Liouvillian coordinates)
-# each for different k, then each column is a different point
-np.savetxt(output_name + '_clustering_assignments.csv',
-           assignments,
-           header = 'assignments',
-           delimiter = ',', comments = '')
-# variable number of coordinates so variable dimension array as each element of list, hence pickle:
-with open(output_name + '_clustering_centres.pickle', 'wb') as filestream:
-    pickle.dump(centres, filestream)
-               
 
 # xlabels for numbers of clusters with just edges (to avoid overlapping when dense)
 x_tick_labels = [clusters_counts[0]] + ['' for x in range(len(clusters_counts)-2)] + [clusters_counts[-1]]
@@ -248,3 +249,57 @@ plt.ylim([-0.1,1])
 plt.xticks(clusters_counts, x_tick_labels)
 plt.title(output_name)
 plt.savefig(output_name + '_clustering_silhouette_scores.svg')
+
+           
+#%% cluster assignments big file:
+
+# save cluster assignment for each point and also cluster centres (latter probably not very useful as it's the Liouvillian coordinates)
+# each for different k, then each column is a different point
+np.savetxt(output_name + '_clustering_assignments.csv',
+           assignments,
+           header = 'assignments',
+           delimiter = ',', comments = '')
+# variable number of coordinates so variable dimension array as each element of list, hence pickle:
+with open(output_name + '_clustering_centres.pickle', 'wb') as filestream:
+    pickle.dump(centres, filestream)
+               
+    
+#%% use assignments and centres given with k = elbow
+
+elbow = 4 # optional manual choice of k for assignment
+
+final_centres = outputs_each_k[elbow]['centres']
+final_assignments = outputs_each_k[elbow]['assignments']
+aux = [0] + [sum(taken_from_each_R[:i+1]) for i in range(len(taken_from_each_R))]
+
+
+# once again get accepted losses to plot against assignment:
+for i, R in enumerate(Rs):
+
+    # import accepted loss values and accepted proposals from same output dictionary:
+    filename = experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R)
+    with open(filename + '_proposals.pickle',
+              'rb') as filestream:
+        proposals = pickle.load(filestream)
+    accepted_proposals = proposals['proposals'][:] # TEMP
+    accepted_losses = [x for (x, y) in zip(proposals['loss'][1:], proposals['acceptance'])  if y == True]
+    # remove losses that have no proposal saved 
+    # note: (old version of code skipped saving proposals over some initial chain steps)
+    accepted_losses = accepted_losses[len(accepted_losses) - len(accepted_proposals) + 1 :]
+    indices = list(range(len(accepted_losses)))
+    
+    overlay = [0 for x in range(burn)] + [x + 1 for x in final_assignments[aux[i]:aux[i+1]]]
+    
+    fig, ax1 = plt.subplots(tight_layout = True)
+    ax1.plot(indices, accepted_losses, c = 'orange')
+    ax1.set_xlabel('iteration')
+    ax1.set_ylabel('loss', c='orange')
+    ax1.set_yscale('log')
+    ax2 = ax1.twinx()
+    ax2.plot(indices, overlay, '--', c='blue')
+    ax2.set_ylim([-0.2, elbow+0.2])
+    ax2.set_ylabel('assignment', c='blue')
+    ax2.set_yticks(list(range(elbow+1)))
+    #plt.xticks(clusters_counts, x_tick_labels)
+    #ax1.set_title('assignment to clusters')
+    fig.savefig(filename + '_assignment_k' + str(elbow) + '.svg')
