@@ -482,7 +482,7 @@ if not True:
 
 #%%
 import pickle
-with open('/home/henry/Code/effective_model_learning/251110-AP-test_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D1_R1_AP.pickle', 'rb') as filestream:
+with open('251110-100k_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R3_proposals.pickle', 'rb') as filestream:
     A = pickle.load(filestream)
     
 #%% 
