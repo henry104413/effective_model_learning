@@ -21,12 +21,12 @@ import numpy as np
 import time
 
 # settings and source data: # '250818-sim-1T-4JL-2tweak' is nice fit
-experiment_name = '251110-1M-narrower' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+experiment_name = '251111-2M-muchnarrower' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 2
-Rs = [2]
+Rs = [3]
 hyperparams = configs.get_hyperparams(config_name)
-output_name = experiment_name + '_clustering_mixing_test_1'
+output_name = experiment_name + '_clustering_mixing_test_2'
 min_clusters = 2
 max_clusters = 10
 loss_threshold = 0.002
@@ -69,7 +69,7 @@ for R in Rs:
     with open(filename + '_proposals.pickle',
               'rb') as filestream:
         proposals = pickle.load(filestream)
-    accepted_proposals = proposals['proposals'][burn:] # TEMP
+    accepted_proposals = proposals['proposals'][-1000:]#[burn:] # TEMP
     
     accepted_losses = [x for (x, y) in zip(proposals['loss'][1:], proposals['acceptance'])  if y == True]
     # remove losses that have no proposal saved 
