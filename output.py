@@ -62,6 +62,56 @@ class Output:
         
         self.fontsize = fontsize
         
+        plt.rcParams['agg.path.chunksize'] = 101
+
+        
+        # save as json overall acceptance for different step types
+        if overall_acceptance:
+            with open(filename + '_overall_acceptance.json', 'w') as filestream:
+                json.dump(overall_acceptance, filestream)
+        
+    
+        # save specified model instances (as text and/or pickle and/or graph):
+            
+        # returns model name if available or its number otherwise:
+        def get_model_name(i):
+            if not model_names or len(model_names) < len(models_to_save): return '_' + str(i)
+            else: return '_' + model_names[i]
+        
+        # save each model as per toggles:    
+        for i, model in enumerate(models_to_save):
+            # as pickle:
+            if toggles.pickle:
+                with open(filename + get_model_name(i) +'.pickle', 'wb') as filestream:
+                    pickle.dump(models_to_save[i],  filestream)
+            # as text:
+            if toggles.text:
+                with open(filename + get_model_name(i) + '.txt', 'w') as filestream:
+                    filestream.write(models_to_save[i].model_description_str())
+            # as graphs:
+            if toggles.graphs:
+                self.create_model_graph(model, filename + get_model_name(i) + '_graph')
+       
+        
+        # save all proposals into single pickle - dictionary with keys 'loss' & 'proposal',
+        # where each proposal is an instance of LearningModel:
+        if toggles.all_proposals:
+            with open(filename + '_proposals.pickle', 'wb') as filestream:
+                pickle.dump(all_proposals, filestream)
+
+        
+        # save chain hyperparameters dictionary as dictionary string and as pickle:
+        # note: unfortunately JSON doesn't support tuples as keys
+        # note: apparently string can be loaded back using ast.literal_eval
+        if toggles.hyperparams:
+            def get_chain_name():
+                if not chain_name: return ''
+                else: return '_' + chain_name    
+            with open(filename + get_chain_name() + '_hyperparameters.txt', 'w') as filestream:
+                filestream.write(pprint.pformat(chain_hyperparams))
+            with open(filename + get_chain_name() + '_hyperparameters.pickle', 'wb') as filestream:
+                pickle.dump(chain_hyperparams,  filestream)
+                
         
         # plot comparison of dynamics datasets (up to 4) wrt all observables:
         if toggles.comparison:
@@ -112,8 +162,12 @@ class Output:
                 if not False:
                     plt.text(0, plt.gca().get_ylim()[0] + (plt.gca().get_ylim()[1]-plt.gca().get_ylim()[0])/50,
                          'best loss = ' + '{:.2e}'.format(best_loss))
-                plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000, bbox_inches='tight')
-                 
+                try:
+                    plt.savefig(filename + '_' + observable + '_comparison.svg', dpi = 1000, bbox_inches='tight')
+                except Exception as exception:
+                    print('Error when saving dynamics comparison plot:\n' + str(exception))
+                    
+                    
     
         # plot loss progression over chain steps, also save list as pickle:
         if toggles.loss:     
@@ -126,7 +180,10 @@ class Output:
                      10**(0.98*np.log10(plt.gca().get_ylim()[0])),
                      'best loss = ' + '{:.2e}'.format(best_loss))
             #plt.xlim([0, 10000])
-            plt.savefig(filename + '_loss.svg', dpi = 1000, bbox_inches='tight')
+            try:
+                plt.savefig(filename + '_loss.svg', dpi = 1000, bbox_inches='tight')
+            except Exception as exception:
+                print('Error when saving loss progression plot:\n' + str(exception))
             with open(filename + '_loss.pickle', 'wb') as filestream:
                 pickle.dump(loss, filestream)
                 
@@ -142,7 +199,10 @@ class Output:
             plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
                      10**(0.98*np.log10(plt.gca().get_ylim()[0])),
                      'best loss = ' + '{:.2e}'.format(best_loss))
-            plt.savefig(filename + '_accepted_loss.svg', dpi = 1000, bbox_inches='tight')
+            try: 
+                plt.savefig(filename + '_accepted_loss.svg', dpi = 1000, bbox_inches='tight')
+            except Exception as exception:
+                print('Error when saving accepted loss progression plot:\n' + str(exception))
             with open(filename + '_accepted_loss.pickle', 'wb') as filestream:
                       pickle.dump(accepted_loss, filestream)
                       
@@ -154,7 +214,10 @@ class Output:
             plt.xlabel('iteration')
             plt.ylabel('acceptance probability')
             plt.ylim([0,2])
-            plt.savefig(filename + '_AP.svg', dpi = 1000, bbox_inches='tight')
+            try:
+                plt.savefig(filename + '_AP.svg', dpi = 1000, bbox_inches='tight')
+            except Exception as exception:
+                print('Error when saving acceptance probability progression plot:\n' + str(exception))
             with open(filename + '_AP.pickle', 'wb') as filestream:
                 pickle.dump(acceptance_probability, filestream)
             
@@ -165,7 +228,10 @@ class Output:
             plt.xlabel('accepted proposal no.')
             plt.ylabel('acceptance probability')
             plt.ylim([0,2])
-            plt.savefig(filename + '_accepted_AP.svg', dpi = 1000, bbox_inches='tight')
+            try:
+                plt.savefig(filename + '_accepted_AP.svg', dpi = 1000, bbox_inches='tight')
+            except Exception as exception:
+                print('Error when saving accepted acceptance probability progression plot:\n' + str(exception))
             with open(filename + '_accepted_AP.pickle', 'wb') as filestream:
                       pickle.dump(accepted_AP, filestream)
             
@@ -181,59 +247,13 @@ class Output:
             plt.ylabel('acceptance ratio')
             #plt.xlim([0, 10000])
             plt.ylim([-0.05,1.05])
-            plt.savefig(filename + '_acceptance.svg', dpi = 1000, bbox_inches='tight')
+            try:
+                plt.savefig(filename + '_acceptance.svg', dpi = 1000, bbox_inches='tight')
+            except Exception as exception:
+                print('Error when saving acceptance over windows plot:\n' + str(exception))
             
         
-        # save as json overall acceptance for different step types
-        if overall_acceptance:
-            with open(filename + '_overall_acceptance.json', 'w') as filestream:
-                json.dump(overall_acceptance, filestream)
-        
-    
-        # save specified model instances (as text and/or pickle and/or graph):
-            
-        # returns model name if available or its number otherwise:
-        def get_model_name(i):
-            if not model_names or len(model_names) < len(models_to_save): return '_' + str(i)
-            else: return '_' + model_names[i]
-        
-        # save each model as per toggles:    
-        for i, model in enumerate(models_to_save):
-            # as pickle:
-            if toggles.pickle:
-                with open(filename + get_model_name(i) +'.pickle', 'wb') as filestream:
-                    pickle.dump(models_to_save[i],  filestream)
-            # as text:
-            if toggles.text:
-                with open(filename + get_model_name(i) + '.txt', 'w') as filestream:
-                    filestream.write(models_to_save[i].model_description_str())
-            # as graphs:
-            if toggles.graphs:
-                self.create_model_graph(model, filename + get_model_name(i) + '_graph')
-       
-        
-        # save all proposals into single pickle - dictionary with keys 'loss' & 'proposal',
-        # where each proposal is an instance of LearningModel:
-        if toggles.all_proposals:
-            with open(filename + '_proposals.pickle', 'wb') as filestream:
-                pickle.dump(all_proposals, filestream)
-
-        
-        # save chain hyperparameters dictionary as dictionary string and as pickle:
-        # note: unfortunately JSON doesn't support tuples as keys
-        # note: apparently string can be loaded back using ast.literal_eval
-        if toggles.hyperparams:
-            def get_chain_name():
-                if not chain_name: return ''
-                else: return '_' + chain_name    
-            with open(filename + get_chain_name() + '_hyperparameters.txt', 'w') as filestream:
-                filestream.write(pprint.pformat(chain_hyperparams))
-            with open(filename + get_chain_name() + '_hyperparameters.pickle', 'wb') as filestream:
-                pickle.dump(chain_hyperparams,  filestream)
-                
-        
-                
-                
+                        
             
     def create_model_graph(self,
                            model: BasicModel|LearningModel,
@@ -242,6 +262,8 @@ class Output:
         
         """
         Creates and saves in current folder a network graph of argument model.
+        
+        Deprecated, not working and not maintained.
         """
         
         #  auxiliary functions to produce graph labels:
