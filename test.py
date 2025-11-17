@@ -482,7 +482,8 @@ if not True:
 
 #%%
 import pickle
-with open('251110-100k_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R3_proposals.pickle', 'rb') as filestream:
+with open('251110-100k_Wit-Fig4-6-0_025_clustering_mixing_test_3_clustering_centres.pickle'
+          , 'rb') as filestream:
     A = pickle.load(filestream)
     
 #%% 
