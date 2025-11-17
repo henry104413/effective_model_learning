@@ -333,6 +333,7 @@ for k in ks:
         plt.ylabel('cluster')
         plt.gca().tick_params(axis='both', which='major', labelsize=8)
         plt.savefig(filename + '_centres_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
+        plt.savefig(filename + '_centres_k' + str(k) + '.png',  dpi = 1000, bbox_inches='tight')
         # note: viewing the svg in ubuntu's image viewer interpolates between the blocks
         # - this is not a problem with the file but with the viewer
         
