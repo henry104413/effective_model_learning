@@ -21,14 +21,16 @@ import numpy as np
 import time
 
 # settings and source data: # '250818-sim-1T-4JL-2tweak' is nice fit
-experiment_name = '251111-3M-muchnarrower' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+#experiment_name = '251111-3M-muchnarrower' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+experiment_name = '251110-100k' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 
 D = 2
 Rs = [1,2,3] # for combining chains
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 hyperparams = configs.get_hyperparams(config_name)
-output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_clustering_test'
+output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_clustering_test2'
 min_clusters = 2
 max_clusters = 10
 loss_threshold = 0.002
@@ -63,6 +65,8 @@ time_last = new_time
 #           'rb') as filestream:
 #     accepted_losses = pickle.load(filestream)
 
+
+# number subsampled clustered models taken from each chain:
 taken_from_each_R_subsampled = []
 
 for R in Rs:
@@ -115,7 +119,7 @@ for R in Rs:
         working_proposals = []
         for region in bounds:
             working_proposals.extend(accepted_proposals[region[0]:region[1]])
-    
+    new_points = []
     if vectorisation == 'Liouvillian': # use Liouvillian
         for new_model in working_proposals:
             # build Liouvillian, turn into 1D vector, separate real and imaginary parts and concatenate:
@@ -123,21 +127,21 @@ for R in Rs:
             Liouvillian_mat = new_model.build_Liouvillian()
             Liouvillian_vect_complex = Liouvillian_mat.ravel()
             Liouvillian_vect_separated = np.concatenate((Liouvillian_vect_complex.real, Liouvillian_vect_complex.imag))
-            points.append(Liouvillian_vect_separated)
-    
+            new_points.append(Liouvillian_vect_separated)
     elif vectorisation == 'parameters': # use model vector
         for new_model in working_proposals:
-            points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
+            new_points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
+    taken_from_each_R_subsampled.append(len(working_proposals[0::subsample]))
+    points.extend(new_points[0::subsample])
         
     
-    # final array to feed into clusterer 
-    # note: each row a different model:
-    points_array = np.stack(points)
-    points_array = points_array[0::subsample,:]
-    taken_from_each_R_subsampled.append(len(points[0::subsample]))
+# final array to feed into clusterer 
+# note: each row a different model:
+points_array = np.stack(points)
+#points_array = points_array[0::subsample,:] # if sampling subsampling combined chains, not now - changes edge cases!
+
     
-    
-    print('\n.....\ndata preparation time pre-clustering (s):' + str(np.round((new_time := time.time()) - time_last,2)) + '\n.....\n', flush = True)
+print('\n.....\ndata preparation time pre-clustering (s):' + str(np.round((new_time := time.time()) - time_last,2)) + '\n.....\n', flush = True)
     
     
 
@@ -265,8 +269,8 @@ with open(output_name + '_clustering_centres.pickle', 'wb') as filestream:
 #%% use assignments and centres given with k = elbow
 
 
-ks = clusters_counts # ks to save assignment and centres for - can be cluster_counts, [elbow], or other
-# ks = [elbow]
+# ks = clusters_counts # ks to save assignment and centres for - can be cluster_counts, [elbow], or other
+ks = [elbow]
 
 
 for k in ks:
@@ -308,7 +312,7 @@ for k in ks:
         ax1.set_ylabel('loss', c='orange')
         ax1.set_yscale('log')
         ax2 = ax1.twinx()
-        ax2.plot(indices_overlay, overlay, '--', c='blue')
+        ax2.plot(indices_overlay, overlay, ' ', marker='_', c='blue', alpha = 0.8)
         ax2.set_ylim([-0.2, k+0.2])
         ax2.set_ylabel('assignment', c='blue')
         ax2.set_yticks(list(range(k+1)))
