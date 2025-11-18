@@ -25,9 +25,10 @@ experiment_name = '251110-100k' + '_Wit-Fig4-6-0_025' # including experiment bas
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 
 D = 2
-Rs = [1]
+Rs = [1,2] # for combining chains
+Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 hyperparams = configs.get_hyperparams(config_name)
-output_name = experiment_name + '_clustering_mixing_test_3'
+output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_clustering_test_2'
 min_clusters = 2
 max_clusters = 10
 loss_threshold = 0.002
@@ -309,33 +310,33 @@ for k in ks:
         ax2.set_yticks(list(range(k+1)))
         #plt.xticks(clusters_counts, x_tick_labels)
         #ax1.set_title('assignment to clusters')
-        fig.savefig(filename + '_assignment_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
+        fig.savefig(output_name + '_R' + str(R) + '_assignment_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
         
         # this is already available for the all-k output saved above so currently disabled
         if False:
-            np.savetxt(filename + '_assignment_k' + str(k) + '.csv',
+            np.savetxt(output_name + '_R' + str(R)  + '_assignment_k' + str(k) + '.csv',
                        overlay,
                        header = 'assignment',
                        delimiter = ',', comments = '')
             
-        # plto and save cluster centres as parameter vectors (rows for each cluster, columns for each parameter):
-        np.savetxt(filename + '_centres_k' + str(k) + '.csv',
-                   final_centres,
-                   #header = 'cluster centre parameters vector',
-                   delimiter = ',', comments = '')
-        plt.figure()
-        img = plt.imshow(final_centres, interpolation='none')
-        cbar = plt.colorbar(img, cmap='inferno', fraction=0.015)
-        cbar.ax.tick_params(labelsize=8)
-        plt.yticks(ticks = [x for x in range(final_centres.shape[0])], labels = [x+1 for x in range(final_centres.shape[0])])
-        plt.xticks(ticks = [x for x in range(final_centres.shape[1])])#, labels = [x+1 for x in range(final_centres.shape[1])])
-        plt.xlabel('parameter')
-        plt.ylabel('cluster')
-        plt.gca().tick_params(axis='both', which='major', labelsize=8)
-        plt.savefig(filename + '_centres_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
-        plt.savefig(filename + '_centres_k' + str(k) + '.png',  dpi = 1000, bbox_inches='tight')
-        # note: viewing the svg in ubuntu's image viewer interpolates between the blocks
-        # - this is not a problem with the file but with the viewer
-        
+    # plot and save cluster centres as parameter vectors (rows for each cluster, columns for each parameter):
+    np.savetxt(output_name + '_centres_k' + str(k) + '.csv',
+               final_centres,
+               #header = 'cluster centre parameters vector',
+               delimiter = ',', comments = '')
+    plt.figure()
+    img = plt.imshow(final_centres, interpolation='none')
+    cbar = plt.colorbar(img, cmap='inferno', fraction=0.015)
+    cbar.ax.tick_params(labelsize=8)
+    plt.yticks(ticks = [x for x in range(final_centres.shape[0])], labels = [x+1 for x in range(final_centres.shape[0])])
+    plt.xticks(ticks = [x for x in range(final_centres.shape[1])])#, labels = [x+1 for x in range(final_centres.shape[1])])
+    plt.xlabel('parameter')
+    plt.ylabel('cluster')
+    plt.gca().tick_params(axis='both', which='major', labelsize=8)
+    plt.savefig(output_name + '_centres_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
+    plt.savefig(output_name + '_centres_k' + str(k) + '.png',  dpi = 1000, bbox_inches='tight')
+    # note: viewing the svg in ubuntu's image viewer interpolates between the blocks
+    # - this is not a problem with the file but with the viewer
+    
         
 
