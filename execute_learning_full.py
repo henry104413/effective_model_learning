@@ -194,6 +194,8 @@ best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurem
 class Toggles:    
     comparison = True # plot comparison of dynamics
     loss = True # plot cost function progression
+    log_posterior = True # plot 1) log posterior and 2) superimposed log likelihood and prior
+    acceptance_probability = False
     acceptance = True # plot acceptance ratios over subsequenct windows
     graphs = False # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
