@@ -21,19 +21,23 @@ import numpy as np
 import time
 
 # settings and source data: # '250818-sim-1T-4JL-2tweak' is nice fit
+experiment_name = '251111-3M-muchnarrower' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
 experiment_name = '251110-100k' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 
 D = 2
-Rs = [1]
+Rs = [1,2,3] # for combining chains
+Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 hyperparams = configs.get_hyperparams(config_name)
-output_name = experiment_name + '_clustering_mixing_test_3'
+output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_clustering_test2'
 min_clusters = 2
 max_clusters = 10
 loss_threshold = 0.002
 bounds = []
 verbosity = 0
 burn = 0
+subsample = 100 # take every however-many-eth point; 1 means every point taken
 
 # clustering choice (by Liouvllians or parameter vectors)
 # vectorisation = 'Liouvillian'
@@ -61,7 +65,9 @@ time_last = new_time
 #           'rb') as filestream:
 #     accepted_losses = pickle.load(filestream)
 
-taken_from_each_R = []
+
+# number subsampled clustered models taken from each chain:
+taken_from_each_R_subsampled = []
 
 for R in Rs:
     
@@ -70,7 +76,7 @@ for R in Rs:
     with open(filename + '_proposals.pickle',
               'rb') as filestream:
         proposals = pickle.load(filestream)
-    accepted_proposals = proposals['proposals'][-1000:]#[burn:] # TEMP
+    accepted_proposals = proposals['proposals'][:]#[burn:] # TEMP
     
     accepted_losses = [x for (x, y) in zip(proposals['loss'][1:], proposals['acceptance'])  if y == True]
     # remove losses that have no proposal saved 
@@ -82,21 +88,13 @@ for R in Rs:
     
     
     # collect all points:
-    taken_from_each_R.append((len(accepted_losses)))
-    indices = list(range(len(accepted_losses)))
-    #%%
     
     bounds = [
-              # (40000, 41500),
-              # (52000, 56000),
-              # (62000, 64000),
-              # (74000, 75000),
-              # (83000, 85000)
-              # 
-              (0, len(indices))
+              (0, len(accepted_losses))
               ]
     
     if False: # plot chain segments determined by bounds:
+        indices = list(range(len(accepted_losses)))
         plt.figure()
         plt.plot(indices, accepted_losses, '-', c = 'orange', linewidth = 0.5)
         plt.yscale('log')
@@ -108,6 +106,7 @@ for R in Rs:
             plt.plot([region[0], region[0]], [ymin, ymax], 'r-', linewidth = 1)
             plt.plot([region[1], region[1]], [ymin, ymax], 'g-', linewidth = 1)
         plt.savefig(output_name + '_chain_segments.svg')
+        plt.clf()
         
         
     # remove points with loss below some threshold - don't combine this with bounds!
@@ -121,7 +120,7 @@ for R in Rs:
         working_proposals = []
         for region in bounds:
             working_proposals.extend(accepted_proposals[region[0]:region[1]])
-    
+    new_points = []
     if vectorisation == 'Liouvillian': # use Liouvillian
         for new_model in working_proposals:
             # build Liouvillian, turn into 1D vector, separate real and imaginary parts and concatenate:
@@ -129,18 +128,21 @@ for R in Rs:
             Liouvillian_mat = new_model.build_Liouvillian()
             Liouvillian_vect_complex = Liouvillian_mat.ravel()
             Liouvillian_vect_separated = np.concatenate((Liouvillian_vect_complex.real, Liouvillian_vect_complex.imag))
-            points.append(Liouvillian_vect_separated)
-    
+            new_points.append(Liouvillian_vect_separated)
     elif vectorisation == 'parameters': # use model vector
         for new_model in working_proposals:
-            points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
+            new_points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
+    taken_from_each_R_subsampled.append(len(working_proposals[0::subsample]))
+    points.extend(new_points[0::subsample])
         
     
-    # final array to feed into clusterer 
-    # note: each row a different model:
-    points_array = np.stack(points)
+# final array to feed into clusterer 
+# note: each row a different model:
+points_array = np.stack(points)
+#points_array = points_array[0::subsample,:] # if sampling subsampling combined chains, not now - changes edge cases!
+
     
-    print('\n.....\ndata preparation time pre-clustering (s):' + str(np.round((new_time := time.time()) - time_last,2)) + '\n.....\n', flush = True)
+print('\n.....\ndata preparation time pre-clustering (s):' + str(np.round((new_time := time.time()) - time_last,2)) + '\n.....\n', flush = True)
     
     
 
@@ -238,8 +240,9 @@ plt.plot(clusters_counts, SSEs, 'b')
 plt.xlabel('number of clusters')
 plt.ylabel('SSE')
 plt.xticks(ticks = clusters_counts, labels = x_tick_labels)
-plt.title(output_name + '\nelbow found at ' + str(elbow))
+plt.title('elbow found at ' + str(elbow))
 plt.savefig(output_name + '_clustering_SSEs.svg',  dpi = 1000, bbox_inches='tight')
+plt.clf()
 
 # plot and save silhouette score vs number of clusters
 plt.figure(tight_layout = True)
@@ -250,7 +253,7 @@ plt.ylim([-0.1,1])
 plt.xticks(clusters_counts, x_tick_labels)
 plt.title(output_name)
 plt.savefig(output_name + '_clustering_silhouette_scores.svg',  dpi = 1000, bbox_inches='tight')
-
+plt.clf()
            
 #%% cluster assignments big file:
 
@@ -268,15 +271,15 @@ with open(output_name + '_clustering_centres.pickle', 'wb') as filestream:
 #%% use assignments and centres given with k = elbow
 
 
-ks = clusters_counts # ks to save assignment and centres for - can be cluster_counts, [elbow], or other
-# ks = [elbow]
+# ks = clusters_counts # ks to save assignment and centres for - can be cluster_counts, [elbow], or other
+ks = [elbow]
 
 
 for k in ks:
 
     final_centres = outputs_each_k[k]['centres']
     final_assignments = outputs_each_k[k]['assignments']
-    aux = [0] + [sum(taken_from_each_R[:i+1]) for i in range(len(taken_from_each_R))]
+    aux = [0] + [sum(taken_from_each_R_subsampled[:i+1]) for i in range(len(taken_from_each_R_subsampled))]
     
     
     # once again get accepted losses to plot against assignment:
@@ -294,8 +297,16 @@ for k in ks:
         accepted_losses = accepted_losses[len(accepted_losses) - len(accepted_proposals) + 1 :]
         indices = list(range(len(accepted_losses)))
         
-        # assignment curve (integer values marking pertinent cluster for each after-burn accepted proposals)
+        # assignment curve (integer values marking pertinent cluster with zeros for burn)
         overlay = [0 for x in range(burn)] + [x + 1 for x in final_assignments[aux[i]:aux[i+1]]]
+        
+        # disabled: pad after each point if subsampling - too demanding
+        #overlay = [0 for x in range(burn)] + [x + 1 for x in final_assignments[aux[i]:aux[i+1]] for _ in range(subsample)]
+        #overlay = overlay[:len(indices)]
+        
+        # subsample also indices and accepted losses for plotting 
+        indices_overlay = indices[0::subsample]
+        
         
         fig, ax1 = plt.subplots(tight_layout = True)
         ax1.plot(indices, accepted_losses, c = 'orange')
@@ -303,39 +314,41 @@ for k in ks:
         ax1.set_ylabel('loss', c='orange')
         ax1.set_yscale('log')
         ax2 = ax1.twinx()
-        ax2.plot(indices, overlay, '--', c='blue')
+        ax2.plot(indices_overlay, overlay, ' ', marker='_', c='blue', alpha = 0.8)
         ax2.set_ylim([-0.2, k+0.2])
         ax2.set_ylabel('assignment', c='blue')
         ax2.set_yticks(list(range(k+1)))
         #plt.xticks(clusters_counts, x_tick_labels)
         #ax1.set_title('assignment to clusters')
-        fig.savefig(filename + '_assignment_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
+        fig.savefig(output_name + '_R' + str(R) + '_assignment_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
+        plt.cla()
         
         # this is already available for the all-k output saved above so currently disabled
         if False:
-            np.savetxt(filename + '_assignment_k' + str(k) + '.csv',
+            np.savetxt(output_name + '_R' + str(R)  + '_assignment_k' + str(k) + '.csv',
                        overlay,
                        header = 'assignment',
                        delimiter = ',', comments = '')
             
-        # plto and save cluster centres as parameter vectors (rows for each cluster, columns for each parameter):
-        np.savetxt(filename + '_centres_k' + str(k) + '.csv',
-                   final_centres,
-                   #header = 'cluster centre parameters vector',
-                   delimiter = ',', comments = '')
-        plt.figure()
-        img = plt.imshow(final_centres, interpolation='none')
-        cbar = plt.colorbar(img, cmap='inferno', fraction=0.015)
-        cbar.ax.tick_params(labelsize=8)
-        plt.yticks(ticks = [x for x in range(final_centres.shape[0])], labels = [x+1 for x in range(final_centres.shape[0])])
-        plt.xticks(ticks = [x for x in range(final_centres.shape[1])])#, labels = [x+1 for x in range(final_centres.shape[1])])
-        plt.xlabel('parameter')
-        plt.ylabel('cluster')
-        plt.gca().tick_params(axis='both', which='major', labelsize=8)
-        plt.savefig(filename + '_centres_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
-        plt.savefig(filename + '_centres_k' + str(k) + '.png',  dpi = 1000, bbox_inches='tight')
-        # note: viewing the svg in ubuntu's image viewer interpolates between the blocks
-        # - this is not a problem with the file but with the viewer
-        
+    # plot and save cluster centres as parameter vectors (rows for each cluster, columns for each parameter):
+    np.savetxt(output_name + '_centres_k' + str(k) + '.csv',
+               final_centres,
+               #header = 'cluster centre parameters vector',
+               delimiter = ',', comments = '')
+    plt.figure()
+    img = plt.imshow(final_centres, interpolation='none')
+    cbar = plt.colorbar(img, cmap='inferno', fraction=0.015)
+    cbar.ax.tick_params(labelsize=8)
+    plt.yticks(ticks = [x for x in range(final_centres.shape[0])], labels = [x+1 for x in range(final_centres.shape[0])])
+    plt.xticks(ticks = [x for x in range(final_centres.shape[1])])#, labels = [x+1 for x in range(final_centres.shape[1])])
+    plt.xlabel('parameter')
+    plt.ylabel('cluster')
+    plt.gca().tick_params(axis='both', which='major', labelsize=8)
+    #plt.savefig(output_name + '_centres_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
+    plt.savefig(output_name + '_centres_k' + str(k) + '.png',  dpi = 1000, bbox_inches='tight')
+    plt.clf()
+    # note: viewing the svg in ubuntu's image viewer interpolates between the blocks
+    # - this is not a problem with the file but with the viewer
+    
         
 
