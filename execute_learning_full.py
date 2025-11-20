@@ -66,7 +66,7 @@ try:
     if max_iterations == 0:
         raise Exception('Maximum iterations not specified by launcher, hence using default.')
 except:
-    max_iterations = 1000
+    max_iterations = 10000
 
 # set proportion (ratio) of available data values to use for training:
 # note: currently taken from start and same for all data sets; 1 means use all
@@ -102,7 +102,7 @@ for supersede in configs.specific_experiment_chain_hyperparams[subexperiment_nam
 
 # run's output files common name:
 # example: '250421_Wit4b-grey_ForClusters'
-filename = (experiment_name + '_' + target_file + '_' + subexperiment_name + '_D' + str(defects_count) +
+filename = (experiment_name + '_' + target_file.replace('.csv', '') + '_' + subexperiment_name + '_D' + str(defects_count) +
     '_R' + str(repetition_number))
  
 print(filename, flush = True)

@@ -68,6 +68,8 @@ class LearningChain:
         
         jump_length_rescaling_factor = 1 # for scaling up or down jump lengths of parameter handler
         
+        complexity_factor = 1
+        
         acceptance_window = 10
         acceptance_target = 0.4
         acceptance_band = 0.2
@@ -179,6 +181,8 @@ class LearningChain:
                  
                  temperature_proposal: float|int | tuple[float|int] = False, # value or gamma (shape, scale)
                  
+                 complexity_factor: float|int = 1,
+                 
                  jump_length_rescaling_factor: float = False, 
                  
                  acceptance_window: float = False,
@@ -278,17 +282,24 @@ class LearningChain:
         self.explored_proposals = [] # repository of explored models
         self.explored_loss = []
         self.explored_acceptance_probability = []
+        self.explored_log_posterior = []
+        self.explored_log_likelihood_prior = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.current)
         self.chain_windows_acceptance_log = []
         
         # evaluate initial setup:
         # (immediately filtering parameters below instance-level thresholds)
+        self.MH_temperature = self.sample_T()
         self.initialise_process_handler()
         self.process_handler.filter_params(self.current, self.params_thresholds)
         self.current_loss = self.total_dev(self.current)
         self.best_loss = self.current_loss
         self.explored_loss.append(self.current_loss)
+        self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
+                                             + self.prior(self.current, return_minus_log_of=True)))
+        self.explored_log_likelihood_prior.append((-self.current_loss/self.MH_temperature,
+                                                   -self.prior(self.current, return_minus_log_of=True)))
         if self.store_all_proposals: self.explored_proposals.append(copy.deepcopy(self.initial))
         
         # counters for overall acceptance tracking (separate for reversible-jump type steps and for value tweak)
@@ -514,7 +525,14 @@ class LearningChain:
             # evaluate new proposal (system evolution calculated here):
             proposal_loss = self.total_dev(proposal)
             self.explored_loss.append(proposal_loss)
-            # proposal.disp() # enabled when testing
+            self.explored_log_posterior.append(-(proposal_loss/self.MH_temperature
+                                                 + self.prior(proposal, return_minus_log_of=True)))
+            self.explored_log_likelihood_prior.append((-proposal_loss/self.MH_temperature,
+                                                       -self.prior(proposal, return_minus_log_of=True)))
+            # !!! note: currently assumes flat priors on allowed parameter values,
+            # as prior evaluation method only depends on number of processes present 
+            # - in algorithm only ratio of posteriors required,
+            # hence currently no methods to evaluate parameters prior for single model
             
             # Metropolis-Hastings acceptance:
             acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back, 
@@ -549,6 +567,8 @@ class LearningChain:
         self.all_proposals = {'proposals': self.explored_proposals,
                               'loss': self.explored_loss,
                               'acceptance': self.run_acceptance_tracker,
+                              'log_posterior': self.explored_log_posterior,
+                              'log_likelihood_prior': self.explored_log_likelihood_prior,
                               'acceptance_probability': self.explored_acceptance_probability
                              } 
         
@@ -573,7 +593,7 @@ class LearningChain:
                              energy = qubit_energy,
                              couplings = {},
                              Ls = {
-                                 #'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
+                                 # 'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
                                  }
                              )
         for i in range(defects_number):
@@ -581,15 +601,15 @@ class LearningChain:
                                   initial_state = self.defect_initial_state,
                                   energy = 0.1, # !!! AD HOC - maybe move this to configs 
                                   couplings = {
-                                      # 'qubit': [
-                                      # (1, [('sigmax','sigmax')]),
-                                      # (1, [('sigmaz','sigmaz')]),
-                                      # (1, [('sigmay','sigmay')])
-                                      # ]
+                                       # 'qubit': [
+                                       # (1, [('sigmax','sigmax')]),
+                                       # (1, [('sigmaz','sigmaz')]),
+                                       # (1, [('sigmay','sigmay')])
+                                       # ]
                                       },
-                                  #{partner: [(rate, [(op_on_self, op_on_partner)])]}
+                                  # note: {partner: [(rate, [(op_on_self, op_on_partner)])]}
                                   Ls = {
-                                      #'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
+                                      # 'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
                                       }
                                   )
         initial_model.build_operators()
@@ -662,7 +682,7 @@ class LearningChain:
         
         Assumes target data is list of numpy arrays,
         and target observables is same-length list of corresponding observable labels.
-        Also assumes all data arrays and times are same length.
+        Also assumes all data arrays and times are same length (!).
         Encapsulates data and observable in lists if single array and single label.
         """
         
@@ -678,8 +698,8 @@ class LearningChain:
         # note: now datasets should all be lists of numpy arrays
         total_MSE = 0
         for i in range(len(model_datasets)):
-            total_MSE += np.sum(np.square(abs(model_datasets[i]-self.target_datasets[i])))/len(self.target_times)
-       
+            total_MSE += np.sum(np.square(abs(model_datasets[i]-self.target_datasets[i])))
+        total_MSE /= (len(self.target_times)*len(model_datasets))
         return total_MSE
     
     
@@ -730,9 +750,18 @@ class LearningChain:
         # note: function calls currently only incorporate complexity,
         # reversible jump has no further prior beyond proposal distribution,
         # parameters-tweak prior ratio is evaluated in run method and passed here as value
-        
+        if all([abs(PP := prior(proposal)) < 1e-40, abs(PC := prior(current)) < 1e-40]):
+            # note: due to subprectision values causing error or NaN result in division evaluation
+            # !!! also note: when using := beware conditionb short circuiting
+            model_priors_ratio = 1
+        elif all([abs(PP := prior(proposal)) >= 1e-40, abs(PC := prior(current)) < 1e-40]):
+            model_priors_ratio = np.inf
+            # note: bold but deals with limiting cases of old prior being subprecision low...
+            # then effectively guaranteed acceptance for non-subprecision prior proposal
+        else:
+            model_priors_ratio = PP/PC
         return (np.exp(-1/T * (proposal_loss-current_loss)) 
-                * prior(proposal) / prior(current) 
+                * model_priors_ratio # prior(proposal) / prior(current) 
                 * back / there 
                 * params_priors_ratio)
     
@@ -767,16 +796,22 @@ class LearningChain:
     
     
     def prior(self,
-              model: TYPE_MODEL
+              model: TYPE_MODEL,
+              return_minus_log_of: bool = False,
               ) -> float:
         """
-        Calculates the prior probability of argument model.
-        The form of this is a heuristic.
+        Calculates the prior probability of argument model (heuristic).
+        
+        !!! Note: Currently depends only on number of processes present,
+        with priors on parameter values evaluated separately!
         """
         total_complexity = (self.process_handler.count_Ls(model)
                             + self.process_handler.count_defect2defect_couplings(model)
                             + self.process_handler.count_qubit2defect_couplings(model))
-        return np.exp(-1*(total_complexity)) 
+        if return_minus_log_of:
+            return total_complexity/self.complexity_factor
+        else:
+            return np.exp(-1*total_complexity/self.complexity_factor) 
     
     
     

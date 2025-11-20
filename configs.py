@@ -36,6 +36,9 @@ default_chain_hyperparams = {
         
         'temperature_proposal': 0.0002, # either value or (shape, scale) of gamma to sample
         
+        'complexity_factor': 10, 
+        # note: expected number of processes akin to STD in dynamics - creates natural posterior scale
+        
         'jump_length_rescaling_factor': 1.0, # for scaling up or down jump lengths of parameter handler
         
         'acceptance_window': 10,
@@ -87,9 +90,9 @@ default_chain_hyperparams = {
             },
         
         'params_bounds': { # (lower, upper) bounds when using rejection sampling - False means no rejection sampling to take place
-            'couplings': (0.1, 5),
-            'energies': (0.01, 0.5),   
-            'Ls': (0.01, 0.5)
+            'couplings': (0.1, 4),
+            'energies': (0.01, 0.4),   
+            'Ls': (0.01, 0.4)
             },
         
         'custom_function_on_dynamics_return': False, #custom_func

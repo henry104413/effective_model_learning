@@ -21,7 +21,7 @@ import numpy as np
 import time
 
 # settings and source data: # '250818-sim-1T-4JL-2tweak' is nice fit
-#experiment_name = '251111-3M-muchnarrower' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+experiment_name = '251111-3M-muchnarrower' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
 experiment_name = '251110-100k' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
@@ -106,6 +106,7 @@ for R in Rs:
             plt.plot([region[0], region[0]], [ymin, ymax], 'r-', linewidth = 1)
             plt.plot([region[1], region[1]], [ymin, ymax], 'g-', linewidth = 1)
         plt.savefig(output_name + '_chain_segments.svg')
+        plt.clf()
         
         
     # remove points with loss below some threshold - don't combine this with bounds!
@@ -241,6 +242,7 @@ plt.ylabel('SSE')
 plt.xticks(ticks = clusters_counts, labels = x_tick_labels)
 plt.title('elbow found at ' + str(elbow))
 plt.savefig(output_name + '_clustering_SSEs.svg',  dpi = 1000, bbox_inches='tight')
+plt.clf()
 
 # plot and save silhouette score vs number of clusters
 plt.figure(tight_layout = True)
@@ -251,7 +253,7 @@ plt.ylim([-0.1,1])
 plt.xticks(clusters_counts, x_tick_labels)
 plt.title(output_name)
 plt.savefig(output_name + '_clustering_silhouette_scores.svg',  dpi = 1000, bbox_inches='tight')
-
+plt.clf()
            
 #%% cluster assignments big file:
 
@@ -319,6 +321,7 @@ for k in ks:
         #plt.xticks(clusters_counts, x_tick_labels)
         #ax1.set_title('assignment to clusters')
         fig.savefig(output_name + '_R' + str(R) + '_assignment_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
+        plt.cla()
         
         # this is already available for the all-k output saved above so currently disabled
         if False:
@@ -343,6 +346,7 @@ for k in ks:
     plt.gca().tick_params(axis='both', which='major', labelsize=8)
     #plt.savefig(output_name + '_centres_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
     plt.savefig(output_name + '_centres_k' + str(k) + '.png',  dpi = 1000, bbox_inches='tight')
+    plt.clf()
     # note: viewing the svg in ubuntu's image viewer interpolates between the blocks
     # - this is not a problem with the file but with the viewer
     
