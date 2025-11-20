@@ -101,6 +101,17 @@ class ParamsHandler:
         
         self.bounds = bounds
         
+        
+        
+    def set_jump_lengths(self,
+                         jump_lengths: dict[str, float|int]
+                         ) -> None:
+        
+        """
+        Sets jump lengths to argument dictionary (no checks on entries). 
+        """
+        
+        self.jump_lengths = copy.deepcopy(jump_lengths)
     
     
     def output_hyperparams_init(self) -> dict:
