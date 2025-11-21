@@ -69,6 +69,11 @@ class Output:
         if overall_acceptance:
             with open(filename + '_overall_acceptance.json', 'w') as filestream:
                 json.dump(overall_acceptance, filestream)
+            # HERE EXPAND WITH DETAILED ACCEPTANCE FOR DIFFERENT STEP CLASSES AND ANNEALING STAGES
+            # USING BELOW AND SIMILAR
+            # [True for (x,y,z) in 
+            #  zip(all_proposals['acceptance'], all_proposals['step_types'], all_proposals['annealed'])
+            #  if x and (y not in ['tweak all parameters', 'jump to best']) and z]
         
     
         # save specified model instances (as text and/or pickle and/or graph):
@@ -167,10 +172,8 @@ class Output:
                 except Exception as exception:
                     print('Error when saving dynamics comparison plot:\n' + str(exception))
                     
-                    
-    
-        # plot loss progression over chain steps, also save list as pickle:
-        if toggles.loss:     
+        
+        if toggles.loss:
             plt.figure()
             plt.plot(loss, 'm-', linewidth = 0.3, markersize = 0.1)
             plt.yscale('log')
@@ -187,66 +190,101 @@ class Output:
             with open(filename + '_loss.pickle', 'wb') as filestream:
                 pickle.dump(loss, filestream)
                 
-            # also loss of just accepted models:    
-            accepted_loss = [x for (x, y) in zip(all_proposals['loss'][1:], all_proposals['acceptance']) if y]
-            if accepted_loss: best_loss = min(accepted_loss) # check for empty sequence
-            else: best_loss = 0
-            plt.figure()
-            plt.plot(accepted_loss, '-', c = 'orange', linewidth = 0.3, markersize = 0.1)
-            plt.yscale('log')
-            plt.xlabel('accepted proposal no.')
-            plt.ylabel('loss')
-            plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
-                     10**(0.98*np.log10(plt.gca().get_ylim()[0])),
-                     'best loss = ' + '{:.2e}'.format(best_loss))
-            try: 
-                plt.savefig(filename + '_accepted_loss.svg', dpi = 1000, bbox_inches='tight')
-            except Exception as exception:
-                print('Error when saving accepted loss progression plot:\n' + str(exception))
-            with open(filename + '_accepted_loss.pickle', 'wb') as filestream:
-                      pickle.dump(accepted_loss, filestream)
+            
         
-                      
-        # plot accepted log-posterior and log-likelihood-prior progression over chain steps, also save list as pickle:
-        if toggles.log_posterior:     
                 
-            accepted_log_posterior = [x for (x, y) in 
-                                      zip(all_proposals['log_posterior'][1:], all_proposals['acceptance']) if y]
-            if accepted_log_posterior: best_log_posterior = min(accepted_log_posterior) # check for empty sequence
-            else: best_log_posterior = 0
-            plt.figure()
-            plt.plot(accepted_log_posterior, '-', c = 'turquoise', linewidth = 0.3, markersize = 0.1)
-            plt.yscale('symlog')
-            plt.xlabel('accepted proposal no.')
-            plt.ylabel('log posterior')
-            # plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
-            #          10**(0.98*np.log10(plt.gca().get_ylim()[0])),
-            #          'best log posterior = ' + '{:.2e}'.format(best_log_posterior))
-            try: 
-                plt.savefig(filename + '_accepted_log_posterior.svg', dpi = 1000, bbox_inches='tight')
-            except Exception as exception:
-                print('Error when saving accepted log posterior progression plot:\n' + str(exception))
-            with open(filename + '_accepted_log_posterior.pickle', 'wb') as filestream:
-                      pickle.dump(accepted_log_posterior, filestream)
-        
-            accepted_log_likelihood_prior = [x for (x, y) in 
-                                      zip(all_proposals['log_likelihood_prior'][1:], all_proposals['acceptance']) if y]
-            accepted_log_likelihood = [x for (x,y) in accepted_log_likelihood_prior]
-            accepted_log_prior = [y for (x,y) in accepted_log_likelihood_prior]
-            plt.figure()
-            plt.plot(accepted_log_likelihood, '-', c = 'red', linewidth = 0.3, markersize = 0.1, label = 'likelihood')
-            plt.plot(accepted_log_prior, '-', c = 'green', linewidth = 0.3, markersize = 0.1, label = 'prior')
-            plt.yscale('symlog')
-            plt.xlabel('accepted proposal no.')
-            plt.ylabel('log posterior')
-            plt.legend()
-            try: 
-                plt.savefig(filename + '_accepted_log_likelihood_prior.svg', dpi = 1000, bbox_inches='tight')
-            except Exception as exception:
-                print('Error when saving accepted log likelihood and prior progression plot:\n' + str(exception))
-            with open(filename + '_accepted_log_likelihood_prior.pickle', 'wb') as filestream:
-                      pickle.dump(accepted_log_likelihood_prior, filestream)
+        # iterables with entries for each annealing stage - if both annealed and unannealed present,
+        # also plot and save these separatenly (only for accepted stuff)
+        annealing_stages_labels = ['unannealed', 'annealed', ''] # last means whole chain regardless of annealing
+        annealing_stages_switch = [temp := (any(all_proposals['annealed'])
+                                            and not all(all_proposals['annealed'])),
+                                   temp, True]
+        def annealing_condition(stage_label: str,
+                                proposal_annealing_flag: bool):
+            if stage_label == 'unannealed': return (not proposal_annealing_flag)
+            elif stage_label == 'annealed': return proposal_annealing_flag
+            elif stage_label == '': return True
+            
+            
+        for q, stage_label in enumerate(annealing_stages_labels):  
 
+            if not annealing_stages_switch[q]: continue  
+            if stage_label: 
+                stage_label_filenames = '_' + stage_label
+                stage_label_axislabels = ' ' + stage_label
+            else: 
+                stage_label_filenames = stage_label                                                       
+                stage_label_axislabels = stage_label
+        
+            # plot loss progression over chain steps, also save list as pickle:
+            if toggles.loss:     
+                # also loss of just accepted models:    
+                accepted_loss = [x for (x, y, z) in 
+                                 zip(all_proposals['loss'][1:], all_proposals['acceptance'], all_proposals['annealed'])
+                                 if y and annealing_condition(stage_label, z)]
+                if accepted_loss: best_loss = min(accepted_loss) # check for empty sequence
+                else: best_loss = 0
+                plt.figure()
+                plt.plot(accepted_loss, '-', c = 'orange', linewidth = 0.3, markersize = 0.1)
+                plt.yscale('log')
+                plt.xlabel('accepted' + stage_label_axislabels + ' proposal no.')
+                plt.ylabel('loss')
+                if not stage_label:
+                    plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
+                             10**(0.98*np.log10(plt.gca().get_ylim()[0])),
+                             'best loss = ' + '{:.2e}'.format(best_loss))
+                try: 
+                    plt.savefig(filename + stage_label_filenames + '_accepted_loss.svg', dpi = 1000, bbox_inches='tight')
+                except Exception as exception:
+                    print('Error when saving accepted loss progression plot:\n' + str(exception))
+                with open(filename + stage_label_filenames + '_accepted_loss.pickle', 'wb') as filestream:
+                    pickle.dump(accepted_loss, filestream)
+                #plt.clf()
+                          
+            # plot accepted log-posterior and log-likelihood-prior progression over chain steps, also save list as pickle:
+            if toggles.log_posterior:     
+                    
+                accepted_log_posterior = [x for (x, y, z) in 
+                                          zip(all_proposals['log_posterior'][1:], all_proposals['acceptance'], all_proposals['annealed'])
+                                          if y and annealing_condition(stage_label, z)]
+                if accepted_log_posterior: best_log_posterior = min(accepted_log_posterior) # check for empty sequence
+                else: best_log_posterior = 0
+                plt.figure()
+                plt.plot(accepted_log_posterior, '-', c = 'turquoise', linewidth = 0.3, markersize = 0.1)
+                plt.yscale('symlog')
+                plt.xlabel('accepted' + stage_label_axislabels + ' proposal no.')
+                plt.ylabel('log posterior')
+                # plt.text(0, #(plt.gca().get_xlim()[1]-plt.gca().get_xlim()[0])/20,
+                #          10**(0.98*np.log10(plt.gca().get_ylim()[0])),
+                #          'best log posterior = ' + '{:.2e}'.format(best_log_posterior))
+                try: 
+                    plt.savefig(filename + stage_label_filenames + '_accepted_log_posterior.svg', dpi = 1000, bbox_inches='tight')
+                except Exception as exception:
+                    print('Error when saving accepted log posterior progression plot:\n' + str(exception))
+                with open(filename + stage_label_filenames + '_accepted_log_posterior.pickle', 'wb') as filestream:
+                    pickle.dump(accepted_log_posterior, filestream)
+                #plt.clf()
+            
+                accepted_log_likelihood_prior = [x for (x, y, z) in 
+                                          zip(all_proposals['log_likelihood_prior'][1:], all_proposals['acceptance'], all_proposals['annealed'])
+                                          if y and annealing_condition(stage_label, z)]
+                accepted_log_likelihood = [x for (x,y) in accepted_log_likelihood_prior]
+                accepted_log_prior = [y for (x,y) in accepted_log_likelihood_prior]
+                plt.figure()
+                plt.plot(accepted_log_likelihood, '-', c = 'red', linewidth = 0.3, markersize = 0.1, label = 'likelihood')
+                plt.plot(accepted_log_prior, '-', c = 'green', linewidth = 0.3, markersize = 0.1, label = 'prior')
+                plt.yscale('symlog')
+                plt.xlabel('accepted' + stage_label_axislabels + ' proposal no.')
+                plt.ylabel('log posterior')
+                plt.legend()
+                try: 
+                    plt.savefig(filename + stage_label_filenames + '_accepted_log_likelihood_prior.svg', dpi = 1000, bbox_inches='tight')
+                except Exception as exception:
+                    print('Error when saving accepted log likelihood and prior progression plot:\n' + str(exception))
+                with open(filename + stage_label_filenames + '_accepted_log_likelihood_prior.pickle', 'wb') as filestream:
+                    pickle.dump(accepted_log_likelihood_prior, filestream)
+                #plt.clf() 
+            
             
         
         # plot acceptance probability progression:

@@ -333,6 +333,9 @@ class LearningChain:
         # also binary annealing tracker: (bool - iterations are either annealed or not)
         self.run_annealing_tracker = []
         
+        # step type tracker:
+        self.run_step_type_tracker = []
+        
         # progress tracking (also used in redirected output):
         time_last = time.time() # elapsed time (s)
         k2 = 0
@@ -361,6 +364,7 @@ class LearningChain:
                 self.explored_log_likelihood_prior.append((-self.current_loss/self.MH_temperature,
                                                            -self.prior(self.current, return_minus_log_of=True)))
                 self.run_annealing_tracker.append(now_annealed)
+                self.run_step_type_tracker.append('jump to best')
                 
             
             # set Metropolis-Hastings acceptance temperature:
@@ -409,6 +413,7 @@ class LearningChain:
             # choose next step:
             next_step = np.random.choice(self.next_step_labels, p = next_step_probabilities_list)
             next_step = str(next_step)
+            self.run_step_type_tracker.append(next_step)
             
             # update total counter for appropriate step type:
             if next_step == 'tweak all parameters':
@@ -602,7 +607,8 @@ class LearningChain:
                               'log_posterior': self.explored_log_posterior,
                               'log_likelihood_prior': self.explored_log_likelihood_prior,
                               'acceptance_probability': self.explored_acceptance_probability,
-                              'annealed': self.run_annealing_tracker
+                              'annealed': self.run_annealing_tracker,
+                              'step_types': self.run_step_type_tracker
                              } 
         
         return self.best
