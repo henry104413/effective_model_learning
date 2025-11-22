@@ -161,9 +161,12 @@ class LearningModel(basic_model.BasicModel):
                     strength, op_pairs = coupling
                     for _ in range(max_attempts):
                         candidate = strength + np.random.normal(0, self.jump_lengths['couplings'])
-                        if abs(candidate) >= bounds['couplings'][0] and candidate <= bounds['couplings'][1]:
+                        if candidate >= bounds['couplings'][0] and candidate <= bounds['couplings'][1]:
                             # within bounds hence update
-                            # note: couplings allowed negative hence absolute value checked
+                            # !!! note: currently disallows negative coupling
+                            # ...allowing jumps into interval negative mirror image causes breakdown of 
+                            # truncated normal distribution formulas
+                            # (but could potentially introduce dedicated negative only couplings etc.) 
                             TLS.couplings[partner][i] = (candidate, op_pairs)
                             #print('Coupling: accepted ' + str(candidate))
                             break

@@ -41,6 +41,9 @@ default_chain_hyperparams = {
         
         'jump_length_rescaling_factor': 1.0, # for scaling up or down jump lengths of parameter handler
         
+        'shock_anneal_at': int(500000), # iteration to perform switch to annealed regime
+        # note: currently annealing only parameters handler
+        
         'acceptance_window': 10,
         'acceptance_target': 0.4,
         'acceptance_band': 0.2,
@@ -48,8 +51,13 @@ default_chain_hyperparams = {
         'params_handler_hyperparams': { 
             'initial_jump_lengths': {'couplings' : 0.4, #0.4,
                                      'energies' : 0.04, #0.04,
-                                     'Ls' : 0.04 #0.04 # halved these now
-                                     }
+                                     'Ls' : 0.04 #0.04
+                                     },
+            'annealed_jump_lengths': {'couplings' : 0.04, #0.04,
+                                      'energies' : 0.004, #0.004,
+                                      'Ls' : 0.004 #0.004
+                                      }
+            
             },
         
         'qubit_Ls_library': { # sampled from mirrored gamma distribution with given (shape, scale)

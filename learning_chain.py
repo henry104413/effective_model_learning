@@ -181,6 +181,8 @@ class LearningChain:
                  
                  temperature_proposal: float|int | tuple[float|int] = False, # value or gamma (shape, scale)
                  
+                 shock_anneal_at: int = False,
+                 
                  complexity_factor: float|int = 1,
                  
                  jump_length_rescaling_factor: float = False, 
@@ -328,12 +330,42 @@ class LearningChain:
         k = 0 # auxiliary iteration counter    
         self.run_acceptance_tracker = [] # all accept/reject events (bool)
         
+        # also binary annealing tracker: (bool - iterations are either annealed or not)
+        self.run_annealing_tracker = []
+        
+        # step type tracker:
+        self.run_step_type_tracker = []
+        
         # progress tracking (also used in redirected output):
         time_last = time.time() # elapsed time (s)
         k2 = 0
         
         # carry out all chain steps:
-        for i in range(steps):
+        i = 0
+        now_annealed = False
+        while i <= steps:
+            
+            # do shock annealing if enabled and reached annealing iteration:
+            if bool(self.shock_anneal_at) and i == self.shock_anneal_at: 
+                self.params_handler.set_jump_lengths(self.params_handler_hyperparams['annealed_jump_lengths'])
+                now_annealed = True
+                i += 1
+                
+                # jump now to best model reached thus far and do more localised exploration from there
+                # - update current model to best and save all statistics:
+                self.current = copy.deepcopy(self.best)
+                self.current_loss = self.best_loss
+                self.run_acceptance_tracker.append(True)
+                if self.store_all_proposals:
+                    self.explored_proposals.append(copy.deepcopy(self.current))
+                self.explored_loss.append(self.current_loss)
+                self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
+                                                     + self.prior(self.current, return_minus_log_of=True)))
+                self.explored_log_likelihood_prior.append((-self.current_loss/self.MH_temperature,
+                                                           -self.prior(self.current, return_minus_log_of=True)))
+                self.run_annealing_tracker.append(now_annealed)
+                self.run_step_type_tracker.append('jump to best')
+                
             
             # set Metropolis-Hastings acceptance temperature:
             self.MH_temperature = self.sample_T()
@@ -381,6 +413,7 @@ class LearningChain:
             # choose next step:
             next_step = np.random.choice(self.next_step_labels, p = next_step_probabilities_list)
             next_step = str(next_step)
+            self.run_step_type_tracker.append(next_step)
             
             # update total counter for appropriate step type:
             if next_step == 'tweak all parameters':
@@ -449,7 +482,7 @@ class LearningChain:
                                 for coupling in TLS.couplings[partner]: # coupling is a touple (strength, [(op1, op2),...])
                                     m = coupling[0]
                                     holder[key] *= (factor := self.xi(m, s, a, b))
-                                          
+                                    
                     p_there = holder['p_there']
                     p_back = holder['p_back']
                                      
@@ -557,8 +590,12 @@ class LearningChain:
                 
             else: # ie. reject proposal
                 self.run_acceptance_tracker.append(False)
-                
+            
+            self.run_annealing_tracker.append(now_annealed)
+            i += 1        
+        # while loop end
          
+        
         if bool(self.iterations_till_progress_update):
             print('\n\nChain run completed.\n'
                   +'_________________________\n\n', flush = True)
@@ -569,7 +606,9 @@ class LearningChain:
                               'acceptance': self.run_acceptance_tracker,
                               'log_posterior': self.explored_log_posterior,
                               'log_likelihood_prior': self.explored_log_likelihood_prior,
-                              'acceptance_probability': self.explored_acceptance_probability
+                              'acceptance_probability': self.explored_acceptance_probability,
+                              'annealed': self.run_annealing_tracker,
+                              'step_types': self.run_step_type_tracker
                              } 
         
         return self.best
@@ -601,15 +640,15 @@ class LearningChain:
                                   initial_state = self.defect_initial_state,
                                   energy = 0.1, # !!! AD HOC - maybe move this to configs 
                                   couplings = {
-                                       # 'qubit': [
-                                       # (1, [('sigmax','sigmax')]),
-                                       # (1, [('sigmaz','sigmaz')]),
-                                       # (1, [('sigmay','sigmay')])
-                                       # ]
+                                        # 'qubit': [
+                                        # (1, [('sigmax','sigmax')]),
+                                        # (1, [('sigmaz','sigmaz')]),
+                                        # (1, [('sigmay','sigmay')])
+                                        # ]
                                       },
                                   # note: {partner: [(rate, [(op_on_self, op_on_partner)])]}
                                   Ls = {
-                                      # 'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
+                                       # 'sigmax': 0.1, 'sigmay': 0.1, 'sigmaz': 0.1
                                       }
                                   )
         initial_model.build_operators()
@@ -752,7 +791,7 @@ class LearningChain:
         # parameters-tweak prior ratio is evaluated in run method and passed here as value
         if all([abs(PP := prior(proposal)) < 1e-40, abs(PC := prior(current)) < 1e-40]):
             # note: due to subprectision values causing error or NaN result in division evaluation
-            # !!! also note: when using := beware conditionb short circuiting
+            # !!! also note: when using := beware condition short circuiting
             model_priors_ratio = 1
         elif all([abs(PP := prior(proposal)) >= 1e-40, abs(PC := prior(current)) < 1e-40]):
             model_priors_ratio = np.inf

@@ -12,6 +12,12 @@ print('Now D = ' + str(cmdargs.defects_number))
 
 print('And R = ' + str(cmdargs.repetition_number))
 
+#%%
+for i in range(10): 
+    print(i) 
+    i=5
+    print(i)
+
 
 #%%
 
@@ -482,7 +488,7 @@ if not True:
 
 #%%
 import pickle
-with open('251110-100k_Wit-Fig4-6-0_025_clustering_mixing_test_3_clustering_centres.pickle'
+with open('2025_11_21_031410_Wit-Fig4-6-0_2_Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--_D1_R1_proposals.pickle'
           , 'rb') as filestream:
     A = pickle.load(filestream)
     

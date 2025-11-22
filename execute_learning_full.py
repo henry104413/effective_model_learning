@@ -6,7 +6,6 @@ Effective model learning
 """
 
 
-
 import numpy as np
 import sys # for passing command line arguments
 import time
@@ -66,7 +65,7 @@ try:
     if max_iterations == 0:
         raise Exception('Maximum iterations not specified by launcher, hence using default.')
 except:
-    max_iterations = 10000
+    max_iterations = 1000
 
 # set proportion (ratio) of available data values to use for training:
 # note: currently taken from start and same for all data sets; 1 means use all
@@ -262,6 +261,8 @@ if False:
 
 
 #%% 
+
+
 
 
 
