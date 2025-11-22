@@ -321,7 +321,7 @@ class Output:
         # plot acceptance ratio evolution:
         if toggles.acceptance:
             plt.figure()
-            plt.plot(acceptance, '-', linewidth = 1, markersize = 0.1, color = 'firebrick')
+            plt.plot(acceptance, '. ', linewidth = 0.1, markersize = 0.5, color = 'firebrick')
             plt.yscale('linear')
             plt.xlabel('window number')
             plt.ylabel('acceptance ratio')

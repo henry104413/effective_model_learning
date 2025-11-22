@@ -41,7 +41,7 @@ default_chain_hyperparams = {
         
         'jump_length_rescaling_factor': 1.0, # for scaling up or down jump lengths of parameter handler
         
-        'shock_anneal_at': int(5000), # iteration to perform switch to annealed regime
+        'shock_anneal_at': int(500000), # iteration to perform switch to annealed regime
         # note: currently annealing only parameters handler
         
         'acceptance_window': 10,
