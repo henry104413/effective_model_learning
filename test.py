@@ -488,7 +488,7 @@ if not True:
 
 #%%
 import pickle
-with open('2025_11_21_031410_Wit-Fig4-6-0_2_Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--_D1_R1_proposals.pickle'
+with open('251121-annealed_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle'
           , 'rb') as filestream:
     A = pickle.load(filestream)
     
