@@ -110,7 +110,8 @@ print(filename, flush = True)
 
 #%% prepare simulated multi-observable training datasets:
     
-# import dictionary of ts, sx, sy, sz observable values (sx equal to original and rest simulated with noise)    
+# import dictionary of ts, sx, sy, sz observable values 
+# (sx equal to original and rest simulated, all with noise with std = 0.01)    
 with open('simulated_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
           'rb') as filestream:
     simulated_data = pickle.load(filestream)    
