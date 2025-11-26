@@ -85,7 +85,9 @@ if True:
     with open(clustering_centres_file, 'rb') as filestream:
         clusters_centres = pickle.load(filestream)[chosen_k]['centres']
     
-    # have to make working model of all the vectorised centres...    
+    # have to make working model of all the vectorised centres...  
+    
+    centre_model = False
     centre_datasets = centre_model.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables,
                                             custom_function_on_return = False)
 

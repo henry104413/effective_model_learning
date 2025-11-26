@@ -723,3 +723,98 @@ plt.ylabel(r'$\sqrt{time\ \mathrm{(s)}}$')
 Y = np.sqrt(avgs_each_N)
 plt.plot(Ns, Y, ':+', linewidth = 1, markeredgewidth = 2, c='firebrick')
 plt.savefig(filename + '_profiling_t_vs_N_plot.svg', bbox_inches='tight')
+
+
+
+#%% model parameter vector to working model...
+
+import configs
+import basic_model
+import learning_model
+import pickle
+
+
+model_file = '251122-run_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R9_best.pickle'
+config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
+hyperparams = configs.get_hyperparams(config_name)
+D = 2
+default_qubit_energy = 1
+
+# import and vectorise test model:
+with open(model_file, 'rb') as filestream:
+    old_model = pickle.load(filestream)
+vals, labels, latex_labels = old_model.vectorise_under_library(hyperparameters = hyperparams)
+    
+# assume 1 qubit and D defects:
+new_model = learning_model.LearningModel()
+new_model.add_TLS(is_qubit = True, energy = default_qubit_energy)
+for i in range(D):
+    new_model.add_TLS(is_qubit = False) 
+qubits = [x for x in new_model.TLSs if x.is_qubit]
+defects = [x for x in new_model.TLSs if not x.is_qubit]
+
+op_short2long = {'sx': 'sigmax', 'sy': 'sigmay', 'sz':'sigmaz', 'sp':'sigmap', 'sm':'sigmam'}
+
+# populate model using vectorised parameters and labels:
+# !!! note: currently assumes simple models with a single operator pair for couplings - can be extended
+for label, val in zip(labels, vals):
+    if val == 0: continue # skip zero-value parameters
+    if (temp := len([True for x in label if x in ['S','V']])) == 2: # ie. coupling
+        systems_labels, op1, op2 = label.split('-',3)
+        holder_label, partner_label = systems_labels.split(',')
+        if holder_label[0] == 'V':
+            holder = defects[int(holder_label[1]) - 1]
+        elif holder_label[0] == 'S':
+            holder = qubits[int(holder_label[1]) - 1]
+        if partner_label[0] == 'V':
+            partner = defects[int(partner_label[1]) - 1]
+        elif partner_label[0] == 'S':
+            partner = qubits[int(partner_label[1]) - 1]
+        if partner not in holder.couplings:
+            holder.couplings[partner] = []
+        holder.couplings[partner].append((val,[(op_short2long[op1],op_short2long[op2])]))
+        # add to dictionary entry DO NOT REPLACE!!
+    elif temp == 1 and 'E' in label: # ie. defect energy term 
+    # note: qubits were initialised to default but can be changed
+        system_label, _ = label.split('-',1)
+        if system_label[0] == 'V':
+            system = defects[int(system_label[1]) - 1]
+        elif system_label[0] == 'S':
+            system = qubits[int(system_label[1]) - 1]
+        system.energy = val
+    else: # ie. lindblad
+        system_label, op = label.split('-',2)[0:2]
+        if system_label[0] == 'V':
+            system = defects[int(system_label[1]) - 1]
+        elif system_label[0] == 'S':
+            system = qubits[int(system_label[1]) - 1]
+        system.Ls[op_short2long[op]] = val
+new_model.build_operators()
+
+new_model.disp()
+     
+# new: {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+
+# new_model.TLSs prints just the 3
+# but new_model.TLSs[0].couplings contains sooo many partners!!! not in TLSs of course,
+# this happens right after adding initial empty TLSs - nothing to do with populatiing loop
+# but it worked before skipping zeros???? coincidence or first run, now not working
+# fuck, it gets created with so much crap... i think some of the disctionaries are not flushing or something
+# theres Ls and couplings even when adding empty tls  
+
+# also! reconstruction incomplete!! fixed
+# general problem with basic model
+# it just keeps adding more and more, ls limited to 3 now, couplings not
+# adds to those dictionaries but the partners are not tlss
+# its fucking weird
+  
+
+#%%
+def add_TLS(self,
+            TLS_label: str = '',
+            is_qubit: bool = False,
+            energy: int|float = None, 
+            couplings: dict[two_level_system.TwoLevelSystem, list[tuple[float|int, list[tuple[str, str]]]]] = {},
+            Ls: dict[str, int|float] = {},
+            initial_state: qutip.Qobj = False
+            ) -> two_level_system.TwoLevelSystem:
