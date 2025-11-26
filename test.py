@@ -729,10 +729,8 @@ plt.savefig(filename + '_profiling_t_vs_N_plot.svg', bbox_inches='tight')
 #%% model parameter vector to working model...
 
 import configs
-import basic_model
 import learning_model
 import pickle
-
 
 model_file = '251122-run_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R9_best.pickle'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
@@ -743,6 +741,12 @@ default_qubit_energy = 1
 # import and vectorise test model:
 with open(model_file, 'rb') as filestream:
     old_model = pickle.load(filestream)
+    
+old_model.vectorise_under_library(hyperparameters = hyperparams)
+newest_model = learning_model.LearningModel() 
+newest_model.configure_to_params_vector(old_model.vectorise_under_library(hyperparameters = hyperparams))
+   
+raise SystemExit()
 vals, labels, latex_labels = old_model.vectorise_under_library(hyperparameters = hyperparams)
     
 # assume 1 qubit and D defects:
@@ -794,27 +798,3 @@ new_model.build_operators()
 new_model.disp()
      
 # new: {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
-
-# new_model.TLSs prints just the 3
-# but new_model.TLSs[0].couplings contains sooo many partners!!! not in TLSs of course,
-# this happens right after adding initial empty TLSs - nothing to do with populatiing loop
-# but it worked before skipping zeros???? coincidence or first run, now not working
-# fuck, it gets created with so much crap... i think some of the disctionaries are not flushing or something
-# theres Ls and couplings even when adding empty tls  
-
-# also! reconstruction incomplete!! fixed
-# general problem with basic model
-# it just keeps adding more and more, ls limited to 3 now, couplings not
-# adds to those dictionaries but the partners are not tlss
-# its fucking weird
-  
-
-#%%
-def add_TLS(self,
-            TLS_label: str = '',
-            is_qubit: bool = False,
-            energy: int|float = None, 
-            couplings: dict[two_level_system.TwoLevelSystem, list[tuple[float|int, list[tuple[str, str]]]]] = {},
-            Ls: dict[str, int|float] = {},
-            initial_state: qutip.Qobj = False
-            ) -> two_level_system.TwoLevelSystem:

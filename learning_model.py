@@ -6,8 +6,10 @@ Effective model learning
 """
 
 
+from __future__ import annotations
 import basic_model
 import numpy as np
+import configs
 
 
 # enhanced model with ability to modify itself
@@ -189,13 +191,92 @@ class LearningModel(basic_model.BasicModel):
                     
         # remake operators (to update with new parameters):
         self.build_operators()
+        
+        
+        
+    def configure_to_params_vector(self,
+                                   vectorised_model: tuple[list[float|int], list[str], list[str]],
+                                   D: int = 2,
+                                   default_qubit_energy: float|int = 1
+                                   #,config_name: str = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
+                                   ) -> LearningModel:
+        
+        """
+        Returns learning model instance populated according to argument vectorised model.
+        
+        Vectorised model is a tuple of corresponding lists of parameter values, parameter labels, 
+        and latex-formatted paremeter labels.
+        
+        D is defects number, default_qubit_energy is starting qubit energy, assuming one qubit only.
+        
+        Currently assuming simple model structure with couplings only as single pairs of single operators,
+        and assuming all present operators are included in ad hoc operator label conversion dictionary.
+        
+        TO DO: to be expanded to allow un-vectorising according to hyperparameters specified by configs file
+        under currently disabled config_name, which will specify the library.
+        The couplings builder should then break the operator pairs string 
+        into an arbitrary number of operators present.
+        """
+
+        #hyperparams = configs.get_hyperparams(config_name)
+        op_short2long = {'sx': 'sigmax', 'sy': 'sigmay', 'sz':'sigmaz', 'sp':'sigmap', 'sm':'sigmam'}
+        vals, labels, latex_labels = vectorised_model
+        
+        # treat this model instance as new model to be emptied and freshly populated:
+        # !!! warning: erases old state
+        new_model = self
+        new_model.TLSs = []
+        new_model.add_TLS(is_qubit = True, energy = default_qubit_energy)
+        for i in range(D):
+            new_model.add_TLS(is_qubit = False) 
+        qubits = [x for x in new_model.TLSs if x.is_qubit]
+        defects = [x for x in new_model.TLSs if not x.is_qubit]
+
+        # populate model using vectorised parameters and labels:
+        # !!! note: currently assumes simple models with a single operator pair for couplings - can be extended
+        for label, val in zip(labels, vals):
+            if val == 0: continue # skip zero-value parameters
+            if (temp := len([True for x in label if x in ['S','V']])) == 2: # ie. coupling
+                systems_labels, op1, op2 = label.split('-',3)
+                holder_label, partner_label = systems_labels.split(',')
+                if holder_label[0] == 'V':
+                    holder = defects[int(holder_label[1]) - 1]
+                elif holder_label[0] == 'S':
+                    holder = qubits[int(holder_label[1]) - 1]
+                if partner_label[0] == 'V':
+                    partner = defects[int(partner_label[1]) - 1]
+                elif partner_label[0] == 'S':
+                    partner = qubits[int(partner_label[1]) - 1]
+                if partner not in holder.couplings:
+                    holder.couplings[partner] = []
+                holder.couplings[partner].append((val,[(op_short2long[op1],op_short2long[op2])]))
+                # add to dictionary entry DO NOT REPLACE!!
+            elif temp == 1 and 'E' in label: # ie. defect energy term 
+            # note: qubits were initialised to default but can be changed
+                system_label, _ = label.split('-',1)
+                if system_label[0] == 'V':
+                    system = defects[int(system_label[1]) - 1]
+                elif system_label[0] == 'S':
+                    system = qubits[int(system_label[1]) - 1]
+                system.energy = val
+            else: # ie. lindblad
+                system_label, op = label.split('-',2)[0:2]
+                if system_label[0] == 'V':
+                    system = defects[int(system_label[1]) - 1]
+                elif system_label[0] == 'S':
+                    system = qubits[int(system_label[1]) - 1]
+                system.Ls[op_short2long[op]] = val
+        new_model.build_operators()
+
+        return new_model             
+
     
     
     
     
 
         
-                        
+
             
         
         
