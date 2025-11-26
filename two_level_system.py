@@ -39,13 +39,15 @@ class TwoLevelSystem:
                  TLS_id: str = "",
                  is_qubit: bool = False,
                  energy: int|float = None,
-                 couplings: dict[typing.Self, list[tuple[float|int, list[tuple[str, str]]]]] = {},
+                 couplings: dict[typing.Self, list[tuple[float|int, list[tuple[str, str]]]]] = None,
                  # {partner: [(rate, [(op_on_self, op_on_partner)])]}
                  # inner list: all two-site operators in it share the same rate
-                 Ls: dict[str, int|float] = {},
+                 Ls: dict[str, int|float] = None,
                  initial_state = False
                  ):
         
+        if Ls is None: Ls = {}
+        if couplings is None: couplings = {}
         
         self.model = model
         self.TLS_id = TLS_id

@@ -69,8 +69,8 @@ class BasicModel():
                 TLS_label: str = '',
                 is_qubit: bool = False,
                 energy: int|float = None, 
-                couplings: dict[two_level_system.TwoLevelSystem, list[tuple[float|int, list[tuple[str, str]]]]] = {},
-                Ls: dict[str, int|float] = {},
+                couplings: dict[two_level_system.TwoLevelSystem, list[tuple[float|int, list[tuple[str, str]]]]] = None,
+                Ls: dict[str, int|float] = None,
                 initial_state: qutip.Qobj = False
                 ) -> two_level_system.TwoLevelSystem:
         
@@ -81,7 +81,10 @@ class BasicModel():
         """
         
         # process arguments: 
-            
+        
+        if couplings is None: couplings = {}    
+        if Ls is None: Ls = {}
+        
         # replace any entries with labels by entries with references):
         # note: TLS objects should only ever have instance references as keys,
         # whereas model instances can handle TLS identifying strings as a user interface
