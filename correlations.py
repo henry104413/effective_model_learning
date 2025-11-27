@@ -252,7 +252,7 @@ plt.xlabel('presence')
 plt.ylabel('parameter')
 plt.yticks(range(len(labels)), labels_latex)
 plt.legend()
-plt.savefig(output_name + '_parameter_popularity' + '.svg', 
+plt.savefig(output_name + '_process_popularity' + '.svg', 
             dpi = 1000, bbox_inches='tight')
 
         
