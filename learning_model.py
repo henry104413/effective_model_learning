@@ -213,13 +213,13 @@ class LearningModel(basic_model.BasicModel):
         
         D is defects number, default_qubit_energy is starting qubit energy, assuming one qubit only.
         
-        Currently assuming simple model structure with couplings only as single pairs of single operators,
-        and assuming all present operators are included in ad hoc operator label conversion dictionary.
+        Label convention is: S# for qubits and V# for defects, # being their number,
+        hyphen (-) separating operator shorthand defined here from processes,
+        single one meaning on-site L and E meaning energy (coherent sigma z),
+        and coupling operator pairs have comma separating each operator in pair,
+        and hyphens separating pairs under same partner (latter of systems, also separated by comma).
         
-        TO DO: to be expanded to allow un-vectorising according to hyperparameters specified by configs file
-        under currently disabled config_name, which will specify the library.
-        The couplings builder should then break the operator pairs string 
-        into an arbitrary number of operators present.
+        TO DO: Shift local operator names dictionary to configs file eventually.
         """
 
         #hyperparams = configs.get_hyperparams(config_name)
@@ -237,11 +237,10 @@ class LearningModel(basic_model.BasicModel):
         defects = [x for x in new_model.TLSs if not x.is_qubit]
 
         # populate model using vectorised parameters and labels:
-        # !!! note: currently assumes simple models with a single operator pair for couplings - can be extended
         for label, val in zip(labels, vals):
             if val == 0: continue # skip zero-value parameters
             if (temp := len([True for x in label if x in ['S','V']])) == 2: # ie. coupling
-                systems_labels, op1, op2 = label.split('-',3)
+                systems_labels, ops = label.split('-',1) # now ops eg. 'sx,sx-sy,sy-sz,sz'
                 holder_label, partner_label = systems_labels.split(',')
                 if holder_label[0] == 'V':
                     holder = defects[int(holder_label[1]) - 1]
@@ -253,7 +252,10 @@ class LearningModel(basic_model.BasicModel):
                     partner = qubits[int(partner_label[1]) - 1]
                 if partner not in holder.couplings:
                     holder.couplings[partner] = []
-                holder.couplings[partner].append((val,[(op_short2long[op1],op_short2long[op2])]))
+                ops = ops.split('-') # now ops eg. ['sx,sx', 'sy,sy', 'sz,sz']
+                op_pairs_list = [tuple([op_short2long[op] for op in op_pair.split(',')])
+                                 for op_pair in ops] 
+                holder.couplings[partner].append((val,op_pairs_list))
                 # add to dictionary entry DO NOT REPLACE!!
             elif temp == 1 and 'E' in label: # ie. defect energy term 
             # note: qubits were initialised to default but can be changed
@@ -273,15 +275,3 @@ class LearningModel(basic_model.BasicModel):
         new_model.build_operators()
 
         return new_model             
-
-    
-    
-    
-    
-
-        
-
-            
-        
-        
-        

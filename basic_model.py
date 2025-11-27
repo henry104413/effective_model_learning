@@ -677,7 +677,7 @@ class BasicModel():
                 for i, op_pair in enumerate(coupling): # coupling is TUPLE of tuples!!
                     if i == 0: ops_label_latex += ' '
                     if i>0: ops_label_latex += '+'
-                    ops_label += '-' + make_op_label(op_pair[0]) + '-' + make_op_label(op_pair[1])
+                    ops_label += '-' + make_op_label(op_pair[0]) + ',' + make_op_label(op_pair[1])
                     ops_label_latex += make_op_label(op_pair[0], tex=True) + r'$\otimes$' + make_op_label(op_pair[1], tex=True)
                 
                 # labels for this process between these pairs
@@ -715,7 +715,7 @@ class BasicModel():
                 for i, op_pair in enumerate(coupling): # coupling is TUPLE of tuples!!
                     if i == 0: ops_label_latex += ' '
                     if i>0: ops_label_latex += '+'
-                    ops_label += '-' + make_op_label(op_pair[0]) + '-' + make_op_label(op_pair[1])
+                    ops_label += '-' + make_op_label(op_pair[0]) + ',' + make_op_label(op_pair[1])
                     ops_label_latex += make_op_label(op_pair[0], tex=True) + r'$\otimes$' + make_op_label(op_pair[1], tex=True)
                 
                 # labels for this process between these pairs
