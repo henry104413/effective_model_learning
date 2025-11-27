@@ -17,7 +17,8 @@ from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import squareform
 
 import configs
-
+import learning_model
+from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # settings:
 cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
@@ -31,7 +32,7 @@ chosen_k = 7
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 hyperparams = configs.get_hyperparams(config_name)
 output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
-               + clustering_name + '_k' + str(chosen_k) + '_correlations')
+               + clustering_name + '_k' + str(chosen_k) + '_correlations_plus')
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 
 # import lists of models in each cluster (currenlty not centres though),
@@ -45,7 +46,6 @@ with open(models_by_clusters_file, 'rb') as filestream:
     models_by_clusters = pickle.load(filestream)
 
 _, labels, labels_latex = example_model.vectorise_under_library(hyperparameters = hyperparams)
-labels = labels_latex # currently using the latex labels for labels
 
 
 
@@ -59,7 +59,7 @@ plt.ylabel('number of models')
 
 
 
-#%% also plot the models comparison for all of these
+#%% also plot dynamics comparison for cluster centres
 
 if True: 
     
@@ -84,14 +84,34 @@ if True:
                 + clustering_name + '_outputs_each_k.pickle')
     with open(clustering_centres_file, 'rb') as filestream:
         clusters_centres = pickle.load(filestream)[chosen_k]['centres']
+    # note: clusters_centres is np array with rows for clusters and columns for parameters
     
     # have to make working model of all the vectorised centres...  
     
-    centre_model = False
-    centre_datasets = centre_model.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables,
-                                            custom_function_on_return = False)
-
-
+    this_centre_datasets = {'sx': [], 'sy': [], 'sz':[]}
+    centre_model = learning_model.LearningModel()
+    for c, centre in enumerate([list(clusters_centres[x,:]) for x in range(clusters_centres.shape[0])]):
+        vectorised_centre = (centre, labels, labels_latex)
+        centre_model.configure_to_params_vector(vectorised_centre, 
+                                                D = D,  
+                                                qubit_initial_state = ops['plus'],
+                                                defect_initial_state = ops['mm'])
+        temp = centre_model.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables)
+        for o, op in enumerate(this_centre_datasets.keys()):
+            this_centre_datasets[op].append(temp[o])
+            plt.figure()
+            plt.xlabel('t (us)')
+            plt.ylabel(ops_longlabels[op])
+            plt.ylim([-1, 1])
+            plt.plot(ts, simulated_data[op], 'b.', markersize = 1, label = 'target')
+            plt.plot(evaluation_ts, this_centre_datasets[op][c], 
+                     'r-', linewidth = 1, alpha = 0.7, label = 'model')
+            plt.legend()
+            plt.title('cluster centre ' + str(c))
+            plt.savefig(output_name + '_C' + str(c) + '_centre_' + str(op) + '_comparison' + '.svg', dpi = 1000, bbox_inches='tight')
+        
+            
+        
 #'251122-run_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_Rs1,4,5,6,7,8,11,12,13,15,17,19,20_clustering-sub100_clustering_centres.pickle'
 
 #%%

@@ -10,6 +10,7 @@ from __future__ import annotations
 import basic_model
 import numpy as np
 import configs
+import qutip
 
 
 # enhanced model with ability to modify itself
@@ -197,7 +198,10 @@ class LearningModel(basic_model.BasicModel):
     def configure_to_params_vector(self,
                                    vectorised_model: tuple[list[float|int], list[str], list[str]],
                                    D: int = 2,
-                                   default_qubit_energy: float|int = 1
+                                   default_qubit_energy: float|int = 1,
+                                   qubit_initial_state: qutip.Qobj = False,
+                                   defect_initial_state: qutip.Qobj = False
+                                   # note: initial states are separable DMs for each constituent TLSs
                                    #,config_name: str = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
                                    ) -> LearningModel:
         
@@ -226,9 +230,9 @@ class LearningModel(basic_model.BasicModel):
         # !!! warning: erases old state
         new_model = self
         new_model.TLSs = []
-        new_model.add_TLS(is_qubit = True, energy = default_qubit_energy)
+        new_model.add_TLS(is_qubit = True, energy = default_qubit_energy, initial_state = qubit_initial_state)
         for i in range(D):
-            new_model.add_TLS(is_qubit = False) 
+            new_model.add_TLS(is_qubit = False, initial_state = defect_initial_state) 
         qubits = [x for x in new_model.TLSs if x.is_qubit]
         defects = [x for x in new_model.TLSs if not x.is_qubit]
 
