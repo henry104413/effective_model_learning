@@ -49,9 +49,10 @@ if vectorisation == 'parameters':
     hyperparams = configs.get_hyperparams(config_name)
 
 
-# container for points to cluster:
-# i.e. vectorised and decomplexified Liouvillians for all models
+# container for points to cluster (vectorised and decomplexified Liouvillians, or parameter vectors),
+# as well as corresponding loss and posterior
 points = []
+losses, posteriors = [], []
 
 # time trackers for profiling:
 new_time = time.time()
@@ -74,6 +75,8 @@ for R in Rs:
                           if (y or not only_take_annealed)]
     accepted_losses = [x for (x,y,z) in zip(proposals['loss'][1:], proposals['acceptance'], proposals['annealed'])
                        if y and (z or not only_take_annealed)]
+    accepted_posteriors = [x for (x,y,z) in zip(proposals['log_posterior'][1:], proposals['acceptance'], proposals['annealed'])
+                       if y and (z or not only_take_annealed)]
     # !!! note: only accepted proposals are saved in proposals, 
     # whereas other entries in proposals dictionary are for all proposals regardless of acceptance
     
@@ -83,7 +86,7 @@ for R in Rs:
         _, labels, labels_latex = accepted_proposals[0].vectorise_under_library(hyperparameters = hyperparams)
         
     
-    # collect all points:
+    # collect all points including loss and posterior:
     
     # split into segments determined by bounds:    
     bounds = [
@@ -105,17 +108,23 @@ for R in Rs:
         plt.clf()
         
     # remove points with loss below some threshold - don't combine this with bounds!
-    if type(loss_threshold) in [int, float]:
+    elif type(loss_threshold) in [int, float]:
         print('Earlier: ' + str(len(accepted_proposals)), flush = True)
         working_proposals = [x for (x, y) in zip(accepted_proposals, accepted_losses) if y < loss_threshold]
         print('After: ' + str(len(accepted_proposals)), flush = True)
     
-    # take only points between the specified regions (sets of bounds):
+    # take only points between the specified regions (sets of bounds),
+    # also corresponding losses and posteriors:
     if True:
         working_proposals = []
+        working_losses, working_posteriors = [], []
         for region in bounds:
             working_proposals.extend(accepted_proposals[region[0]:region[1]])
+            working_losses.extend(accepted_losses[region[0]:region[1]])
+            working_posteriors.extend(accepted_posteriors[region[0]:region[1]])
     new_points = []
+    
+    # turn proposals into points (vectors):
     if vectorisation == 'Liouvillian': # use Liouvillian
         for new_model in working_proposals:
             # build Liouvillian, turn into 1D vector, separate real and imaginary parts and concatenate:
@@ -127,9 +136,12 @@ for R in Rs:
     elif vectorisation == 'parameters': # use model vector
         for new_model in working_proposals:
             new_points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
+    
     taken_from_each_R_subsampled.append(len(working_proposals[0::subsample]))
     points.extend(new_points[0::subsample])
-        
+    losses.extend(working_losses[0::subsample])
+    posteriors.extend(working_posteriors[0::subsample])
+    
     
 # final array to feed into clusterer 
 # note: each row a different model:
@@ -137,9 +149,15 @@ points_array = np.stack(points)
 #points_array = points_array[0::subsample,:] # if sampling subsampling combined chains, not now - changes edge cases!
 
 
-# also export list of points:
+# also export lists of points, losses, posteriors:
 with open(output_name + '_points.pickle', 'wb') as filestream:
     pickle.dump(points, filestream)
+with open(output_name + '_losses.pickle', 'wb') as filestream:
+    pickle.dump(losses, filestream)
+with open(output_name + '_posteriors.pickle', 'wb') as filestream:
+    pickle.dump(posteriors, filestream)
+
+
     
 print('\n.....\ndata preparation time pre-clustering (s):' 
       + str(np.round((new_time := time.time()) - time_last,2)) + '\n.....\n', flush = True)

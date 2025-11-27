@@ -32,7 +32,7 @@ chosen_k = 7
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 hyperparams = configs.get_hyperparams(config_name)
 output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
-               + clustering_name + '_k' + str(chosen_k) + '_correlations_plus')
+               + clustering_name + '_k' + str(chosen_k) + '_correlations_vol3')
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 
 # import lists of models in each cluster (currenlty not centres though),
@@ -59,7 +59,7 @@ plt.ylabel('number of models')
 
 
 
-#%% also plot dynamics comparison for cluster centres
+#%% also plot dynamics comparison for cluster centres and champions
 
 if True: 
     
@@ -80,15 +80,15 @@ if True:
 
     
     # centres file (now pickle with centres for all ks - could also use specific k csv centres file)
-    clustering_centres_file = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
+    outputs_each_k_file = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
                 + clustering_name + '_outputs_each_k.pickle')
-    with open(clustering_centres_file, 'rb') as filestream:
-        clusters_centres = pickle.load(filestream)[chosen_k]['centres']
+    with open(outputs_each_k_file, 'rb') as filestream:
+        outputs_each_k = pickle.load(filestream)
+        clusters_centres = outputs_each_k[chosen_k]['centres']
     # note: clusters_centres is np array with rows for clusters and columns for parameters
     
-    # have to make working model of all the vectorised centres...  
-    
-    this_centre_datasets = {'sx': [], 'sy': [], 'sz':[]}
+    # turn into models and do dynamics comparison of centres vs target datasets: 
+    centres_datasets = {'sx': [], 'sy': [], 'sz':[]}
     centre_model = learning_model.LearningModel()
     for c, centre in enumerate([list(clusters_centres[x,:]) for x in range(clusters_centres.shape[0])]):
         vectorised_centre = (centre, labels, labels_latex)
@@ -97,20 +97,65 @@ if True:
                                                 qubit_initial_state = ops['plus'],
                                                 defect_initial_state = ops['mm'])
         temp = centre_model.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables)
-        for o, op in enumerate(this_centre_datasets.keys()):
-            this_centre_datasets[op].append(temp[o])
+        for o, op in enumerate(centres_datasets.keys()):
+            centres_datasets[op].append(temp[o])
             plt.figure()
             plt.xlabel('t (us)')
             plt.ylabel(ops_longlabels[op])
             plt.ylim([-1, 1])
-            plt.plot(ts, simulated_data[op], 'b.', markersize = 1, label = 'target')
-            plt.plot(evaluation_ts, this_centre_datasets[op][c], 
+            #plt.plot(ts, simulated_data[op], 'b.', markersize = 1, label = 'target')
+            plt.errorbar(ts, simulated_data[op], yerr = 0.01, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
+            plt.plot(evaluation_ts, centres_datasets[op][c], 
                      'r-', linewidth = 1, alpha = 0.7, label = 'model')
             plt.legend()
             plt.title('cluster centre ' + str(c))
-            plt.savefig(output_name + '_C' + str(c) + '_centre_' + str(op) + '_comparison' + '.svg', dpi = 1000, bbox_inches='tight')
+            plt.savefig(output_name + '_C' + str(c) + '_centre_' + str(op) + '_comparison' + '.svg', 
+                        dpi = 1000, bbox_inches='tight')
         
-            
+    # also do the same for cluster champions - find, turn into models and do comparison vs target datasets: 
+    # note: currently based on posterior (can also do loss):
+    source_base = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_' + clustering_name
+    with open(source_base + '_points.pickle', 'rb') as filestream:
+        points = pickle.load(filestream)
+    with open(source_base + '_posteriors.pickle', 'rb') as filestream:
+        posteriors = pickle.load(filestream)
+    assignments = list(outputs_each_k[chosen_k]['assignments'])
+    
+    champions = {}
+    champ_posteriors = {}
+    champion_model = learning_model.LearningModel()
+    champions_datasets = {'sx': [], 'sy': [], 'sz':[]}
+    for c in range(chosen_k):
+    
+        # find highest posterior and corresponding parameter vector (point) for each cluster assignment c
+        champion, posterior, assignment = max(filter(lambda x: x[2] == c, zip(points, posteriors, assignments)),
+                                            key = lambda x: x[1])
+        champions[assignment] = champion
+        champ_posteriors[assignment] = posterior
+        
+        vectorised_champion = (champion, labels, labels_latex)
+        champion_model.configure_to_params_vector(vectorised_champion, 
+                                                D = D,  
+                                                qubit_initial_state = ops['plus'],
+                                                defect_initial_state = ops['mm'])
+        temp = champion_model.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables)
+        for o, op in enumerate(champions_datasets.keys()):
+            champions_datasets[op].append(temp[o])
+            plt.figure()
+            plt.xlabel('t (us)')
+            plt.ylabel(ops_longlabels[op])
+            plt.ylim([-1, 1])
+            plt.errorbar(ts, simulated_data[op], yerr = 0.01, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
+            plt.plot(evaluation_ts, champions_datasets[op][c], 
+                     'r-', linewidth = 1, alpha = 0.7, label = 'model')
+            plt.legend()
+            plt.title('cluster champion ' + str(c))
+            plt.savefig(output_name + '_C' + str(c) + '_champion_' + str(op) + '_comparison' + '.svg',
+                        dpi = 1000, bbox_inches='tight')
+        
+    # overall champion:
+    # champion, posterior = max(zip(points, posteriors), key = lambda x: x[1])    
+    
         
 #'251122-run_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_Rs1,4,5,6,7,8,11,12,13,15,17,19,20_clustering-sub100_clustering_centres.pickle'
 

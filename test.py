@@ -798,3 +798,49 @@ new_model.build_operators()
 new_model.disp()
      
 # new: {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+
+
+#%%
+# look at popularity of different terms
+
+import pandas as pd
+import pickle
+import seaborn
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+from scipy.spatial.distance import squareform
+
+import configs
+import learning_model
+from definitions import observable_shorthand2pretty as ops_longlabels, ops
+
+# settings:
+cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
+# experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
+experiment_name = '251122-run' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
+D = 2
+Rs = [1,4,5,6,7,8,11,12,13,15,17,19,20]
+clustering_name = 'clustering-sub100'
+chosen_k = 7
+Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
+hyperparams = configs.get_hyperparams(config_name)
+output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
+               + clustering_name + '_k' + str(chosen_k) + '_process_popularity')
+correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
+
+# import lists of models in each cluster (currenlty not centres though),
+# and example model (for parameter labels):
+example_model_file = experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(Rs[0]) + '_best.pickle'
+with open(example_model_file, 'rb') as filestream:
+    example_model = pickle.load(filestream)
+models_by_clusters_file = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
+            + clustering_name + '_k' + str(chosen_k) + '_combined_assignments.pickle')
+with open(models_by_clusters_file, 'rb') as filestream:
+    models_by_clusters = pickle.load(filestream)
+
+_, labels, labels_latex = example_model.vectorise_under_library(hyperparameters = hyperparams)
+
+
+
