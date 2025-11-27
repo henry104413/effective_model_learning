@@ -488,7 +488,7 @@ if not True:
 
 #%%
 import pickle
-with open('2025_11_21_031410_Wit-Fig4-6-0_2_Lsyst-sz-Lvirt--Cs2v-sx-Cv2v--_D1_R1_proposals.pickle'
+with open('251122-run_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_Rs1,4,5,6,7,8,11,12,13,15,17,19,20_clustering-sub100_clustering_centres.pickle'
           , 'rb') as filestream:
     A = pickle.load(filestream)
     
@@ -723,3 +723,124 @@ plt.ylabel(r'$\sqrt{time\ \mathrm{(s)}}$')
 Y = np.sqrt(avgs_each_N)
 plt.plot(Ns, Y, ':+', linewidth = 1, markeredgewidth = 2, c='firebrick')
 plt.savefig(filename + '_profiling_t_vs_N_plot.svg', bbox_inches='tight')
+
+
+
+#%% model parameter vector to working model...
+
+import configs
+import learning_model
+import pickle
+
+model_file = '251122-run_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R9_best.pickle'
+config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
+hyperparams = configs.get_hyperparams(config_name)
+D = 2
+default_qubit_energy = 1
+
+# import and vectorise test model:
+with open(model_file, 'rb') as filestream:
+    old_model = pickle.load(filestream)
+    
+old_model.vectorise_under_library(hyperparameters = hyperparams)
+newest_model = learning_model.LearningModel() 
+newest_model.configure_to_params_vector(old_model.vectorise_under_library(hyperparameters = hyperparams))
+   
+raise SystemExit()
+vals, labels, latex_labels = old_model.vectorise_under_library(hyperparameters = hyperparams)
+    
+# assume 1 qubit and D defects:
+new_model = learning_model.LearningModel()
+new_model.add_TLS(is_qubit = True, energy = default_qubit_energy)
+for i in range(D):
+    new_model.add_TLS(is_qubit = False) 
+qubits = [x for x in new_model.TLSs if x.is_qubit]
+defects = [x for x in new_model.TLSs if not x.is_qubit]
+
+op_short2long = {'sx': 'sigmax', 'sy': 'sigmay', 'sz':'sigmaz', 'sp':'sigmap', 'sm':'sigmam'}
+
+# populate model using vectorised parameters and labels:
+# !!! note: currently assumes simple models with a single operator pair for couplings - can be extended
+for label, val in zip(labels, vals):
+    if val == 0: continue # skip zero-value parameters
+    if (temp := len([True for x in label if x in ['S','V']])) == 2: # ie. coupling
+        systems_labels, op1, op2 = label.split('-',3)
+        holder_label, partner_label = systems_labels.split(',')
+        if holder_label[0] == 'V':
+            holder = defects[int(holder_label[1]) - 1]
+        elif holder_label[0] == 'S':
+            holder = qubits[int(holder_label[1]) - 1]
+        if partner_label[0] == 'V':
+            partner = defects[int(partner_label[1]) - 1]
+        elif partner_label[0] == 'S':
+            partner = qubits[int(partner_label[1]) - 1]
+        if partner not in holder.couplings:
+            holder.couplings[partner] = []
+        holder.couplings[partner].append((val,[(op_short2long[op1],op_short2long[op2])]))
+        # add to dictionary entry DO NOT REPLACE!!
+    elif temp == 1 and 'E' in label: # ie. defect energy term 
+    # note: qubits were initialised to default but can be changed
+        system_label, _ = label.split('-',1)
+        if system_label[0] == 'V':
+            system = defects[int(system_label[1]) - 1]
+        elif system_label[0] == 'S':
+            system = qubits[int(system_label[1]) - 1]
+        system.energy = val
+    else: # ie. lindblad
+        system_label, op = label.split('-',2)[0:2]
+        if system_label[0] == 'V':
+            system = defects[int(system_label[1]) - 1]
+        elif system_label[0] == 'S':
+            system = qubits[int(system_label[1]) - 1]
+        system.Ls[op_short2long[op]] = val
+new_model.build_operators()
+
+new_model.disp()
+     
+# new: {partner: [(rate, [(op_self, op_partner), (op_self, op_partner), ...]]}
+
+
+#%%
+# look at popularity of different terms
+
+import pandas as pd
+import pickle
+import seaborn
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
+from scipy.spatial.distance import squareform
+
+import configs
+import learning_model
+from definitions import observable_shorthand2pretty as ops_longlabels, ops
+
+# settings:
+cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
+# experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
+experiment_name = '251122-run' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
+D = 2
+Rs = [1,4,5,6,7,8,11,12,13,15,17,19,20]
+clustering_name = 'clustering-sub100'
+chosen_k = 7
+Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
+hyperparams = configs.get_hyperparams(config_name)
+output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
+               + clustering_name + '_k' + str(chosen_k) + '_process_popularity')
+correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
+
+# import lists of models in each cluster (currenlty not centres though),
+# and example model (for parameter labels):
+example_model_file = experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(Rs[0]) + '_best.pickle'
+with open(example_model_file, 'rb') as filestream:
+    example_model = pickle.load(filestream)
+models_by_clusters_file = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
+            + clustering_name + '_k' + str(chosen_k) + '_combined_assignments.pickle')
+with open(models_by_clusters_file, 'rb') as filestream:
+    models_by_clusters = pickle.load(filestream)
+
+_, labels, labels_latex = example_model.vectorise_under_library(hyperparameters = hyperparams)
+
+
+

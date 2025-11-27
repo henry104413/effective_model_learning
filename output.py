@@ -41,24 +41,34 @@ class Output:
                  toggles: type,
                  filename: str,
                  dynamics_ts: np.ndarray = False, 
-                 dynamics_datasets: list[list[np.ndarray]] = [], 
-                 dynamics_datasets_labels: list[str] = [],
+                 dynamics_datasets: list[list[np.ndarray]] = None, 
+                 dynamics_datasets_labels: list[str] = None,
                  dynamics_formatting: list[str] = False,
-                 observable_labels: list[str] = [],
-                 loss: list[float|int] = [],
-                 acceptance_probability: list[float|int] = [],
+                 observable_labels: list[str] = None,
+                 loss: list[float|int] = None,
+                 acceptance_probability: list[float|int] = None,
                  best_loss: float = None,
-                 acceptance: list[float|int] = [],
+                 acceptance: list[float|int] = None,
                  overall_acceptance: dict[str,float] = False,
-                 models_to_save: list[BasicModel|LearningModel] = [],
-                 model_names: list[str] = [],
-                 all_proposals: dict[str, list[float]|list[LearningModel]] = {},
+                 models_to_save: list[BasicModel|LearningModel] = None,
+                 model_names: list[str] = None,
+                 all_proposals: dict[str, list[float]|list[LearningModel]] = None,
                  chain_hyperparams: dict = False,
                  chain_name: str = False,
                  fontsize: float = False):
         """
         Creates outputs as specified by arguments.
         """
+        
+        if dynamics_datasets is None: dynamics_datasets = [], 
+        if dynamics_datasets_labels is None: dynamics_datasets_labels = [],
+        if observable_labels is None: observable_labels = [],
+        if loss is None: loss = [],
+        if acceptance_probability is None: acceptance_probability = [],
+        if acceptance is None: acceptance = [],
+        if models_to_save is None: models_to_save = [],
+        if model_names is None: model_names = [],
+        if all_proposals is None: all_proposals = {},
         
         self.fontsize = fontsize
         
