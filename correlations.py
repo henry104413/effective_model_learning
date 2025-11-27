@@ -56,6 +56,8 @@ plt.bar(list(models_by_clusters.keys()), [len(models_by_clusters[x]) for x in mo
         color = 'navy')
 plt.xlabel('cluster')
 plt.ylabel('number of models')
+plt.savefig(output_name + '_cluster_popularity' + '.svg', 
+            dpi = 1000, bbox_inches='tight')
 
 
 
@@ -230,3 +232,30 @@ for cluster_combination in cluster_combinations:
         plt.savefig(output_name + '_Cs' + Cs_tag + '_thr' + str(threshold) + '_clustered_matrix.svg', dpi = 1000, bbox_inches='tight')
     
     
+    
+# %%
+
+# popularity of different processes:
+# manually chosen sets for now... cheeky bit of code
+    
+pops_all = [sum([True for point in points if abs(point[p]) > 0])/len(points)
+            for p in range(len(labels))]
+pops_c1 = [sum([True for point in models_by_clusters[1] if abs(point[p]) > 0])/len(models_by_clusters[1])
+           for p in range(len(labels))]
+#%%
+plt.figure()
+plt.barh(range(len(labels)), pops_all,
+        color = 'navy', alpha = 0.5, height = 0.8, label = 'all clusters')
+plt.barh(range(len(labels)), pops_c1,
+        color = 'red', alpha = 0.5, height = 0.5, label = 'cluster 1')
+plt.xlabel('presence')
+plt.ylabel('parameter')
+plt.yticks(range(len(labels)), labels_latex)
+plt.legend()
+plt.savefig(output_name + '_parameter_popularity' + '.svg', 
+            dpi = 1000, bbox_inches='tight')
+
+        
+        
+        
+        
