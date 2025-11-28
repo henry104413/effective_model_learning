@@ -13,6 +13,7 @@ import pickle
 import seaborn
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import squareform
 
@@ -234,7 +235,6 @@ for cluster_combination in cluster_combinations:
     
     
 # %%
-
 # popularity of different processes:
 # manually chosen sets for now... cheeky bit of code
     
@@ -242,7 +242,7 @@ pops_all = [sum([True for point in points if abs(point[p]) > 0])/len(points)
             for p in range(len(labels))]
 pops_c1 = [sum([True for point in models_by_clusters[1] if abs(point[p]) > 0])/len(models_by_clusters[1])
            for p in range(len(labels))]
-#%%
+
 plt.figure()
 plt.barh(range(len(labels)), pops_all,
         color = 'navy', alpha = 0.5, height = 0.8, label = 'all clusters')
@@ -257,5 +257,67 @@ plt.savefig(output_name + '_process_popularity' + '.svg',
 
         
         
-        
-        
+#%%        
+# sample set of models (like one cluster), evaluate dynamics, find mean and standard deviation
+
+# want for each observable numpy array
+# dyynamics produces array in time
+# stack multiple models vertically
+# then can do mean, std over columns
+# plot this vs target
+
+# section settings:
+chosen_cluster = 2
+model_set = models_by_clusters[chosen_cluster]
+samples = 10000
+vectors = random.sample(model_set, min(samples, len(model_set)))
+
+# target data:
+# note: datasets and observable labels must be encapsulated into lists
+with open('simulated_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
+          'rb') as filestream:
+    simulated_data = pickle.load(filestream)    
+ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
+measurement_datasets = [sx, sy, sz]
+measurement_observables = ['sigmax', 'sigmay', 'sigmaz']
+
+# turn each parameters vector into model and evaluate and save observables:
+evaluation_ts = ts
+evaluated_datasets = {obs: [] for obs in measurement_observables} 
+model = learning_model.LearningModel()
+for vector in vectors:
+    model.configure_to_params_vector((vector, labels, labels_latex),
+                                     D = D,  
+                                     qubit_initial_state = ops['plus'],
+                                     defect_initial_state = ops['mm'])
+    temp = model.calculate_dynamics(evaluation_ts, measurement_observables)
+    for i in range(len(measurement_observables)):
+        evaluated_datasets[measurement_observables[i]].append(temp[i])
+    
+# stack sample models evaluated data:
+# entry for each observable is array, each row for one model,
+# each column for one evaluation time, to find mean and std along columns     
+evaluated_arrays = {obs: np.stack(evaluated_datasets[obs])
+                    for obs in measurement_observables}
+
+means = {obs: evaluated_arrays[obs].mean(axis=0)
+         for obs in measurement_observables}
+
+stds = {obs: evaluated_arrays[obs].std(axis=0)
+         for obs in measurement_observables}
+
+for i, op in enumerate(measurement_observables):
+    plt.figure()
+    plt.xlabel('t (us)')
+    plt.ylabel(ops_longlabels[op])
+    plt.ylim([-1, 1])
+    plt.plot(evaluation_ts, means[op], 'r-', linewidth = 0.7, alpha = 0.7)
+    plt.fill_between(evaluation_ts, means[op]-stds[op], means[op]+stds[op],
+                     alpha=0.4, color='tomato')
+    plt.errorbar(ts, measurement_datasets[i], yerr = 0.01,
+                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
+    plt.savefig(output_name + '_C' + str(chosen_cluster)
+                + '_sample' + str(min(samples, len(model_set)))
+                + '_' + op + '_comparison.svg', dpi = 1000, bbox_inches='tight')
+
+    
