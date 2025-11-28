@@ -240,7 +240,7 @@ class LearningModel(basic_model.BasicModel):
         for label, val in zip(labels, vals):
             if val == 0: continue # skip zero-value parameters
             if (temp := len([True for x in label if x in ['S','V']])) == 2: # ie. coupling
-                systems_labels, ops = label.split('-',1) # now ops eg. 'sx,sx-sy,sy-sz,sz'
+                systems_labels, ops_all = label.split('-',1) # now ops_all eg. 'sx,sx-sy,sy-sz,sz'
                 holder_label, partner_label = systems_labels.split(',')
                 if holder_label[0] == 'V':
                     holder = defects[int(holder_label[1]) - 1]
@@ -252,9 +252,9 @@ class LearningModel(basic_model.BasicModel):
                     partner = qubits[int(partner_label[1]) - 1]
                 if partner not in holder.couplings:
                     holder.couplings[partner] = []
-                ops = ops.split('-') # now ops eg. ['sx,sx', 'sy,sy', 'sz,sz']
+                ops_all = ops_all.split('-') # now ops_all eg. ['sx,sx', 'sy,sy', 'sz,sz']
                 op_pairs_list = [tuple([op_short2long[op] for op in op_pair.split(',')])
-                                 for op_pair in ops] 
+                                 for op_pair in ops_all] 
                 holder.couplings[partner].append((val,op_pairs_list))
                 # add to dictionary entry DO NOT REPLACE!!
             elif temp == 1 and 'E' in label: # ie. defect energy term 
