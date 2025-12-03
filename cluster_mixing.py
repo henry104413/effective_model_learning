@@ -22,18 +22,18 @@ import time
 import copy
 
 # settings and source data: # '250818-sim-1T-4JL-2tweak' is nice fit
-experiment_name = '251122-run' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+experiment_name = '251128-smallnoise' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
 #experiment_name = '251110-100k' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 
 D = 2
-Rs = [1, 4, 5, 6, 7, 8, 11, 12, 13, 15, 17, 19, 20] # for combining chains
+Rs = [2, 5, 8, 10, 11, 12, 13, 16, 17, 22, 23, 26, 27, 29, 30] # for combining chains
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 hyperparams = configs.get_hyperparams(config_name)
-output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_clustering-sub100'
+output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_clustering-every100'
 min_clusters = 2
-max_clusters = 20
+max_clusters = 10
 loss_threshold = False # if zero, watch the conditional 
 bounds = []
 verbosity = 0
@@ -48,7 +48,7 @@ if vectorisation == 'parameters':
     #config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
     hyperparams = configs.get_hyperparams(config_name)
 
-
+ 
 # container for points to cluster (vectorised and decomplexified Liouvillians, or parameter vectors),
 # as well as corresponding loss and posterior
 points = []

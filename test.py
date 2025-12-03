@@ -345,17 +345,22 @@ ts = ts[order]
 og_sx = og_sx[order] # original sx measurements - currently using all simulated
 ts = ts/1000 # convert from ns to us
 
+# set simulated noise level (std) - now assuming all observables same noise
+std_all = 0.05
 
 # import a model (would have been trained on ts, sx):
 model_file = '250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best'
 with open(model_file + '.pickle', 'rb') as filestream:
     best = pickle.load(filestream)
     
+std_sx = std_all 
+std_sy = std_all
+std_sz = std_all
 
 # random noise shift for sy, sz, and simulated measurements of sy, sz:
-noise_sy = np.random.normal(loc = 0, scale = 0.01, size = len(ts))
-noise_sz = np.random.normal(loc = 0, scale = 0.01, size = len(ts))
-noise_sx = np.random.normal(loc = 0, scale = 0.01, size = len(ts))
+noise_sx = np.random.normal(loc = 0, scale = std_sx, size = len(ts))
+noise_sy = np.random.normal(loc = 0, scale = std_sy, size = len(ts))
+noise_sz = np.random.normal(loc = 0, scale = std_sz, size = len(ts))
 sy, sz, sx = best.calculate_dynamics(ts, observable_ops = ['sigmay', 'sigmaz', 'sigmax'],
                                         custom_function_on_return = False)
 sim_sy = sy + noise_sy
@@ -372,16 +377,20 @@ plt.plot(ts, sim_sy, 'm.', label = r'sim $\langle\sigma_y\rangle$', alpha = 0.5,
 plt.plot(ts, sz, 'g-', label = '_hidden', alpha = 0.4)
 plt.plot(ts, sim_sz, 'g.', label = r'sim $\langle\sigma_z\rangle$', alpha = 0.5, markersize = 5)
 plt.legend(fontsize = 14)
+plt.text(0.1, 1, 'noise std on all = ' + str(std_all), fontsize = 10)
 plt.xlabel(r'$time\ (\mu s)$') 
 plt.savefig('simulated_' + model_file + '.svg', dpi = 1000, bbox_inches='tight')
 
 simulated_data = {'ts': ts,
                   'sx': sim_sx,
                   'sy': sim_sy,
-                  'sz': sim_sz
+                  'sz': sim_sz,
+                  'std_sx': std_sx,
+                  'std_sy': std_sy,
+                  'std_sz': std_sz
                   }
 
-with open('simulated_' + model_file + '.pickle', 'wb') as filestream:
+with open('simulated-std' + str(std_all).replace('.', 'p') + '_' + model_file + '.pickle', 'wb') as filestream:
     pickle.dump(simulated_data, filestream)
 
 
