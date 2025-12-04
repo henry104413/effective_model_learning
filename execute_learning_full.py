@@ -109,6 +109,7 @@ print(filename, flush = True)
 
 
 #%% prepare simulated multi-observable training datasets:
+# !!! NOTE: this currently means not using specified target file but taking data from file below instead:
     
 # import dictionary of ts, sx, sy, sz observable values 
 # (sx equal to original and rest simulated, all with noise with std = 0.01)    

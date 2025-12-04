@@ -853,3 +853,35 @@ _, labels, labels_latex = example_model.vectorise_under_library(hyperparameters 
 
 
 
+#%%
+
+import pickle
+
+# D2:
+output_name = '251128-smallnoise_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_Rs2,5,8,10,11,12,13,16,17,22,23,26,27,29,30_clustering-every100'
+# D1:
+# output_name = '251128-smallnoise_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D1_Rs1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30_clustering-every100'
+
+with open(output_name + '_points.pickle', 'rb') as filestream:
+    points = pickle.load(filestream)
+with open(output_name + '_outputs_each_k.pickle', 'rb') as filestream:
+    outputs_each_k = pickle.load(filestream)
+
+# k choice:
+# D1 -> 8 (could also try 3)
+# D2 -> 4
+
+# go over selected ks:
+ks = [4]
+for k in ks:
+    
+    # make dictionary where keys are cluster labels and entries all points (parameter vectors) in that cluster:
+    points_by_clusters = {}
+    for label in set(outputs_each_k[k]['assignments']): # label (number) for each cluster
+        points_by_clusters[label] = [x for (x,y) in zip(points, outputs_each_k[k]['assignments'])
+                                     if y == label]
+    
+    # save as pickle:
+    with open(output_name + '_k' + str(k) + '_combined_assignments.pickle', 'wb') as filestream:
+        pickle.dump(points_by_clusters, filestream)
+    

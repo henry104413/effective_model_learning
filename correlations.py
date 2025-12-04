@@ -24,12 +24,13 @@ from definitions import observable_shorthand2pretty as ops_longlabels, ops
 # settings:
 cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
 # experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
-experiment_name = '251122-run' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+experiment_name = '251128-smallnoise' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 2
-Rs = [1,4,5,6,7,8,11,12,13,15,17,19,20]
-clustering_name = 'clustering-sub100'
-chosen_k = 7
+Rs = [2,5,8,10,11,12,13,16,17,22,23,26,27,29,30] # for D2
+# Rs = [x+1 for x in range(30)]
+clustering_name = 'clustering-every100'
+chosen_k = 4
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 hyperparams = configs.get_hyperparams(config_name)
 output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
@@ -56,6 +57,7 @@ plt.figure()
 plt.bar(list(models_by_clusters.keys()), [len(models_by_clusters[x]) for x in models_by_clusters],
         color = 'navy')
 plt.xlabel('cluster')
+plt.xticks(list(range(chosen_k)), labels = [str(x) for x in list(range(chosen_k))])
 plt.ylabel('number of models')
 plt.savefig(output_name + '_cluster_popularity' + '.svg', 
             dpi = 1000, bbox_inches='tight')
@@ -68,7 +70,7 @@ if True:
     
     # import dictionary of ts, sx, sy, sz observable values: 
     # (sx equal to original and rest simulated, all with noise with std = 0.01)    
-    with open('simulated_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
+    with open('simulated_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle.py',
               'rb') as filestream:
         simulated_data = pickle.load(filestream)    
     ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
@@ -237,17 +239,22 @@ for cluster_combination in cluster_combinations:
 # %%
 # popularity of different processes:
 # manually chosen sets for now... cheeky bit of code
-    
+
+cluster_choices = [0, 1]
+# formatting - must have options for at least each cluster choice, can be longer:
+colours = ['red', 'navy']
+heights = [0.6, 0.4] # ideally descending
+alphas = [0.4, 0.5] # ideally ascending or same
 pops_all = [sum([True for point in points if abs(point[p]) > 0])/len(points)
             for p in range(len(labels))]
-pops_c1 = [sum([True for point in models_by_clusters[1] if abs(point[p]) > 0])/len(models_by_clusters[1])
-           for p in range(len(labels))]
-
 plt.figure()
 plt.barh(range(len(labels)), pops_all,
-        color = 'navy', alpha = 0.5, height = 0.8, label = 'all clusters')
-plt.barh(range(len(labels)), pops_c1,
-        color = 'red', alpha = 0.5, height = 0.5, label = 'cluster 1')
+        color = 'silver', alpha = 0.5, height = 1, label = 'all clusters')
+for i, cluster_choice in enumerate(cluster_choices):
+    pops_choice = [sum([True for point in models_by_clusters[cluster_choice] if abs(point[p]) > 0])/len(models_by_clusters[cluster_choice])
+               for p in range(len(labels))]
+    plt.barh(range(len(labels)), pops_choice,
+            color = colours[i], alpha = alphas[i], height = heights[i], label = 'cluster ' + str(cluster_choice))
 plt.xlabel('presence')
 plt.ylabel('parameter')
 plt.yticks(range(len(labels)), labels_latex)
@@ -267,14 +274,12 @@ plt.savefig(output_name + '_process_popularity' + '.svg',
 # plot this vs target
 
 # section settings:
-chosen_cluster = 2
-model_set = models_by_clusters[chosen_cluster]
+cluster_choices = [0, 1]
 samples = 10000
-vectors = random.sample(model_set, min(samples, len(model_set)))
 
 # target data:
 # note: datasets and observable labels must be encapsulated into lists
-with open('simulated_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
+with open('simulated_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle.py',
           'rb') as filestream:
     simulated_data = pickle.load(filestream)    
 ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
@@ -282,42 +287,47 @@ measurement_datasets = [sx, sy, sz]
 measurement_observables = ['sigmax', 'sigmay', 'sigmaz']
 
 # turn each parameters vector into model and evaluate and save observables:
-evaluation_ts = ts
-evaluated_datasets = {obs: [] for obs in measurement_observables} 
-model = learning_model.LearningModel()
-for vector in vectors:
-    model.configure_to_params_vector((vector, labels, labels_latex),
-                                     D = D,  
-                                     qubit_initial_state = ops['plus'],
-                                     defect_initial_state = ops['mm'])
-    temp = model.calculate_dynamics(evaluation_ts, measurement_observables)
-    for i in range(len(measurement_observables)):
-        evaluated_datasets[measurement_observables[i]].append(temp[i])
+for chosen_cluster in cluster_choices:
+    model_set = models_by_clusters[chosen_cluster]
+    vectors = random.sample(model_set, min(samples, len(model_set)))
     
-# stack sample models evaluated data:
-# entry for each observable is array, each row for one model,
-# each column for one evaluation time, to find mean and std along columns     
-evaluated_arrays = {obs: np.stack(evaluated_datasets[obs])
-                    for obs in measurement_observables}
-
-means = {obs: evaluated_arrays[obs].mean(axis=0)
-         for obs in measurement_observables}
-
-stds = {obs: evaluated_arrays[obs].std(axis=0)
-         for obs in measurement_observables}
-
-for i, op in enumerate(measurement_observables):
-    plt.figure()
-    plt.xlabel('t (us)')
-    plt.ylabel(ops_longlabels[op])
-    plt.ylim([-1, 1])
-    plt.plot(evaluation_ts, means[op], 'r-', linewidth = 0.7, alpha = 0.7)
-    plt.fill_between(evaluation_ts, means[op]-stds[op], means[op]+stds[op],
-                     alpha=0.4, color='tomato')
-    plt.errorbar(ts, measurement_datasets[i], yerr = 0.01,
-                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
-    plt.savefig(output_name + '_C' + str(chosen_cluster)
-                + '_sample' + str(min(samples, len(model_set)))
-                + '_' + op + '_comparison.svg', dpi = 1000, bbox_inches='tight')
-
+    evaluation_ts = ts
+    evaluated_datasets = {obs: [] for obs in measurement_observables} 
+    model = learning_model.LearningModel()
+    for vector in vectors:
+        model.configure_to_params_vector((vector, labels, labels_latex),
+                                         D = D,  
+                                         qubit_initial_state = ops['plus'],
+                                         defect_initial_state = ops['mm'])
+        temp = model.calculate_dynamics(evaluation_ts, measurement_observables)
+        for i in range(len(measurement_observables)):
+            evaluated_datasets[measurement_observables[i]].append(temp[i])
+        
+    # stack sample models evaluated data:
+    # entry for each observable is array, each row for one model,
+    # each column for one evaluation time, to find mean and std along columns     
+    evaluated_arrays = {obs: np.stack(evaluated_datasets[obs])
+                        for obs in measurement_observables}
     
+    means = {obs: evaluated_arrays[obs].mean(axis=0)
+             for obs in measurement_observables}
+    
+    stds = {obs: evaluated_arrays[obs].std(axis=0)
+             for obs in measurement_observables}
+    
+    for i, op in enumerate(measurement_observables):
+        plt.figure()
+        plt.xlabel('t (us)')
+        plt.ylabel(ops_longlabels[op])
+        plt.ylim([-1, 1])
+        plt.plot(evaluation_ts, means[op], 'r-', linewidth = 0.7, alpha = 0.7)
+        plt.fill_between(evaluation_ts, means[op]-stds[op], means[op]+stds[op],
+                         alpha=0.4, color='tomato', label = 'cluster ' + str(chosen_cluster))
+        plt.errorbar(ts, measurement_datasets[i], yerr = 0.01,
+                     fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
+        plt.legend()
+        plt.savefig(output_name + '_C' + str(chosen_cluster)
+                    + '_sample' + str(min(samples, len(model_set)))
+                    + '_' + op + '_comparison.svg', dpi = 1000, bbox_inches='tight')
+    
+        

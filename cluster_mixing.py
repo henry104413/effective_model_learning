@@ -162,7 +162,6 @@ with open(output_name + '_posteriors.pickle', 'wb') as filestream:
 print('\n.....\ndata preparation time pre-clustering (s):' 
       + str(np.round((new_time := time.time()) - time_last,2)) + '\n.....\n', flush = True)
   
-raise SystemExit()
 
 #%% clustering execution:
 
@@ -295,7 +294,29 @@ print('Finished exporting metrics', flush = True)
 
 
 del proposals # this MAY speed things up before reallocation below - UNTESTED
+
+
+
+#%% collate clustered models:
+# create dictionary where keys are cluster labels,
+# and entries are lists of all parameter vectors for that cluster;
+# whole dictionary specific to k - use elbow for now 
+
+# go over selected ks:
+ks = clusters_counts
+for k in ks:
     
+    # make dictionary where keys are cluster labels and entries all points (parameter vectors) in that cluster:
+    points_by_clusters = {}
+    for label in set(outputs_each_k[k]['assignments']): # label (number) for each cluster
+        points_by_clusters[label] = [x for (x,y) in zip(points, outputs_each_k[k]['assignments'])
+                                     if y == label]
+    
+    # save as pickle:
+    with open(output_name + '_k' + str(k) + '_combined_assignments.pickle', 'wb') as filestream:
+        pickle.dump(points_by_clusters, filestream)
+    
+
     
 #%% plot assignments and centres given with k = elbow
 
@@ -382,26 +403,6 @@ if not False:
         
         print('Finished potting assignments of consituent models for each chain', flush = True)
 
-        
-        
-#%% collate clustered models:
-# create dictionary where keys are cluster labels,
-# and entries are lists of all parameter vectors for that cluster;
-# whole dictionary specific to k - use elbow for now 
-
-# go over selected ks:
-ks = clusters_counts
-for k in ks:
-    
-    # make dictionary where keys are cluster labels and entries all points (parameter vectors) in that cluster:
-    points_by_clusters = {}
-    for label in set(outputs_each_k[k]['assignments']): # label (number) for each cluster
-        points_by_clusters[label] = [x for (x,y) in zip(points, outputs_each_k[k]['assignments'])
-                                     if y == label]
-    
-    # save as pickle:
-    with open(output_name + '_k' + str(k) + '_combined_assignments.pickle', 'wb') as filestream:
-        pickle.dump(points_by_clusters, filestream)
         
         
 
