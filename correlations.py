@@ -7,6 +7,7 @@ Effective model learning
 Finds correlations for across selected clusters of models.
 """
 
+# NEED TO SHORTEN FILE NAMES...
 
 import pandas as pd
 import pickle
@@ -28,13 +29,13 @@ experiment_name = '251128-smallnoise' + '_Wit-Fig4-6-0_025' # including experime
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 2
 Rs = [2,5,8,10,11,12,13,16,17,22,23,26,27,29,30] # for D2
-# Rs = [x+1 for x in range(30)]
+#Rs = [x+1 for x in range(30)]
+Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'clustering-every100'
 chosen_k = 4
-Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 hyperparams = configs.get_hyperparams(config_name)
 output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
-               + clustering_name + '_k' + str(chosen_k) + '_correlations_vol3')
+               + clustering_name + '_k' + str(chosen_k) + '_corr')
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 
 # import lists of models in each cluster (currenlty not centres though),
@@ -48,6 +49,18 @@ with open(models_by_clusters_file, 'rb') as filestream:
     models_by_clusters = pickle.load(filestream)
 
 _, labels, labels_latex = example_model.vectorise_under_library(hyperparameters = hyperparams)
+
+# also import points, assignments, and outputs_each_k for centres below:
+source_base = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_' + clustering_name
+outputs_each_k_file = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
+            + clustering_name + '_outputs_each_k.pickle')
+with open(source_base + '_points.pickle', 'rb') as filestream:
+    points = pickle.load(filestream)
+with open(source_base + '_posteriors.pickle', 'rb') as filestream:
+    posteriors = pickle.load(filestream)
+with open(outputs_each_k_file, 'rb') as filestream:
+    outputs_each_k = pickle.load(filestream)
+assignments = list(outputs_each_k[chosen_k]['assignments'])
 
 
 
@@ -66,7 +79,7 @@ plt.savefig(output_name + '_cluster_popularity' + '.svg',
 
 #%% also plot dynamics comparison for cluster centres and champions
 
-if True: 
+if not True: 
     
     # import dictionary of ts, sx, sy, sz observable values: 
     # (sx equal to original and rest simulated, all with noise with std = 0.01)    
@@ -85,11 +98,7 @@ if True:
 
     
     # centres file (now pickle with centres for all ks - could also use specific k csv centres file)
-    outputs_each_k_file = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
-                + clustering_name + '_outputs_each_k.pickle')
-    with open(outputs_each_k_file, 'rb') as filestream:
-        outputs_each_k = pickle.load(filestream)
-        clusters_centres = outputs_each_k[chosen_k]['centres']
+    clusters_centres = outputs_each_k[chosen_k]['centres']
     # note: clusters_centres is np array with rows for clusters and columns for parameters
     
     # turn into models and do dynamics comparison of centres vs target datasets: 
@@ -119,13 +128,6 @@ if True:
         
     # also do the same for cluster champions - find, turn into models and do comparison vs target datasets: 
     # note: currently based on posterior (can also do loss):
-    source_base = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_' + clustering_name
-    with open(source_base + '_points.pickle', 'rb') as filestream:
-        points = pickle.load(filestream)
-    with open(source_base + '_posteriors.pickle', 'rb') as filestream:
-        posteriors = pickle.load(filestream)
-    assignments = list(outputs_each_k[chosen_k]['assignments'])
-    
     champions = {}
     champ_posteriors = {}
     champion_model = learning_model.LearningModel()
@@ -168,7 +170,7 @@ if True:
 # find correlations, dendrograms, and clustered parameters in selected cluster combinations
 
 # list of lists, each inner list for combinations of cluster to analyse together: 
-cluster_combinations = []
+cluster_combinations = [[0,1],[0,1,3]]
 # each separately:
 cluster_combinations.extend([x] for x in (models_by_clusters.keys()))
 # all together: 
@@ -200,7 +202,7 @@ for cluster_combination in cluster_combinations:
     plt.figure(figsize=(10,10))
     seaborn.heatmap(CM, annot=False, cmap=cmap, fmt=".2f", linewidths=0.5, vmin = -1, vmax = 1)
     # colormaps: coolwarm, PiYG
-    plt.savefig(output_name + '_Cs' + Cs_tag + '_matrix.svg', dpi = 1000, bbox_inches='tight')
+    plt.savefig(output_name + '_Cs' + Cs_tag + '_mat.svg', dpi = 1000, bbox_inches='tight')
     
     # hierarchical clustering:
     
@@ -232,7 +234,7 @@ for cluster_combination in cluster_combinations:
         clust_CM = clustered.corr()
         # seaborn.heatmap(round(clust_CM,2), cmap='RdBu', annot=True, annot_kws={"size": 7}, vmin=-1, vmax=1);
         seaborn.heatmap(clust_CM, cmap=cmap, annot=False, annot_kws={"size": 7}, vmin=-1, vmax=1);
-        plt.savefig(output_name + '_Cs' + Cs_tag + '_thr' + str(threshold) + '_clustered_matrix.svg', dpi = 1000, bbox_inches='tight')
+        plt.savefig(output_name + '_Cs' + Cs_tag + '_thr' + str(threshold) + '_cmat.svg', dpi = 1000, bbox_inches='tight')
     
     
     
@@ -240,16 +242,16 @@ for cluster_combination in cluster_combinations:
 # popularity of different processes:
 # manually chosen sets for now... cheeky bit of code
 
-cluster_choices = [0, 1]
+cluster_choices = [0,1]
 # formatting - must have options for at least each cluster choice, can be longer:
-colours = ['red', 'navy']
-heights = [0.6, 0.4] # ideally descending
-alphas = [0.4, 0.5] # ideally ascending or same
+colours = ['red', 'blue', 'black']
+heights = [0.8, 0.5, 0.3] # ideally descending
+alphas = [0.3, 0.3, 0.3] # ideally ascending or same
 pops_all = [sum([True for point in points if abs(point[p]) > 0])/len(points)
             for p in range(len(labels))]
 plt.figure()
 plt.barh(range(len(labels)), pops_all,
-        color = 'silver', alpha = 0.5, height = 1, label = 'all clusters')
+        edgecolor = 'black', color = 'none', alpha = 0.5, height = 1, label = 'all clusters')
 for i, cluster_choice in enumerate(cluster_choices):
     pops_choice = [sum([True for point in models_by_clusters[cluster_choice] if abs(point[p]) > 0])/len(models_by_clusters[cluster_choice])
                for p in range(len(labels))]
@@ -274,7 +276,7 @@ plt.savefig(output_name + '_process_popularity' + '.svg',
 # plot this vs target
 
 # section settings:
-cluster_choices = [0, 1]
+# cluster_choices = [0, 1] # note: now taken from above section, enable if required separately
 samples = 10000
 
 # target data:
