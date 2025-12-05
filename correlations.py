@@ -7,7 +7,7 @@ Effective model learning
 Finds correlations for across selected clusters of models.
 """
 
-# NEED TO SHORTEN FILE NAMES...
+
 
 import pandas as pd
 import pickle
@@ -25,18 +25,23 @@ from definitions import observable_shorthand2pretty as ops_longlabels, ops
 # settings:
 cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
 # experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
-experiment_name = '251128-smallnoise' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+experiment_name = '251204-LN' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+simulated_std = 0.1
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 2
-Rs = [2,5,8,10,11,12,13,16,17,22,23,26,27,29,30] # for D2
+Rs = [1,2,3,4,5] # for D2
 #Rs = [x+1 for x in range(30)]
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
-clustering_name = 'clustering-every100'
+clustering_name = 'e100'
 chosen_k = 4
 hyperparams = configs.get_hyperparams(config_name)
 output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
                + clustering_name + '_k' + str(chosen_k) + '_corr')
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
+target_data_pickle_file = (
+    'simulated-std' + str(simulated_std).replace('.', 'p')
+    + '_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle.py')
+# note: using naming convention for std
 
 # import lists of models in each cluster (currenlty not centres though),
 # and example model (for parameter labels):
@@ -118,7 +123,7 @@ if not True:
             plt.ylabel(ops_longlabels[op])
             plt.ylim([-1, 1])
             #plt.plot(ts, simulated_data[op], 'b.', markersize = 1, label = 'target')
-            plt.errorbar(ts, simulated_data[op], yerr = 0.01, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
+            plt.errorbar(ts, simulated_data[op], yerr = simulated_std, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
             plt.plot(evaluation_ts, centres_datasets[op][c], 
                      'r-', linewidth = 1, alpha = 0.7, label = 'model')
             plt.legend()
@@ -152,7 +157,7 @@ if not True:
             plt.xlabel('t (us)')
             plt.ylabel(ops_longlabels[op])
             plt.ylim([-1, 1])
-            plt.errorbar(ts, simulated_data[op], yerr = 0.01, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
+            plt.errorbar(ts, simulated_data[op], yerr = simulated_std, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
             plt.plot(evaluation_ts, champions_datasets[op][c], 
                      'r-', linewidth = 1, alpha = 0.7, label = 'model')
             plt.legend()
@@ -170,7 +175,7 @@ if not True:
 # find correlations, dendrograms, and clustered parameters in selected cluster combinations
 
 # list of lists, each inner list for combinations of cluster to analyse together: 
-cluster_combinations = [[0,1],[0,1,3]]
+cluster_combinations = [[3]]
 # each separately:
 cluster_combinations.extend([x] for x in (models_by_clusters.keys()))
 # all together: 
@@ -242,11 +247,11 @@ for cluster_combination in cluster_combinations:
 # popularity of different processes:
 # manually chosen sets for now... cheeky bit of code
 
-cluster_choices = [0,1]
+cluster_choices = [1,2,3,0]
 # formatting - must have options for at least each cluster choice, can be longer:
-colours = ['red', 'blue', 'black']
-heights = [0.8, 0.5, 0.3] # ideally descending
-alphas = [0.3, 0.3, 0.3] # ideally ascending or same
+colours = ['red', 'blue', 'black', 'purple']
+heights = [0.8, 0.5, 0.3, 0.1] # ideally descending
+alphas = [0.3, 0.3, 0.3, 1] # ideally ascending or same
 pops_all = [sum([True for point in points if abs(point[p]) > 0])/len(points)
             for p in range(len(labels))]
 plt.figure()
@@ -281,15 +286,18 @@ samples = 10000
 
 # target data:
 # note: datasets and observable labels must be encapsulated into lists
-with open('simulated_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle.py',
+with open(target_data_pickle_file,
           'rb') as filestream:
     simulated_data = pickle.load(filestream)    
 ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
 measurement_datasets = [sx, sy, sz]
 measurement_observables = ['sigmax', 'sigmay', 'sigmaz']
 
+# cumulative evaluated arrays combining all chosen clusters:
+cumul_evaluated_arrays = {}
+
 # turn each parameters vector into model and evaluate and save observables:
-for chosen_cluster in cluster_choices:
+for j, chosen_cluster in enumerate(cluster_choices):
     model_set = models_by_clusters[chosen_cluster]
     vectors = random.sample(model_set, min(samples, len(model_set)))
     
@@ -325,11 +333,38 @@ for chosen_cluster in cluster_choices:
         plt.plot(evaluation_ts, means[op], 'r-', linewidth = 0.7, alpha = 0.7)
         plt.fill_between(evaluation_ts, means[op]-stds[op], means[op]+stds[op],
                          alpha=0.4, color='tomato', label = 'cluster ' + str(chosen_cluster))
-        plt.errorbar(ts, measurement_datasets[i], yerr = 0.01,
+        plt.errorbar(ts, measurement_datasets[i], yerr = simulated_std,
                      fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
         plt.legend()
         plt.savefig(output_name + '_C' + str(chosen_cluster)
                     + '_sample' + str(min(samples, len(model_set)))
                     + '_' + op + '_comparison.svg', dpi = 1000, bbox_inches='tight')
-    
+     
         
+    # also add to cumulative array:
+    for obs in measurement_observables:
+        if j == 0: # ie. first iteration
+            cumul_evaluated_arrays[obs] = evaluated_arrays[obs]
+        elif j > 0:
+            cumul_evaluated_arrays[obs] = np.concatenate((cumul_evaluated_arrays[obs], evaluated_arrays[obs]), axis = 0)
+    
+# plot cumulative means and stds (combining all chosen clusters):
+clusters_label = 'clusters ' + ''.join([str(x) + ', ' for x in cluster_choices])[:-2]
+means = {obs: cumul_evaluated_arrays[obs].mean(axis=0)
+         for obs in measurement_observables}
+stds = {obs: cumul_evaluated_arrays[obs].std(axis=0)
+         for obs in measurement_observables}
+for i, op in enumerate(measurement_observables):
+    plt.figure()
+    plt.xlabel('t (us)')
+    plt.ylabel(ops_longlabels[op])
+    plt.ylim([-1, 1])
+    plt.plot(evaluation_ts, means[op], 'r-', linewidth = 0.7, alpha = 0.7)
+    plt.fill_between(evaluation_ts, means[op]-stds[op], means[op]+stds[op],
+                     alpha=0.4, color='tomato', label = clusters_label)
+    plt.errorbar(ts, measurement_datasets[i], yerr = simulated_std,
+                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
+    plt.legend()
+    plt.savefig(output_name + '_C' + str(chosen_cluster)
+                + '_sample' + str(min(samples, len(model_set)))
+                + '_' + op + '_comparison.svg', dpi = 1000, bbox_inches='tight')
