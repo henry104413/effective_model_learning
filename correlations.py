@@ -28,12 +28,12 @@ cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
 experiment_name = '251204-LN' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
 simulated_std = 0.1
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-D = 2
+D = 1
 Rs = [1,2,3,4,5] # for D2
 #Rs = [x+1 for x in range(30)]
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e100'
-chosen_k = 4
+chosen_k = 5 # D2 MN and D2 LN = 4; D1 MN 4,5,7; D1 LN 5 -- D1 not that clearcut
 hyperparams = configs.get_hyperparams(config_name)
 output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
                + clustering_name + '_k' + str(chosen_k) + '_corr')
@@ -175,7 +175,7 @@ if not True:
 # find correlations, dendrograms, and clustered parameters in selected cluster combinations
 
 # list of lists, each inner list for combinations of cluster to analyse together: 
-cluster_combinations = [[3]]
+cluster_combinations = [[2,3]]
 # each separately:
 cluster_combinations.extend([x] for x in (models_by_clusters.keys()))
 # all together: 
@@ -220,27 +220,28 @@ for cluster_combination in cluster_combinations:
     
     # plot correlation matrix with clustered parameters
     # note: now clustering parameters not models!!
-    for threshold in correlation_hierarchical_clustering_thresholds:
-        flattened_dendrogram_labels = fcluster(Z, threshold, criterion='distance')
+    if not True:
+        for threshold in correlation_hierarchical_clustering_thresholds:
+            flattened_dendrogram_labels = fcluster(Z, threshold, criterion='distance')
+            
+            # indices to sort labels
+            labels_order = np.argsort(flattened_dendrogram_labels)
+            
+            # new dataframe with sorted columns
+            for idx, i in enumerate(data.columns[labels_order]):
+                if idx == 0:
+                    clustered = pd.DataFrame(data[i])
+                else:
+                    df_to_append = pd.DataFrame(data[i])
+                    clustered = pd.concat([clustered, df_to_append], axis=1)
+            
+            # plot:        
+            plt.figure(figsize=(10,10))
+            clust_CM = clustered.corr()
+            # seaborn.heatmap(round(clust_CM,2), cmap='RdBu', annot=True, annot_kws={"size": 7}, vmin=-1, vmax=1);
+            seaborn.heatmap(clust_CM, cmap=cmap, annot=False, annot_kws={"size": 7}, vmin=-1, vmax=1);
+            plt.savefig(output_name + '_Cs' + Cs_tag + '_thr' + str(threshold) + '_cmat.svg', dpi = 1000, bbox_inches='tight')
         
-        # indices to sort labels
-        labels_order = np.argsort(flattened_dendrogram_labels)
-        
-        # new dataframe with sorted columns
-        for idx, i in enumerate(data.columns[labels_order]):
-            if idx == 0:
-                clustered = pd.DataFrame(data[i])
-            else:
-                df_to_append = pd.DataFrame(data[i])
-                clustered = pd.concat([clustered, df_to_append], axis=1)
-        
-        # plot:        
-        plt.figure(figsize=(10,10))
-        clust_CM = clustered.corr()
-        # seaborn.heatmap(round(clust_CM,2), cmap='RdBu', annot=True, annot_kws={"size": 7}, vmin=-1, vmax=1);
-        seaborn.heatmap(clust_CM, cmap=cmap, annot=False, annot_kws={"size": 7}, vmin=-1, vmax=1);
-        plt.savefig(output_name + '_Cs' + Cs_tag + '_thr' + str(threshold) + '_cmat.svg', dpi = 1000, bbox_inches='tight')
-    
     
     
 # %%
@@ -281,7 +282,7 @@ plt.savefig(output_name + '_process_popularity' + '.svg',
 # plot this vs target
 
 # section settings:
-# cluster_choices = [0, 1] # note: now taken from above section, enable if required separately
+cluster_choices = list(range(chosen_k)) # note: now taken from above section, enable if required separately
 samples = 10000
 
 # target data:
@@ -293,8 +294,12 @@ ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
 measurement_datasets = [sx, sy, sz]
 measurement_observables = ['sigmax', 'sigmay', 'sigmaz']
 
-# cumulative evaluated arrays combining all chosen clusters:
+# cumulative evaluated arrays combining all chosen clusters,
+# also means and stds now as dictionaries storing this for each chosen cluster for overlaying:
 cumul_evaluated_arrays = {}
+means = {}
+stds = {}
+
 
 # turn each parameters vector into model and evaluate and save observables:
 for j, chosen_cluster in enumerate(cluster_choices):
@@ -319,10 +324,10 @@ for j, chosen_cluster in enumerate(cluster_choices):
     evaluated_arrays = {obs: np.stack(evaluated_datasets[obs])
                         for obs in measurement_observables}
     
-    means = {obs: evaluated_arrays[obs].mean(axis=0)
+    means[chosen_cluster] = {obs: evaluated_arrays[obs].mean(axis=0)
              for obs in measurement_observables}
     
-    stds = {obs: evaluated_arrays[obs].std(axis=0)
+    stds[chosen_cluster] = {obs: evaluated_arrays[obs].std(axis=0)
              for obs in measurement_observables}
     
     for i, op in enumerate(measurement_observables):
@@ -330,11 +335,11 @@ for j, chosen_cluster in enumerate(cluster_choices):
         plt.xlabel('t (us)')
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-1, 1])
-        plt.plot(evaluation_ts, means[op], 'r-', linewidth = 0.7, alpha = 0.7)
-        plt.fill_between(evaluation_ts, means[op]-stds[op], means[op]+stds[op],
+        plt.plot(evaluation_ts, means[chosen_cluster][op], 'r-', linewidth = 0.7, alpha = 0.7)
+        plt.fill_between(evaluation_ts, means[chosen_cluster][op]-stds[chosen_cluster][op], means[chosen_cluster][op]+stds[chosen_cluster][op],
                          alpha=0.4, color='tomato', label = 'cluster ' + str(chosen_cluster))
         plt.errorbar(ts, measurement_datasets[i], yerr = simulated_std,
-                     fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
+                     fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.5)
         plt.legend()
         plt.savefig(output_name + '_C' + str(chosen_cluster)
                     + '_sample' + str(min(samples, len(model_set)))
@@ -348,23 +353,49 @@ for j, chosen_cluster in enumerate(cluster_choices):
         elif j > 0:
             cumul_evaluated_arrays[obs] = np.concatenate((cumul_evaluated_arrays[obs], evaluated_arrays[obs]), axis = 0)
     
-# plot cumulative means and stds (combining all chosen clusters):
+    
+# plot all chosen clusters combined, and all chosen clusters separate dynamics overlay 
+key = tuple(cluster_choices)
 clusters_label = 'clusters ' + ''.join([str(x) + ', ' for x in cluster_choices])[:-2]
-means = {obs: cumul_evaluated_arrays[obs].mean(axis=0)
+clusters_label_short = ''.join([str(x) + ',' for x in cluster_choices])[:-1]
+means[key] = {obs: cumul_evaluated_arrays[obs].mean(axis=0)
          for obs in measurement_observables}
-stds = {obs: cumul_evaluated_arrays[obs].std(axis=0)
+stds[key] = {obs: cumul_evaluated_arrays[obs].std(axis=0)
          for obs in measurement_observables}
+
 for i, op in enumerate(measurement_observables):
+    
+    # plot cumulative means and stds (combining all chosen clusters):
+    key = tuple(cluster_choices)
     plt.figure()
     plt.xlabel('t (us)')
     plt.ylabel(ops_longlabels[op])
     plt.ylim([-1, 1])
-    plt.plot(evaluation_ts, means[op], 'r-', linewidth = 0.7, alpha = 0.7)
-    plt.fill_between(evaluation_ts, means[op]-stds[op], means[op]+stds[op],
+    plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = 0.7, alpha = 0.7)
+    plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                      alpha=0.4, color='tomato', label = clusters_label)
     plt.errorbar(ts, measurement_datasets[i], yerr = simulated_std,
-                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
+                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.3)
     plt.legend()
-    plt.savefig(output_name + '_C' + str(chosen_cluster)
+    plt.savefig(output_name + '_Cs' + clusters_label_short
                 + '_sample' + str(min(samples, len(model_set)))
                 + '_' + op + '_comparison.svg', dpi = 1000, bbox_inches='tight')
+
+
+    # plot together means with stds filling for all clusters (overlay)
+    # note: maybe manually specify list of colours
+    plt.figure()
+    plt.xlabel('t (us)')
+    plt.ylabel(ops_longlabels[op])
+    plt.ylim([-1, 1])
+    for key in cluster_choices: 
+        plt.plot(evaluation_ts, means[key][op], '-', linewidth = 0.7, alpha = 0.7)
+        plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
+                         alpha=0.4, label = 'cluster ' + str(key))
+    plt.errorbar(ts, measurement_datasets[i], yerr = simulated_std,
+                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.3)
+    plt.legend()
+    plt.savefig(output_name + '_Cs' + clusters_label_short
+                + '_sample' + str(min(samples, len(model_set)))
+                + '_' + op + '_comparison.svg', dpi = 1000, bbox_inches='tight')
+
