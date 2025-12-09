@@ -25,15 +25,15 @@ from definitions import observable_shorthand2pretty as ops_longlabels, ops
 # settings:
 cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
 # experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
-experiment_name = '251204-LN' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
-simulated_std = 0.1
+experiment_name = '251204-MN' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+simulated_std = 0.05
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 1
 Rs = [1,2,3,4,5] # for D2
 #Rs = [x+1 for x in range(30)]
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e100'
-chosen_k = 5 # D2 MN and D2 LN = 4; D1 MN 4,5,7; D1 LN 5 -- D1 not that clearcut
+chosen_k = 4 # D2 MN and D2 LN = 4; D1 MN 4,5,7; D1 LN 5 -- D1 not that clearcut
 hyperparams = configs.get_hyperparams(config_name)
 output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
                + clustering_name + '_k' + str(chosen_k) + '_corr')
@@ -175,7 +175,7 @@ if not True:
 # find correlations, dendrograms, and clustered parameters in selected cluster combinations
 
 # list of lists, each inner list for combinations of cluster to analyse together: 
-cluster_combinations = [[2,3]]
+cluster_combinations = [[3],[0,1,2,3]]
 # each separately:
 cluster_combinations.extend([x] for x in (models_by_clusters.keys()))
 # all together: 
@@ -249,6 +249,7 @@ for cluster_combination in cluster_combinations:
 # manually chosen sets for now... cheeky bit of code
 
 cluster_choices = [1,2,3,0]
+# cluster_choices = [2,3,4] # for LN D=1
 # formatting - must have options for at least each cluster choice, can be longer:
 colours = ['red', 'blue', 'black', 'purple']
 heights = [0.8, 0.5, 0.3, 0.1] # ideally descending
@@ -337,13 +338,13 @@ for j, chosen_cluster in enumerate(cluster_choices):
         plt.ylim([-1, 1])
         plt.plot(evaluation_ts, means[chosen_cluster][op], 'r-', linewidth = 0.7, alpha = 0.7)
         plt.fill_between(evaluation_ts, means[chosen_cluster][op]-stds[chosen_cluster][op], means[chosen_cluster][op]+stds[chosen_cluster][op],
-                         alpha=0.4, color='tomato', label = 'cluster ' + str(chosen_cluster))
+                         alpha=0.3, color='tomato', label = 'cluster ' + str(chosen_cluster))
         plt.errorbar(ts, measurement_datasets[i], yerr = simulated_std,
-                     fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.5)
+                     fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
         plt.legend()
         plt.savefig(output_name + '_C' + str(chosen_cluster)
-                    + '_sample' + str(min(samples, len(model_set)))
-                    + '_' + op + '_comparison.svg', dpi = 1000, bbox_inches='tight')
+                    + '_samp' + str(min(samples, len(model_set)))
+                    + '_' + op + '_solo.svg', dpi = 1000, bbox_inches='tight')
      
         
     # also add to cumulative array:
@@ -373,13 +374,13 @@ for i, op in enumerate(measurement_observables):
     plt.ylim([-1, 1])
     plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = 0.7, alpha = 0.7)
     plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
-                     alpha=0.4, color='tomato', label = clusters_label)
+                     alpha=0.3, color='tomato', label = clusters_label)
     plt.errorbar(ts, measurement_datasets[i], yerr = simulated_std,
-                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.3)
+                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
     plt.legend()
     plt.savefig(output_name + '_Cs' + clusters_label_short
-                + '_sample' + str(min(samples, len(model_set)))
-                + '_' + op + '_comparison.svg', dpi = 1000, bbox_inches='tight')
+                + '_samp' + str(min(samples, len(model_set)))
+                + '_' + op + '_lump.svg', dpi = 1000, bbox_inches='tight')
 
 
     # plot together means with stds filling for all clusters (overlay)
@@ -391,11 +392,45 @@ for i, op in enumerate(measurement_observables):
     for key in cluster_choices: 
         plt.plot(evaluation_ts, means[key][op], '-', linewidth = 0.7, alpha = 0.7)
         plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
-                         alpha=0.4, label = 'cluster ' + str(key))
+                         alpha=0.2, label = 'cluster ' + str(key))
     plt.errorbar(ts, measurement_datasets[i], yerr = simulated_std,
-                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.3)
+                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
     plt.legend()
     plt.savefig(output_name + '_Cs' + clusters_label_short
-                + '_sample' + str(min(samples, len(model_set)))
-                + '_' + op + '_comparison.svg', dpi = 1000, bbox_inches='tight')
+                + '_samp' + str(min(samples, len(model_set)))
+                + '_' + op + '_overlay.svg', dpi = 1000, bbox_inches='tight')
 
+
+
+#%%
+# for chosen clusters also plot parameter vectors - maybe 
+
+champions = {}
+#champ_posteriors = {}
+
+for c in cluster_choices:
+
+    # find highest posterior and corresponding parameter vector (point) for each cluster assignment c
+    champion, posterior, assignment = max(filter(lambda x: x[2] == c, zip(points, posteriors, assignments)),
+                                        key = lambda x: x[1])
+    champions[assignment] = champion
+    #champ_posteriors[assignment] = posterior
+    #vectorised_champion = (champion, labels, labels_latex)
+    
+champions_array = np.stack([champions[x] for x in cluster_choices])
+
+plt.figure()
+axisfontsize = 6
+img = plt.imshow(np.transpose(champions_array), interpolation='none', aspect='1')
+cbar = plt.colorbar(img, fraction=0.015) # , cmap='viridis' ???? not doing anything?
+plt.set_cmap('viridis')
+cbar.ax.tick_params(labelsize=6)
+plt.xticks(ticks = [x for x in range(champions_array.shape[0])], labels = [x for x in range(champions_array.shape[0])])
+plt.ylabel('parameter', fontsize=axisfontsize)
+plt.yticks(range(len(labels_latex)), labels = labels_latex)
+plt.xlabel('cluster', fontsize=axisfontsize)
+plt.gca().tick_params(axis='both', which='major', labelsize=4)
+plt.savefig(output_name + '_champions_k' + str(chosen_k) + '.svg',  dpi = 1000, bbox_inches='tight')
+plt.savefig(output_name + '_champions_k' + str(chosen_k) + '.png',  dpi = 1000, bbox_inches='tight')
+
+    
