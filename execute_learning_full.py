@@ -125,6 +125,9 @@ if noise_stdev:
     config['temperature_proposal'] = 2 * noise_stdev**2
 if shock_anneal_at:
     config['shock_anneal_at'] = shock_anneal_at 
+    
+# also FOR NOW append noise stdev to experiment name:
+experiment_name = experiment_name + '_std' + str(noise_stdev).replace('.','p')
 
 # run's output files common name:
 # example: '250421_Wit4b-grey_ForClusters'
