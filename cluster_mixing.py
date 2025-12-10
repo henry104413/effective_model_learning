@@ -22,7 +22,9 @@ import time
 import copy
 
 # settings and source data: # '250818-sim-1T-4JL-2tweak' is nice fit
-experiment_name = '251128-smallnoise' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
+simulated_std = 0.05
+experiment_name = ('251128-smallnoise' + '_std' + str(simulated_std).replace('.','p')
+                   + '_Wit-Fig4-6-0_025') # including experiment base and source file name
 #experiment_name = '251110-100k' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'

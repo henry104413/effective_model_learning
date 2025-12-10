@@ -25,8 +25,9 @@ from definitions import observable_shorthand2pretty as ops_longlabels, ops
 # settings:
 cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
 # experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
-experiment_name = '251204-MN' + '_Wit-Fig4-6-0_025' # including experiment base and source file name
 simulated_std = 0.05
+experiment_name = ('251204-MN' + '_std' + str(simulated_std).replace('.','p')
+                   + '_Wit-Fig4-6-0_025') # including experiment base and source file name
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 D = 1
 Rs = [1,2,3,4,5] # for D2
