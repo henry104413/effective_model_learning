@@ -124,7 +124,7 @@ for supersede in configs.specific_experiment_chain_hyperparams[subexperiment_nam
 if noise_stdev:
     config['temperature_proposal'] = 2 * noise_stdev**2
 if shock_anneal_at:
-    config['shock_anneal_at']: shock_anneal_at 
+    config['shock_anneal_at'] = shock_anneal_at 
 
 # run's output files common name:
 # example: '250421_Wit4b-grey_ForClusters'
@@ -146,7 +146,7 @@ print(filename, flush = True)
     
 # import dictionary of ts, sx, sy, sz observable values 
 # (sx equal to original and rest simulated, all with noise with std = 0.01)   
-noise_level_in_filename = str(noise_stdev).replace('p', '.') if type(noise_stdev) in [int, float] else ''
+noise_level_in_filename = str(noise_stdev).replace('.', 'p') if type(noise_stdev) in [int, float] else ''
 with open('simulated-std' 
           + noise_level_in_filename
           + '_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
