@@ -349,6 +349,7 @@ class LearningChain:
             if bool(self.shock_anneal_at) and i == self.shock_anneal_at: 
                 self.params_handler.set_jump_lengths(self.params_handler_hyperparams['annealed_jump_lengths'])
                 now_annealed = True
+                print('\n\nPerforming shock annealing at iteration ' + str(i), flush=True)
                 i += 1
                 
                 # jump now to best model reached thus far and do more localised exploration from there

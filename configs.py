@@ -44,7 +44,7 @@ default_chain_hyperparams = {
         'shock_anneal_at': int(500000), # iteration to perform switch to annealed regime
         # note: currently annealing only parameters handler
         
-        'acceptance_window': 10,
+        'acceptance_window': 100,
         'acceptance_target': 0.4,
         'acceptance_band': 0.2,
         

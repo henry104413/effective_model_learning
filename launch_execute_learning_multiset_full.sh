@@ -22,13 +22,17 @@
 # !! but in each case must be arrays!  
 declare -a target_csvs=("Wit-Fig4-6-0_025")
 # "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
-experiment_name="251121-annealed"
+experiment_name="251210-test10"
 defects_numbers=(2)
-repetitions_numbers=(10)
-iterations_numbers=(1000000)
+repetitions_numbers=(2)
+iterations_numbers=(600)
+shock_anneal_ats=(300) # ...plural
 proportion_training=1
 configs=(11)
 full=1
+noise_stdev=0.05
+# note: above arrays allowed to be different for each number of defects,
+# then repetitions carried out with identical setups
 
 
 # execution:
@@ -48,6 +52,18 @@ for config in ${configs[@]}; do
 	    	iterations_number=0	
 	    fi
 	    
+	    # determine shock_anneal_at for this number of defects:
+	    if [ ${#shock_anneal_ats[@]} -eq ${#shock_anneal_ats[@]} ]; then
+	    	shock_anneal_at=${shock_anneal_ats[i]}
+	    elif [ ${#shock_anneal_ats[@]} -eq 1 ]; then
+	    	shock_anneal_at=${shock_anneal_ats[0]}
+	    else
+	    	# if not specified properly, will pass 0
+	    	# then execute file will not replace configs file value
+	    	# note: means cannot anneal at iteration 0 (would be pointless anyway)
+	    	shock_anneal_at=0	
+	    fi
+	    
 	    # determine repetitions number for this number of defects:
 	    if [ ${#repetitions_numbers[@]} -eq ${#defects_numbers[@]} ]; then
 	    	repetitions_number=${repetitions_numbers[i]}
@@ -60,7 +76,7 @@ for config in ${configs[@]}; do
 	    
 	    for ((rep=1; rep<=repetitions_number; rep++)); do
 		echo launching for $defects_number defects repetition no. $rep
-		nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" </dev/null &>"$experiment_name"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt &
+		nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" </dev/null &>"$experiment_name"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt &
 		done
 	done
 done
