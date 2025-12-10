@@ -403,7 +403,7 @@ for i, op in enumerate(measurement_observables):
 
 
 #%%
-# for chosen clusters also plot parameter vectors - maybe 
+# also plot parameter vectors for chosen clusters 
 
 champions = {}
 #champ_posteriors = {}

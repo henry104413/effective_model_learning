@@ -22,7 +22,10 @@ import definitions
 
 
 # run parameters taken from additional command line arguments,
-# order: target_file, experiment_name, defects_count, repetition_number, max_iterations;
+# order: target_file, experiment_name, defects_count, repetition_number, max_iterations,
+# proportion_to_use (of data for training), configuration_number,
+# full_switch (3 observables as opposed to 1),
+# noise_stdev, shock_anneal_at iterations  
 # defaults specified here if unavailable
 # note: files are overwritten if saved with same name
 
@@ -90,6 +93,23 @@ try:
     full_switch = bool(int(sys.argv[8]))
 except:
     full_switch = True    
+    
+# noise standard deviation - currently if passed, also reset Metropolis-Hastings temperature to 2*this**2
+try:
+    noise_stdev = float(sys.argv[9])
+except:
+    noise_stdev = False
+
+# set iterations at which shock annealing is performed
+# ie. when initial_jump_lengths are updated to annealed_jump_lengths
+# note: as currently named arguments not supported,
+# if subsequent arguments needed, this can be passed as == max_iterations
+try:
+    shock_anneal_at = int(sys.argv[10])
+except:
+    shock_anneal_at = False # check!  
+    
+# noise_stdev, shock_anneal_at
 
 # get subexperiment name and  corresponding chain configuration:    
 subexperiment_name = list(configs.specific_experiment_chain_hyperparams.keys())[configuration_number]
@@ -98,6 +118,13 @@ for supersede in configs.specific_experiment_chain_hyperparams[subexperiment_nam
     config[supersede] = configs.specific_experiment_chain_hyperparams[subexperiment_name][supersede]
 # note: supersede is name of each hyperparam that is superseded in defaults
 # by value for this specific experiment (subexperiment)
+
+# if passed and set above, then populate in config both shock_anneal_at, 
+# and temperature (twice the noise variance, ie. 2* noise_stdev**2)
+if noise_stdev:
+    config['temperature_proposal'] = 2 * noise_stdev**2
+if shock_anneal_at:
+    config['shock_anneal_at']: shock_anneal_at 
 
 # run's output files common name:
 # example: '250421_Wit4b-grey_ForClusters'
@@ -110,10 +137,19 @@ print(filename, flush = True)
 
 #%% prepare simulated multi-observable training datasets:
 # !!! NOTE: this currently means not using specified target file but taking data from file below instead:
+
+# note - current use:
+# known noise stdev used to load data,
+# anod to specify Metropolis-Hastings temperature as = 2 * noise VARIANCE;
+# target data filename contains after experiment name this noise stdev as e.g. std0p01, meaning stdev = 0.01
+# - hence now temperature proposal taken as static (as opposed to sampling from a gamma distribution)
     
 # import dictionary of ts, sx, sy, sz observable values 
-# (sx equal to original and rest simulated, all with noise with std = 0.01)    
-with open('simulated-std0p01_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
+# (sx equal to original and rest simulated, all with noise with std = 0.01)   
+noise_level_in_filename = str(noise_stdev).replace('p', '.') if type(noise_stdev) in [int, float] else ''
+with open('simulated-std' 
+          + noise_level_in_filename
+          + '_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
           'rb') as filestream:
     simulated_data = pickle.load(filestream)    
 ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
