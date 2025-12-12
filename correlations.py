@@ -23,26 +23,27 @@ import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # settings:
-cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
-# experiment_name = '250811-sim-250810-batch-R2-plus_Wit-Fig4-6-0_025'
-simulated_std = 0.05
-experiment_name = ('251204-MN' + '_std' + str(simulated_std).replace('.','p')
-                   + '_Wit-Fig4-6-0_025') # including experiment base and source file name
-config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
+experiment_name = '251210'
+noise_stdev = 0.05 # set None if not included in file name
 D = 1
-Rs = [1,2,3,4,5] # for D2
-#Rs = [x+1 for x in range(30)]
+Rs = [1,2,3] # for D2
+og_source = '_Wit-Fig4-6-0_025'
+config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e100'
 chosen_k = 4 # D2 MN and D2 LN = 4; D1 MN 4,5,7; D1 LN 5 -- D1 not that clearcut
-hyperparams = configs.get_hyperparams(config_name)
-output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
-               + clustering_name + '_k' + str(chosen_k) + '_corr')
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
-    'simulated-std' + str(simulated_std).replace('.', 'p')
+    'simulated-std' + str(noise_stdev).replace('.', 'p')
     + '_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle.py')
-# note: using naming convention for std
+
+# consequent setup:
+hyperparams = configs.get_hyperparams(config_name)
+if noise_stdev:
+    experiment_name += '_std' + str(noise_stdev).replace('.','p')
+experiment_name += og_source
+output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
+               + clustering_name + '_k' + str(chosen_k))
 
 # import lists of models in each cluster (currenlty not centres though),
 # and example model (for parameter labels):
@@ -84,6 +85,7 @@ plt.savefig(output_name + '_cluster_popularity' + '.svg',
 
 
 #%% also plot dynamics comparison for cluster centres and champions
+# !!! DEPRECATED SECTION
 
 if not True: 
     
@@ -91,6 +93,7 @@ if not True:
     # (sx equal to original and rest simulated, all with noise with std = 0.01)    
     with open('simulated_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle.py',
               'rb') as filestream:
+        # !!! THIS IS NO LONGER UP TO DATE - now taking target data based on noise stdev
         simulated_data = pickle.load(filestream)    
     ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
             
@@ -124,7 +127,7 @@ if not True:
             plt.ylabel(ops_longlabels[op])
             plt.ylim([-1, 1])
             #plt.plot(ts, simulated_data[op], 'b.', markersize = 1, label = 'target')
-            plt.errorbar(ts, simulated_data[op], yerr = simulated_std, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
+            plt.errorbar(ts, simulated_data[op], yerr = noise_stdev, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
             plt.plot(evaluation_ts, centres_datasets[op][c], 
                      'r-', linewidth = 1, alpha = 0.7, label = 'model')
             plt.legend()
@@ -158,7 +161,7 @@ if not True:
             plt.xlabel('t (us)')
             plt.ylabel(ops_longlabels[op])
             plt.ylim([-1, 1])
-            plt.errorbar(ts, simulated_data[op], yerr = simulated_std, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
+            plt.errorbar(ts, simulated_data[op], yerr = noise_stdev, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
             plt.plot(evaluation_ts, champions_datasets[op][c], 
                      'r-', linewidth = 1, alpha = 0.7, label = 'model')
             plt.legend()
@@ -174,6 +177,8 @@ if not True:
 
 #%%
 # find correlations, dendrograms, and clustered parameters in selected cluster combinations
+
+cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
 
 # list of lists, each inner list for combinations of cluster to analyse together: 
 cluster_combinations = [[3],[0,1,2,3]]
@@ -340,7 +345,7 @@ for j, chosen_cluster in enumerate(cluster_choices):
         plt.plot(evaluation_ts, means[chosen_cluster][op], 'r-', linewidth = 0.7, alpha = 0.7)
         plt.fill_between(evaluation_ts, means[chosen_cluster][op]-stds[chosen_cluster][op], means[chosen_cluster][op]+stds[chosen_cluster][op],
                          alpha=0.3, color='tomato', label = 'cluster ' + str(chosen_cluster))
-        plt.errorbar(ts, measurement_datasets[i], yerr = simulated_std,
+        plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                      fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
         plt.legend()
         plt.savefig(output_name + '_C' + str(chosen_cluster)
@@ -376,7 +381,7 @@ for i, op in enumerate(measurement_observables):
     plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = 0.7, alpha = 0.7)
     plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                      alpha=0.3, color='tomato', label = clusters_label)
-    plt.errorbar(ts, measurement_datasets[i], yerr = simulated_std,
+    plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                  fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
     plt.legend()
     plt.savefig(output_name + '_Cs' + clusters_label_short
@@ -394,7 +399,7 @@ for i, op in enumerate(measurement_observables):
         plt.plot(evaluation_ts, means[key][op], '-', linewidth = 0.7, alpha = 0.7)
         plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                          alpha=0.2, label = 'cluster ' + str(key))
-    plt.errorbar(ts, measurement_datasets[i], yerr = simulated_std,
+    plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                  fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
     plt.legend()
     plt.savefig(output_name + '_Cs' + clusters_label_short
