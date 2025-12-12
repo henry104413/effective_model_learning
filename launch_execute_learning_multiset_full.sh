@@ -22,15 +22,15 @@
 # !! but in each case must be arrays!  
 declare -a target_csvs=("Wit-Fig4-6-0_025")
 # "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
-experiment_name="251210-test10"
-defects_numbers=(2)
-repetitions_numbers=(2)
-iterations_numbers=(600)
-shock_anneal_ats=(300) # ...plural
+experiment_name="251210"
+defects_numbers=(1 2 3)
+repetitions_numbers=(3)
+iterations_numbers=(2000000)
+shock_anneal_ats=(800000) # ...plural
 proportion_training=1
 configs=(11)
 full=1
-noise_stdev=0.05
+noise_stdev=0.1
 # note: above arrays allowed to be different for each number of defects,
 # then repetitions carried out with identical setups
 
@@ -76,7 +76,7 @@ for config in ${configs[@]}; do
 	    
 	    for ((rep=1; rep<=repetitions_number; rep++)); do
 		echo launching for $defects_number defects repetition no. $rep
-		nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" </dev/null &>"$experiment_name"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt &
+		nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt &
 		done
 	done
 done

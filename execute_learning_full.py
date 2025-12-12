@@ -152,7 +152,7 @@ print(filename, flush = True)
 noise_level_in_filename = str(noise_stdev).replace('.', 'p') if type(noise_stdev) in [int, float] else ''
 with open('simulated-std' 
           + noise_level_in_filename
-          + '_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
+          + '_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle.csv',
           'rb') as filestream:
     simulated_data = pickle.load(filestream)    
 ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
@@ -302,7 +302,6 @@ if False:
 
 
 #%% 
-
 
 
 
