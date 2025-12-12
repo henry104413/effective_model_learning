@@ -885,3 +885,74 @@ for k in ks:
     with open(output_name + '_k' + str(k) + '_combined_assignments.pickle', 'wb') as filestream:
         pickle.dump(points_by_clusters, filestream)
     
+    
+    
+#%% 
+# expected loss/posterior depending on D & noise STD
+
+import pickle
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# details of experients to include:
+# note: now assuming same Rs for all configs, can be changed 
+# also assuming all Ds done for all noise levels
+experiment_name =' 251204-LN'
+Rs_tag = '1,2,3,4,5'
+sampled_each_tag = '_e100'
+noise_stdevs = [0.01, 0.05, 0.1]
+Ds = [1,2,3]
+
+take_top_percent = 10
+
+mean_top_loss = {}
+mean_top_posterior = {}
+
+
+# populate loss and posterior for each D under each noise stdev
+for noise_stdev in noise_stdevs:
+    for D in Ds:
+
+        # load points, losses, posteriors:        
+        filename_base = (
+                        experiment_name + '_std' + str(noise_stdev).replace('.','p') 
+                        + '_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
+                        + '_D' + str(D) + '_Rs' + Rs_tag
+                        + sampled_each_tag
+                        )
+        with open(filename_base + '_points.pickle', 'rb') as filestream:
+            points = pickle.load(filestream)
+        with open(filename_base + '_losses.pickle', 'rb') as filestream:
+            losses = pickle.load(filestream)
+        with open(filename_base + '_posteriors.pickle', 'rb') as filestream:
+            posteriors = pickle.load(filestream)
+            
+        # find loss and posterior ordering (in order of best models): 
+        ordering_best_loss = np.argsort(losses) 
+        ordering_best_posterior = np.argsort(posteriors)[::-1]
+        # note: numpy argsort is always ascending (doesn't even say in docs...);
+        # want to keep first whatever number of elements, 
+        # so use roeturn direcly if sorting by loss, but flip if argsorting by posterior (makes descending order)
+        
+        # take top specified percent of loss and posterior:
+        losses_top = losses[ordering_best_loss][:int(take_top_percent/100 * len(losses))]
+        posteriors_top = posteriors[ordering_best_posterior][:int(take_top_percent/100 * len(posteriors))]
+        
+        # find means of top loss and posterior:
+        mean_top_loss[noise_stdev][D] = losses_top.mean()
+        mean_top_posterior[noise_stdev][D] = posteriors_top.mean()
+        
+        
+# plot a curve for each noise stdev where xs are Ds and ys are losses for now
+plt.figure()
+for noise_stdev in noise_stdev:
+    plt.plot(Ds, [mean_top_loss[D] for D in Ds], label = str(noise_stdev))
+plt.xlabel(r'$D$')
+plt.ylabel('loss')
+plt.yscale('log')
+plt.legend(title = 'noise stdev')
+        
+
+                                                            
+        
