@@ -898,14 +898,15 @@ import matplotlib.pyplot as plt
 # details of experients to include:
 # note: now assuming same Rs for all configs, can be changed 
 # also assuming all Ds done for all noise levels
-experiment_name =' 251204-LN'
-Rs_tag = '1,2,3,4,5'
+experiment_name =' 251210'
 sampled_each_tag = '_e100'
 noise_stdevs = [0.01, 0.05, 0.1]
 Ds = [1,2,3]
-
+Rs = [1,2,3]
 take_top_percent = 10
+# right now putting og_source and config right into filename_base below - can change later
 
+Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 mean_top_loss = {}
 mean_top_posterior = {}
 

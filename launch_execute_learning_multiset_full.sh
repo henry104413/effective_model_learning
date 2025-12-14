@@ -25,8 +25,8 @@ declare -a target_csvs=("Wit-Fig4-6-0_025")
 experiment_name="251210"
 defects_numbers=(1 2 3)
 repetitions_numbers=(3)
-iterations_numbers=(2000000)
-shock_anneal_ats=(800000) # ...plural
+iterations_numbers=(2000)
+shock_anneal_ats=(800) # ...plural
 proportion_training=1
 configs=(11)
 full=1
@@ -76,7 +76,8 @@ for config in ${configs[@]}; do
 	    
 	    for ((rep=1; rep<=repetitions_number; rep++)); do
 		echo launching for $defects_number defects repetition no. $rep
-		nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt &
+#		nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt & # regular
+		python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt # slurm
 		done
 	done
 done
