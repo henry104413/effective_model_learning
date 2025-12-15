@@ -31,7 +31,7 @@ og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e100'
-chosen_k = 4 # D2 MN and D2 LN = 4; D1 MN 4,5,7; D1 LN 5 -- D1 not that clearcut
+chosen_k = 4 # 
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -253,6 +253,7 @@ for cluster_combination in cluster_combinations:
 # %%
 # popularity of different processes:
 # manually chosen sets for now... cheeky bit of code
+# i could actually just chose the most popular clusters here...
 
 cluster_choices = [1,2,3,0]
 # cluster_choices = [2,3,4] # for LN D=1

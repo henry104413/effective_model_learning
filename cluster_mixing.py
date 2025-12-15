@@ -22,7 +22,7 @@ import time
 import copy
 
 # settings and source data:
-experiment_name = '251210'
+experiment_name_base = '251210'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 noise_stdevs = [0.01, 0.05, 0.1]
@@ -45,7 +45,8 @@ vectorisation = 'parameters'
 # go over all combinations of noise_stdevs and Ds:
 if not noise_stdevs: noise_stdevs = [False]
 for noise_stdev in noise_stdevs:
-    if type(noise_stdev) not in [int, float] and not noise_stdev:
+    experiment_name = experiment_name_base
+    if type(noise_stdev) in [int, float]:
         experiment_name += '_std' + str(noise_stdev).replace('.','p')
     experiment_name += og_source
     for D in Ds:
