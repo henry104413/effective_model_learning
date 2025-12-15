@@ -497,9 +497,44 @@ if not True:
 
 #%%
 import pickle
-with open('251122-run_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_Rs1,4,5,6,7,8,11,12,13,15,17,19,20_clustering-sub100_clustering_centres.pickle'
+
+# load og proposals dictionary
+with open(
+          #'251111-100k-muchnarrower_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle'
+          #'251110-1M-wider_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D1_R2_proposals.pickle'
+          #'251210-test2_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D3_R2_proposals.pickle'
+          
+          '251210_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D1_R1_proposals.pickle'
+          # D=1
+          
+          #'251210_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle'
+          # D=2
+          
+          #'251210_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D3_R1_proposals.pickle'
+          # D=3
+          
           , 'rb') as filestream:
     A = pickle.load(filestream)
+    
+# split
+models = A.pop('proposals')
+models_dict = {'proposals': models}
+rest = A
+# note: pop changes dictionary, removes that key and its values,
+#  AND returns those values - but not as a dictionary
+
+
+with open('memtest-models.pickle'
+          , 'wb') as filestream:
+    pickle.dump(models, filestream)
+with open('memtest-models_dict.pickle'
+          , 'wb') as filestream:
+    pickle.dump(models_dict, filestream)
+with open('memtest-rest.pickle'
+          , 'wb') as filestream:
+    pickle.dump(rest, filestream)
+
+    
     
 #%% 
 # plot selected different proportion learning on top of target data

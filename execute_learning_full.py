@@ -205,7 +205,7 @@ quest = learning_chain.LearningChain(target_times = training_ts,
 
                       max_chain_steps = max_iterations,
                       
-                      store_all_proposals = True,
+                      store_all_proposals = False,
                       
                       **config # specific experiment chain hyperparameters
                       

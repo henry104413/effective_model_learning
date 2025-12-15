@@ -108,8 +108,10 @@ class Output:
                 self.create_model_graph(model, filename + get_model_name(i) + '_graph')
        
         
-        # save all proposals into single pickle - dictionary with keys 'loss' & 'proposal',
-        # where each proposal is an instance of LearningModel:
+        # save all proposals into single pickle:
+        # ie. dictionary with keys: acceptance, log_likelihood_prior, step_types, shock_anneal_at, vectors
+        # and if chain not in lean_mode: proposals, loss, acceptance_probability, annealed, log_posterior;
+        # - proposals are instances of LearningModel saved if save_all_propoals was on
         if toggles.all_proposals:
             with open(filename + '_proposals.pickle', 'wb') as filestream:
                 pickle.dump(all_proposals, filestream)

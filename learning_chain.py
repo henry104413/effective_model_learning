@@ -128,7 +128,9 @@ class LearningChain:
         
         iterations_till_progress_update = False # number of iterations before iteration number and time elapsed printed
     
-        store_all_proposals = False # switch to keep all proposed models
+        store_all_proposals = False # switch to keep all ACCEPTED proposed model OBJECTS
+        
+        lean_mode = True
     
         
     
@@ -218,6 +220,8 @@ class LearningChain:
                  
                  store_all_proposals: bool = False,
                  
+                 lean_mode: bool = True
+                 
                  ):
         
         
@@ -275,16 +279,28 @@ class LearningChain:
         self.next_step_priorities_list = [self.chain_step_options[option]/temp
                                         for option in options] # actually unused as of algorithm of modification with #-ways-scaling
         
+        # process libraries dictionary:
+        # note: currently used by models' vectorise_under_library method
+        self.process_libraries = {
+            'qubit2defect_couplings_library': self.qubit2defect_couplings_library,
+            'defect2defect_couplings_library': self.defect2defect_couplings_library,
+            'qubit_Ls_library': self.qubit_Ls_library,
+            'defect_Ls_library': self.defect_Ls_library
+            }
+        
         # process and parameter objects to perform chain steps:
         # note: initialised at first call of methods that use them
         self.params_handler = None 
         self.process_handler = None
         
         # chain progression containers:
-        self.explored_proposals = [] # repository of explored models
-        self.explored_loss = []
-        self.explored_acceptance_probability = []
-        self.explored_log_posterior = []
+        if self.store_all_proposals:
+            self.explored_proposals = [] # repository of explored models
+        self.explored_acc_vectors = []
+        if not self.lean_mode:
+            self.explored_loss = []
+            self.explored_acceptance_probability = []
+            self.explored_log_posterior = []
         self.explored_log_likelihood_prior = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.current)
@@ -297,12 +313,14 @@ class LearningChain:
         self.process_handler.filter_params(self.current, self.params_thresholds)
         self.current_loss = self.total_dev(self.current)
         self.best_loss = self.current_loss
-        self.explored_loss.append(self.current_loss)
-        self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
+        if not self.lean_mode:
+            self.explored_loss.append(self.current_loss)
+            self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
                                              + self.prior(self.current, return_minus_log_of=True)))
         self.explored_log_likelihood_prior.append((-self.current_loss/self.MH_temperature,
                                                    -self.prior(self.current, return_minus_log_of=True)))
         if self.store_all_proposals: self.explored_proposals.append(copy.deepcopy(self.initial))
+        self.explored_acc_vectors.append(self.initial.vectorise_under_library(hyperparameters = self.process_libraries)[0])
         
         # counters for overall acceptance tracking (separate for reversible-jump type steps and for value tweak)
         self.tot_RJ_steps = 0
@@ -330,9 +348,10 @@ class LearningChain:
         k = 0 # auxiliary iteration counter    
         self.run_acceptance_tracker = [] # all accept/reject events (bool)
         
-        # also binary annealing tracker: (bool - iterations are either annealed or not)
-        self.run_annealing_tracker = []
-        
+        if not self.lean_mode:
+            # also binary annealing tracker: (bool - iterations are either annealed or not)
+            self.run_annealing_tracker = []
+            
         # step type tracker:
         self.run_step_type_tracker = []
         
@@ -359,9 +378,11 @@ class LearningChain:
                 self.run_acceptance_tracker.append(True)
                 if self.store_all_proposals:
                     self.explored_proposals.append(copy.deepcopy(self.current))
-                self.explored_loss.append(self.current_loss)
-                self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
-                                                     + self.prior(self.current, return_minus_log_of=True)))
+                self.explored_acc_vectors.append(self.current.vectorise_under_library(hyperparameters = self.process_libraries)[0])
+                if not self.lean_mode:
+                    self.explored_loss.append(self.current_loss)
+                    self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
+                                                         + self.prior(self.current, return_minus_log_of=True)))
                 self.explored_log_likelihood_prior.append((-self.current_loss/self.MH_temperature,
                                                            -self.prior(self.current, return_minus_log_of=True)))
                 self.run_annealing_tracker.append(now_annealed)
@@ -558,9 +579,10 @@ class LearningChain:
                                   
             # evaluate new proposal (system evolution calculated here):
             proposal_loss = self.total_dev(proposal)
-            self.explored_loss.append(proposal_loss)
-            self.explored_log_posterior.append(-(proposal_loss/self.MH_temperature
-                                                 + self.prior(proposal, return_minus_log_of=True)))
+            if not self.lean_mode:
+                self.explored_loss.append(proposal_loss)
+                self.explored_log_posterior.append(-(proposal_loss/self.MH_temperature
+                                                     + self.prior(proposal, return_minus_log_of=True)))
             self.explored_log_likelihood_prior.append((-proposal_loss/self.MH_temperature,
                                                        -self.prior(proposal, return_minus_log_of=True)))
             # !!! note: currently assumes flat priors on allowed parameter values,
@@ -571,7 +593,8 @@ class LearningChain:
             # Metropolis-Hastings acceptance:
             acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back, 
                                                                  params_priors_ratio)
-            self.explored_acceptance_probability.append(acceptance_probability)
+            if not self.lean_mode:
+                self.explored_acceptance_probability.append(acceptance_probability)
             if np.random.uniform() < acceptance_probability: # ie. accept proposal
                 # update current and also best if warranted:
                 self.current = proposal
@@ -583,6 +606,8 @@ class LearningChain:
                 # save accepted proposal for statistical analysis of chain
                 if self.store_all_proposals:
                     self.explored_proposals.append(copy.deepcopy(proposal))
+                self.explored_acc_vectors.append(proposal.vectorise_under_library(hyperparameters = self.process_libraries)[0])
+                
                 # update accepted step counter:
                 if next_step == 'tweak all parameters':
                     self.acc_tweak_steps += 1
@@ -602,15 +627,19 @@ class LearningChain:
                   +'_________________________\n\n', flush = True)
         self.best.final_loss = self.best_loss
         
-        self.all_proposals = {'proposals': self.explored_proposals,
-                              'loss': self.explored_loss,
-                              'acceptance': self.run_acceptance_tracker,
-                              'log_posterior': self.explored_log_posterior,
+        self.all_proposals = {'acceptance': self.run_acceptance_tracker,
                               'log_likelihood_prior': self.explored_log_likelihood_prior,
-                              'acceptance_probability': self.explored_acceptance_probability,
-                              'annealed': self.run_annealing_tracker,
                               'step_types': self.run_step_type_tracker
-                             } 
+                             }
+        if not self.lean_mode:
+            self.all_proposals['loss'] = self.explored_loss
+            self.all_proposals['log_posterior'] = self.explored_log_posterior
+            self.all_proposals['acceptance_probability'] = self.explored_acceptance_probability
+            self.all_proposals['annealed'] = self.run_annealing_tracker
+        if self.store_all_proposals:
+            self.all_proposals['proposals'] = self.explored_proposals
+        self.all_proposals['vectors'] = self.explored_acc_vectors
+        self.all_proposals['shock_anneal_at'] = self.shock_anneal_at
         
         return self.best
     
