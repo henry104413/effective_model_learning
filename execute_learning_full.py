@@ -233,14 +233,15 @@ best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurem
 # output controls bundle:
 class Toggles:    
     comparison = True # plot comparison of dynamics
-    loss = True # plot cost function progression
-    log_posterior = True # plot 1) log posterior and 2) superimposed log likelihood and prior
+    loss = True # loss progression
+    log_posterior = True # log posterior 
+    log_likelihood_prior = True # superimposed log likelihood and prior
     acceptance_probability = False
-    acceptance = True # plot acceptance ratios over subsequenct windows
+    acceptance_windows = True # plot acceptance ratios over subsequenct windows
     graphs = False # plot model graphs with corresponding labels
     pickle = True # save selected models as pickles
     text = True # save selected models as text
-    all_proposals = True # save all proposals in dictionary of lists under keys 'losses', 'proposals' 
+    all_proposals = True # save all proposals dictionary as created by chain 
     hyperparams = True # save chain hyperparameters as json
 
 
@@ -252,57 +253,18 @@ if True:
        dynamics_datasets_labels = ['all measurements', 'training subset', 'prediction'],
        dynamics_formatting = ['b+', 'b.', 'r-'],
        observable_labels = measurement_observables,
-       loss = quest.explored_loss,
        best_loss = quest.best_loss,
        # !!! TO DO: two lines below are new -- add elsewhere too!
-       acceptance_probability = quest.explored_acceptance_probability,
        overall_acceptance = {'parameters tweak': quest.acc_tweak_steps/max(quest.tot_tweak_steps, 1), # avoiding div by 0
                              'reversible jump': quest.acc_RJ_steps/max(quest.tot_RJ_steps, 1)}, # avoiding div by 0
-       acceptance = quest.chain_windows_acceptance_log,
+       acceptance_windows = quest.chain_windows_acceptance_log,
        models_to_save = [best],
        model_names = ['best'],
        chain_hyperparams = quest.get_init_hyperparams(),
        all_proposals = quest.all_proposals
        )
-
-
-# create outputs - only training subset of measurements, last datapoint plotted for consistent x-axis scaling:
-if False:
-    output.Output(toggles = Toggles, filename = filename + '_training_data_gap',
-       dynamics_ts = [np.append(training_ts, ts[-1])],
-       dynamics_datasets = [[np.append(training_measurement_datasets[0], 0)]],
-       dynamics_datasets_labels = ['measurements'],
-       dynamics_formatting = ['g+'],
-       observable_labels = measurement_observables,
-       loss = quest.explored_loss,
-       best_loss = quest.best_loss,
-       acceptance = quest.chain_windows_acceptance_log,
-       models_to_save = [best],
-       model_names = ['best'],
-       chain_hyperparams = quest.get_init_hyperparams(),
-       all_proposals = quest.all_proposals
-       )
-
-# create outputs - training on training_ts (possibly subset) and evaluation on best_datasets:
-if False:
-    output.Output(toggles = Toggles, filename = filename + '_training_data_model',
-       dynamics_ts = [training_ts, evaluation_ts],
-       dynamics_datasets = [training_measurement_datasets, best_datasets],
-       dynamics_datasets_labels = ['measurements', 'model'],
-       dynamics_formatting = ['g+', 'r-'],
-       observable_labels = measurement_observables,
-       loss = quest.explored_loss,
-       best_loss = quest.best_loss,
-       acceptance = quest.chain_windows_acceptance_log,
-       models_to_save = [best],
-       model_names = ['best'],
-       chain_hyperparams = quest.get_init_hyperparams(),
-       all_proposals = quest.all_proposals
-       )
-
-
-#%% 
-
+    
+    
 
 
 
