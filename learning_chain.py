@@ -348,8 +348,8 @@ class LearningChain:
         k = 0 # auxiliary iteration counter    
         self.run_acceptance_tracker = [] # all accept/reject events (bool)
         
+        # also binary annealing tracker: (bool - iterations are either annealed or not)
         if not self.lean_mode:
-            # also binary annealing tracker: (bool - iterations are either annealed or not)
             self.run_annealing_tracker = []
             
         # step type tracker:
@@ -380,12 +380,12 @@ class LearningChain:
                     self.explored_proposals.append(copy.deepcopy(self.current))
                 self.explored_acc_vectors.append(self.current.vectorise_under_library(hyperparameters = self.process_libraries)[0])
                 if not self.lean_mode:
+                    self.run_annealing_tracker.append(now_annealed)
                     self.explored_loss.append(self.current_loss)
                     self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
                                                          + self.prior(self.current, return_minus_log_of=True)))
                 self.explored_log_likelihood_prior.append((-self.current_loss/self.MH_temperature,
                                                            -self.prior(self.current, return_minus_log_of=True)))
-                self.run_annealing_tracker.append(now_annealed)
                 self.run_step_type_tracker.append('jump to best')
                 
             
@@ -617,7 +617,8 @@ class LearningChain:
             else: # ie. reject proposal
                 self.run_acceptance_tracker.append(False)
             
-            self.run_annealing_tracker.append(now_annealed)
+            if not self.lean_mode:
+                self.run_annealing_tracker.append(now_annealed)
             i += 1        
         # while loop end
          
