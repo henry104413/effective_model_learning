@@ -261,7 +261,8 @@ if True:
        models_to_save = [best],
        model_names = ['best'],
        chain_hyperparams = quest.get_init_hyperparams(),
-       all_proposals = quest.all_proposals
+       all_proposals = quest.all_proposals,
+       shock_anneal_at = config['shock_anneal_at']
        )
     
     

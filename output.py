@@ -50,6 +50,7 @@ class Output:
                  models_to_save: list[BasicModel|LearningModel] = None,
                  model_names: list[str] = None,
                  all_proposals: dict[str, list[float]|list[LearningModel]] = None,
+                 shock_anneal_at: int = False,
                  chain_hyperparams: dict = False,
                  chain_name: str = False,
                  fontsize: float = False):
@@ -204,11 +205,24 @@ class Output:
                 
                 
         # iterables with entries for each annealing stage - if both annealed and unannealed present,
-        # also plot and save these separatenly (only for accepted stuff)
+        # also plot and save these separatenly (only for accepted stuff);
+        # if all proposals dictionary contains annealed boolean list, iterate over that,
+        # otherwise use generator that flips upon reaching shock_anneal_at if passed
         annealing_stages_labels = ['unannealed', 'annealed', ''] # last means whole chain regardless of annealing
-        annealing_stages_switch = [temp := (any(all_proposals['annealed'])
-                                            and not all(all_proposals['annealed'])),
-                                   temp, True]
+        if 'annealed' in all_proposals:
+            annealing_stages_switch = [temp := (any(all_proposals['annealed'])
+                                                and not all(all_proposals['annealed'])),
+                                       temp, True]
+            def annealed_generator(): return (x for x in all_proposals['annealed'])
+        elif (type(shock_anneal_at) == int): 
+            annealing_stages_switch = [temp := (shock_anneal_at > 0
+                                                and shock_anneal_at < len(all_proposals['acceptance'])-1),
+                                       temp, True]
+            def annealed_generator(): return (x >= shock_anneal_at 
+                                              for x in range(len(all_proposals['acceptance'])))
+        else:
+            annealing_stages_switch = [False, False, True]
+            def annealed_generator(): return (True for x in all_proposals['acceptance'])
         def annealing_condition(stage_label: str,
                                 proposal_annealing_flag: bool):
             if stage_label == 'unannealed': return (not proposal_annealing_flag)
@@ -229,7 +243,7 @@ class Output:
             if toggles.loss and 'loss' in all_proposals:     
                 # also loss of just accepted models:    
                 accepted_loss = [x for (x, y, z) in 
-                                 zip(all_proposals['loss'][1:], all_proposals['acceptance'], all_proposals['annealed'])
+                                 zip(all_proposals['loss'][1:], all_proposals['acceptance'], annealed_generator())
                                  if y and annealing_condition(stage_label, z)]
                 if accepted_loss: best_loss = min(accepted_loss) # check for empty sequence
                 else: best_loss = 0
@@ -249,12 +263,13 @@ class Output:
                 with open(filename + stage_label_filenames + '_accepted_loss.pickle', 'wb') as filestream:
                     pickle.dump(accepted_loss, filestream)
                 plt.clf()
+                del accepted_loss
                           
             # plot accepted log-posterior progression over chain steps, also save list as pickle:
             if toggles.log_posterior and 'log_posterior' in all_proposals:     
                     
                 accepted_log_posterior = [x for (x, y, z) in 
-                                          zip(all_proposals['log_posterior'][1:], all_proposals['acceptance'], all_proposals['annealed'])
+                                          zip(all_proposals['log_posterior'][1:], all_proposals['acceptance'], annealed_generator())
                                           if y and annealing_condition(stage_label, z)]
                 if accepted_log_posterior: best_log_posterior = min(accepted_log_posterior) # check for empty sequence
                 else: best_log_posterior = 0
@@ -273,12 +288,13 @@ class Output:
                 with open(filename + stage_label_filenames + '_accepted_log_posterior.pickle', 'wb') as filestream:
                     pickle.dump(accepted_log_posterior, filestream)
                 plt.clf()
+                del accepted_log_posterior
             
             # plot log-likelihood-prior progression over chain steps, also save list as pickle:
             if toggles.log_likelihood_prior and 'log_likelihood_prior' in all_proposals:     
             
                 accepted_log_likelihood_prior = [x for (x, y, z) in 
-                                          zip(all_proposals['log_likelihood_prior'][1:], all_proposals['acceptance'], all_proposals['annealed'])
+                                          zip(all_proposals['log_likelihood_prior'][1:], all_proposals['acceptance'], annealed_generator())
                                           if y and annealing_condition(stage_label, z)]
                 accepted_log_likelihood = [x for (x,y) in accepted_log_likelihood_prior]
                 accepted_log_prior = [y for (x,y) in accepted_log_likelihood_prior]
@@ -296,6 +312,7 @@ class Output:
                 with open(filename + stage_label_filenames + '_accepted_log_likelihood_prior.pickle', 'wb') as filestream:
                     pickle.dump(accepted_log_likelihood_prior, filestream)
                 plt.clf() 
+                del accepted_log_likelihood_prior
        
         
         # plot acceptance probability progression:
