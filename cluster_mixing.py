@@ -29,16 +29,15 @@ noise_stdevs = [0.01, 0.05, 0.1]
 Ds = [1,2,3]
 Rs = [1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
-hyperparams = configs.get_hyperparams(config_name)
 min_clusters = 2
 max_clusters = 10
-loss_threshold = False # if zero, watch the conditional 
 bounds = []
 verbosity = 0
 burn = 0
 subsample = 100 # take every however-many-eth point; 1 means every point taken
 only_take_annealed = True
 vectorisation = 'parameters'
+model_objects_switch = False # switch for importing full models - no longer done 
 
 # note: assumings all Rs for each D and all Ds for each noise_stdev
 
@@ -55,9 +54,9 @@ for noise_stdev in noise_stdevs:
         output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_e100'
          
         # container for points to cluster (vectorised and decomplexified Liouvillians, or parameter vectors),
-        # as well as corresponding loss and posterior
+        # as well as corresponding log likelihood-prior pairs and log posteriors
         points = []
-        losses, posteriors = [], []
+        log_likelihoods_priors, log_posteriors = [], []
         
         # time trackers for profiling:
         new_time = time.time()
@@ -69,42 +68,62 @@ for noise_stdev in noise_stdevs:
         labels_obtained = False
         for R in Rs:
             
-            # import accepted loss values and accepted proposals from same output dictionary:
+            
+            # import accepted proposals and corresponding quantities progression from output dictionary:
+            
             filename = experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R)
             
             with open(filename + '_proposals.pickle',
                       'rb') as filestream:
                 proposals = pickle.load(filestream)
-            accepted_annealing_flags = [x for (x, y) in zip(proposals['annealed'], proposals['acceptance']) if y]
-            accepted_proposals = [x for (x,y) in zip(proposals['proposals'], accepted_annealing_flags)
+            def annealing_generator(): 
+                if 'annealed' in proposals:
+                    return (x for x in proposals['annealed'])  
+                elif 'shock_anneal_at' in proposals:
+                    return (i > proposals['shock_anneal_at'] for i in range(len(proposals['acceptance'])))
+                else:
+                    return (True for x in proposals['acceptance'])
+            accepted_annealing_flags = (x for (x, y) in zip(annealing_generator(), proposals['acceptance']) if y)
+            # ie. true when both annealed and accepted
+            
+            if (model_objects_used := (model_objects_switch and ('proposals' in proposals))):
+                # ie. using model objects here
+                accepted_proposals = [x for (x,y) in zip(proposals['proposals'], accepted_annealing_flags)
+                                      if (y or not only_take_annealed)]
+            else: accepted_proposals = False
+            accepted_vectors = [x for (x,y) in zip(proposals['vectors'], accepted_annealing_flags)
                                   if (y or not only_take_annealed)]
-            accepted_losses = [x for (x,y,z) in zip(proposals['loss'][1:], proposals['acceptance'], proposals['annealed'])
-                               if y and (z or not only_take_annealed)]
-            accepted_posteriors = [x for (x,y,z) in zip(proposals['log_posterior'][1:], proposals['acceptance'], proposals['annealed'])
-                               if y and (z or not only_take_annealed)]
+            accepted_log_likelihoods_priors = [x for (x,y,z) 
+                                   in zip(proposals['log_likelihood_prior'][1:], proposals['acceptance'], annealing_generator())
+                                   if y and (z or not only_take_annealed)]
+            accepted_log_posteriors = [x for (x,y,z) 
+                                   in zip(proposals['log_posterior'][1:], proposals['acceptance'], annealing_generator())
+                                   if y and (z or not only_take_annealed)]
             # !!! note: only accepted proposals are saved in proposals, 
             # whereas other entries in proposals dictionary are for all proposals regardless of acceptance
             
             # get parameter labels off of 1st proposal:
             if not labels_obtained:
-                hyperparams = configs.get_hyperparams(config_name)
-                _, labels, labels_latex = accepted_proposals[0].vectorise_under_library(hyperparameters = hyperparams)
-                
+                if model_objects_switch: # in case model objects stored - not done anymore:
+                    hyperparams = configs.get_hyperparams(config_name)
+                    _, labels, labels_latex = (
+                        accepted_proposals[0].vectorise_under_library(hyperparameters = hyperparams))
+                else:
+                    labels, labels_latex = (
+                        proposals['params_labels'], proposals['params_labels_latex'])
+            
             
             # collect all points including loss and posterior:
             
             # split into segments determined by bounds:    
-            bounds = [
-                      (0, len(accepted_losses))
-                      ]
             if len(bounds) > 1: # plot chain segments determined by bounds:
-                indices = list(range(len(accepted_losses)))
+                indices = list(range(len(accepted_log_likelihoods_priors)))
                 plt.figure()
-                plt.plot(indices, accepted_losses, '-', c = 'orange', linewidth = 0.5)
+                plt.plot(indices, log_likelihoods := [x[0] for x in accepted_log_likelihoods_priors], '-', c = 'orange', linewidth = 0.5)
                 plt.yscale('log')
-                ymin = min(accepted_losses)
-                ymax = max(accepted_losses)
-                plt.ylabel('loss')
+                ymin = min(log_likelihoods)
+                ymax = max(log_likelihoods)
+                plt.ylabel('log likelihoods')
                 plt.xlabel('accepted model')
                 for region in bounds:
                     plt.plot([region[0], region[0]], [ymin, ymax], 'r-', linewidth = 1)
@@ -112,24 +131,26 @@ for noise_stdev in noise_stdevs:
                 plt.savefig(output_name + '_chain_segments.svg')
                 plt.clf()
                 
-            # remove points with loss below some threshold - don't combine this with bounds!
-            elif type(loss_threshold) in [int, float]:
-                print('Earlier: ' + str(len(accepted_proposals)), flush = True)
-                working_proposals = [x for (x, y) in zip(accepted_proposals, accepted_losses) if y < loss_threshold]
-                print('After: ' + str(len(accepted_proposals)), flush = True)
-            
             # take only points between the specified regions (sets of bounds),
             # also corresponding losses and posteriors:
-            if True:
+            if bounds:
                 working_proposals = []
-                working_losses, working_posteriors = [], []
+                working_vectors = []
+                working_log_likelihoods_priors, working_log_posteriors = [], []
                 for region in bounds:
-                    working_proposals.extend(accepted_proposals[region[0]:region[1]])
-                    working_losses.extend(accepted_losses[region[0]:region[1]])
-                    working_posteriors.extend(accepted_posteriors[region[0]:region[1]])
+                    if model_objects_used:
+                        working_proposals.extend(accepted_proposals[region[0]:region[1]])
+                    working_vectors.extend(accepted_vectors[region[0]:region[1]])
+                    working_log_likelihoods_priors.extend(accepted_log_likelihoods_priors[region[0]:region[1]])
+                    working_log_posteriors.extend(accepted_log_posteriors[region[0]:region[1]])
+            else:
+                working_proposals = accepted_proposals
+                working_vectors = accepted_vectors
+                working_log_likelihoods_priors = accepted_log_likelihoods_priors
+                working_log_posteriors = accepted_log_posteriors
+                
+            # turn proposals into points for clustering as per vectorisation choice:
             new_points = []
-            
-            # turn proposals into points (vectors):
             if vectorisation == 'Liouvillian': # use Liouvillian
                 for new_model in working_proposals:
                     # build Liouvillian, turn into 1D vector, separate real and imaginary parts and concatenate:
@@ -139,13 +160,19 @@ for noise_stdev in noise_stdevs:
                     Liouvillian_vect_separated = np.concatenate((Liouvillian_vect_complex.real, Liouvillian_vect_complex.imag))
                     new_points.append(Liouvillian_vect_separated)
             elif vectorisation == 'parameters': # use model vector
-                for new_model in working_proposals:
-                    new_points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
+                if False: 
+                # now vectors are saved by chain and imported so this is redundant
+                # retained here for legacy reasons
+                    for new_model in working_proposals:
+                        new_points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
+                else:
+                    new_points.append(working_vectors)
             
+            # append points for this R with subsampling as specified (reducing requirements):
             taken_from_each_R_subsampled.append(len(working_proposals[0::subsample]))
             points.extend(new_points[0::subsample])
-            losses.extend(working_losses[0::subsample])
-            posteriors.extend(working_posteriors[0::subsample])
+            log_likelihoods_priors.extend(working_log_likelihoods_priors[0::subsample])
+            log_posteriors.extend(working_log_posteriors[0::subsample])
             
             
         # final array to feed into clusterer 
@@ -153,17 +180,14 @@ for noise_stdev in noise_stdevs:
         points_array = np.stack(points)
         #points_array = points_array[0::subsample,:] # if sampling subsampling combined chains, not now - changes edge cases!
         
-        
         # also export lists of points, losses, posteriors:
         with open(output_name + '_points.pickle', 'wb') as filestream:
             pickle.dump(points, filestream)
-        with open(output_name + '_losses.pickle', 'wb') as filestream:
-            pickle.dump(losses, filestream)
-        with open(output_name + '_posteriors.pickle', 'wb') as filestream:
-            pickle.dump(posteriors, filestream)
+        with open(output_name + '_log_likelihoods_priors.pickle', 'wb') as filestream:
+            pickle.dump(log_likelihoods_priors, filestream)
+        with open(output_name + '_log_posteriors.pickle', 'wb') as filestream:
+            pickle.dump(log_posteriors, filestream)
         
-        
-            
         print('\n.....\ndata preparation time pre-clustering (s):' 
               + str(np.round((new_time := time.time()) - time_last,2)) + '\n.....\n', flush = True)
           
@@ -324,6 +348,8 @@ for noise_stdev in noise_stdevs:
         
             
         #%% plot assignments and centres given for specified ks
+        # currently deprecated and not up to date
+        # - if needed requires updating with vectors instead of model objects!
         
         if False:
             

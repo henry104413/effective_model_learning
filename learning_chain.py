@@ -641,6 +641,9 @@ class LearningChain:
             self.all_proposals['proposals'] = self.explored_proposals
         self.all_proposals['vectors'] = self.explored_acc_vectors
         self.all_proposals['shock_anneal_at'] = self.shock_anneal_at
+        _, self.all_proposals['params_labels'], self.all_proposals['params_labels_latex'] = (
+            self.best.vectorise_under_library(hyperparameters = self.process_libraries))
+            
         
         return self.best
     

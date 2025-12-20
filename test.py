@@ -504,7 +504,7 @@ with open(
           #'251110-1M-wider_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D1_R2_proposals.pickle'
           #'251210-test2_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D3_R2_proposals.pickle'
           
-          '251210_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D1_R1_proposals.pickle'
+          #'251210_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D1_R1_proposals.pickle'
           # D=1
           
           #'251210_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle'
@@ -512,7 +512,7 @@ with open(
           
           #'251210_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D3_R1_proposals.pickle'
           # D=3
-          
+          '251216-quicktest2_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D3_R1_proposals.pickle'
           , 'rb') as filestream:
     A = pickle.load(filestream)
     
