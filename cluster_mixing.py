@@ -161,10 +161,10 @@ for noise_stdev in noise_stdevs:
                     for new_model in working_proposals:
                         new_points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
                 else:
-                    new_points.append(working_vectors)
+                    new_points = working_vectors
             
             # append points for this R with subsampling as specified (reducing requirements):
-            taken_from_each_R_subsampled.append(len(working_proposals[0::subsample]))
+            taken_from_each_R_subsampled.append(len(working_log_likelihoods_priors[0::subsample]))
             points.extend(new_points[0::subsample])
             log_likelihoods_priors.extend(working_log_likelihoods_priors[0::subsample])
             
