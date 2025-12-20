@@ -22,15 +22,15 @@ import time
 import copy
 
 # settings and source data:
-experiment_name_base = '251210'
+experiment_name_base = '251220-test1'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-noise_stdevs = [0.01, 0.05, 0.1]
-Ds = [1,2,3]
-Rs = [1,2,3] # for combining chains - same for all Ds above
+noise_stdevs = [0.01]#[0.01, 0.05, 0.1]
+Ds = [2]#[1,2,3]
+Rs = [1,2]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 min_clusters = 2
-max_clusters = 10
+max_clusters = 6
 bounds = []
 verbosity = 0
 burn = 0
@@ -54,9 +54,9 @@ for noise_stdev in noise_stdevs:
         output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_e100'
          
         # container for points to cluster (vectorised and decomplexified Liouvillians, or parameter vectors),
-        # as well as corresponding log likelihood-prior pairs and log posteriors
+        # as well as corresponding log likelihood-prior pairs
         points = []
-        log_likelihoods_priors, log_posteriors = [], []
+        log_likelihoods_priors = []
         
         # time trackers for profiling:
         new_time = time.time()
@@ -96,9 +96,6 @@ for noise_stdev in noise_stdevs:
             accepted_log_likelihoods_priors = [x for (x,y,z) 
                                    in zip(proposals['log_likelihood_prior'][1:], proposals['acceptance'], annealing_generator())
                                    if y and (z or not only_take_annealed)]
-            accepted_log_posteriors = [x for (x,y,z) 
-                                   in zip(proposals['log_posterior'][1:], proposals['acceptance'], annealing_generator())
-                                   if y and (z or not only_take_annealed)]
             # !!! note: only accepted proposals are saved in proposals, 
             # whereas other entries in proposals dictionary are for all proposals regardless of acceptance
             
@@ -113,7 +110,7 @@ for noise_stdev in noise_stdevs:
                         proposals['params_labels'], proposals['params_labels_latex'])
             
             
-            # collect all points including loss and posterior:
+            # collect all points including log likelihood-prior pairs:
             
             # split into segments determined by bounds:    
             if len(bounds) > 1: # plot chain segments determined by bounds:
@@ -132,22 +129,20 @@ for noise_stdev in noise_stdevs:
                 plt.clf()
                 
             # take only points between the specified regions (sets of bounds),
-            # also corresponding losses and posteriors:
+            # also corresponding log likelihood-prior pairs:
             if bounds:
                 working_proposals = []
                 working_vectors = []
-                working_log_likelihoods_priors, working_log_posteriors = [], []
+                working_log_likelihoods_priors = []
                 for region in bounds:
                     if model_objects_used:
                         working_proposals.extend(accepted_proposals[region[0]:region[1]])
                     working_vectors.extend(accepted_vectors[region[0]:region[1]])
                     working_log_likelihoods_priors.extend(accepted_log_likelihoods_priors[region[0]:region[1]])
-                    working_log_posteriors.extend(accepted_log_posteriors[region[0]:region[1]])
             else:
                 working_proposals = accepted_proposals
                 working_vectors = accepted_vectors
                 working_log_likelihoods_priors = accepted_log_likelihoods_priors
-                working_log_posteriors = accepted_log_posteriors
                 
             # turn proposals into points for clustering as per vectorisation choice:
             new_points = []
@@ -172,7 +167,6 @@ for noise_stdev in noise_stdevs:
             taken_from_each_R_subsampled.append(len(working_proposals[0::subsample]))
             points.extend(new_points[0::subsample])
             log_likelihoods_priors.extend(working_log_likelihoods_priors[0::subsample])
-            log_posteriors.extend(working_log_posteriors[0::subsample])
             
             
         # final array to feed into clusterer 
@@ -180,13 +174,11 @@ for noise_stdev in noise_stdevs:
         points_array = np.stack(points)
         #points_array = points_array[0::subsample,:] # if sampling subsampling combined chains, not now - changes edge cases!
         
-        # also export lists of points, losses, posteriors:
+        # also export lists of points and log likelihood-prior pairs:
         with open(output_name + '_points.pickle', 'wb') as filestream:
             pickle.dump(points, filestream)
         with open(output_name + '_log_likelihoods_priors.pickle', 'wb') as filestream:
             pickle.dump(log_likelihoods_priors, filestream)
-        with open(output_name + '_log_posteriors.pickle', 'wb') as filestream:
-            pickle.dump(log_posteriors, filestream)
         
         print('\n.....\ndata preparation time pre-clustering (s):' 
               + str(np.round((new_time := time.time()) - time_last,2)) + '\n.....\n', flush = True)
