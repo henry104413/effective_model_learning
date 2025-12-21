@@ -22,15 +22,15 @@ import time
 import copy
 
 # settings and source data:
-experiment_name_base = '251220-test2'
+experiment_name_base = '251216'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-noise_stdevs = [0.01, 0.05]#[0.01, 0.05, 0.1]
-Ds = [1,2]#[1,2,3]
-Rs = [1,2]#[1,2,3] # for combining chains - same for all Ds above
+noise_stdevs = [0.01]#[0.01, 0.05, 0.1]
+Ds = [1]#[1,2,3]
+Rs = [1,2, 3]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 min_clusters = 2
-max_clusters = 6
+max_clusters = 8
 bounds = []
 verbosity = 0
 burn = 0
@@ -96,14 +96,14 @@ for noise_stdev in noise_stdevs:
             accepted_log_likelihoods_priors = [x for (x,y,z) 
                                    in zip(proposals['log_likelihood_prior'][1:], proposals['acceptance'], annealing_generator())
                                    if y and (z or not only_take_annealed)]
-            # !!! note: only accepted proposals are saved in proposals, 
+            # !!! note: only accepted proposals and vectors are saved in proposals, 
             # whereas other entries in proposals dictionary are for all proposals regardless of acceptance
             
             # set parameter labels:
             if not labels_obtained:
                 def load_best():
                     try:
-                        with open(filename + '_best.pickle') as filestream:
+                        with open(filename + '_best.pickle', 'rb') as filestream:
                             best = pickle.load(filestream)
                         return True, best
                     except:
