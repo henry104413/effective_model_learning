@@ -22,11 +22,11 @@ import time
 import copy
 
 # settings and source data:
-experiment_name_base = '251220-test1'
+experiment_name_base = '251220-test2'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-noise_stdevs = [0.01]#[0.01, 0.05, 0.1]
-Ds = [2]#[1,2,3]
+noise_stdevs = [0.01, 0.05]#[0.01, 0.05, 0.1]
+Ds = [1,2]#[1,2,3]
 Rs = [1,2]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 min_clusters = 2
@@ -99,15 +99,37 @@ for noise_stdev in noise_stdevs:
             # !!! note: only accepted proposals are saved in proposals, 
             # whereas other entries in proposals dictionary are for all proposals regardless of acceptance
             
-            # get parameter labels off of 1st proposal:
+            # set parameter labels:
             if not labels_obtained:
-                if model_objects_switch: # in case model objects stored - not done anymore:
+                def load_best():
+                    try:
+                        with open(filename + '_best.pickle') as filestream:
+                            best = pickle.load(filestream)
+                        return True, best
+                    except:
+                        return False, None
+                if model_objects_switch: 
+                # take parameter labels off of 1st proposal model object if loaded:
                     hyperparams = configs.get_hyperparams(config_name)
                     _, labels, labels_latex = (
                         accepted_proposals[0].vectorise_under_library(hyperparameters = hyperparams))
-                else:
+                elif 'params_labels_latex' in proposals and 'params_labels' in proposals:
+                # take directly from proposals dictionary if stored:
                     labels, labels_latex = (
                         proposals['params_labels'], proposals['params_labels_latex'])
+                elif (temp := load_best())[0]:
+                # try and take from best if loaded succesfully;
+                # note: temp is tuple of (success flag of loading best, best model, hyperparams)
+                    hyperparams = configs.get_hyperparams(config_name)
+                    _, best = temp
+                    _, labels, labels_latex = (
+                        best.vectorise_under_library(hyperparameters = hyperparams))
+                else:
+                    # if not obtained otherwise, just use parameter numbers as labels:
+                    print('Could not obtain parameters labels - using numerals instead', flush = True)
+                    labels = [str(x) for x in range(len(accepted_vectors[0]))]
+                    labels_latex = [str(x) for x in range(len(accepted_vectors[0]))]
+                labels_obtained = True
             
             
             # collect all points including log likelihood-prior pairs:
