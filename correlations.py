@@ -7,7 +7,7 @@ Effective model learning
 Finds correlations for across selected clusters of models.
 """
 
-
+CHANGE: POSTERIORS NO LONGER SAVED - SWAP FOR IMPORTING LOG LIKELIHOODS PRIORS AND SUMMING 
 
 import pandas as pd
 import pickle
@@ -23,8 +23,8 @@ import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # settings:
-experiment_name = '251210'
-noise_stdev = 0.05 # set None if not included in file name
+experiment_name = '251216'
+noise_stdev = 0.01 # set None if not included in file name
 D = 1
 Rs = [1,2,3] # for D2
 og_source = '_Wit-Fig4-6-0_025'
@@ -74,7 +74,8 @@ assignments = list(outputs_each_k[chosen_k]['assignments'])
 #%%
 # bar plot of clusters' popularity:
 plt.figure()
-plt.bar(list(models_by_clusters.keys()), [len(models_by_clusters[x]) for x in models_by_clusters],
+clusters_popularity = [len(models_by_clusters[x]) for x in models_by_clusters]
+plt.bar(list(models_by_clusters.keys()), clusters_popularity,
         color = 'navy')
 plt.xlabel('cluster')
 plt.xticks(list(range(chosen_k)), labels = [str(x) for x in list(range(chosen_k))])
@@ -82,6 +83,11 @@ plt.ylabel('number of models')
 plt.savefig(output_name + '_cluster_popularity' + '.svg', 
             dpi = 1000, bbox_inches='tight')
 
+# ordering of clusters by popularity in DESCENDING order:
+clusters_by_pop_desc = sorted(range(len(clusters_popularity)), 
+                               key = lambda i: clusters_popularity[i], reverse=True)
+# note: no need to now order clusters labels by this
+# ordering and ordered set equivalent here because cluster labels are a range(0, chosen_k)
 
 
 #%% also plot dynamics comparison for cluster centres and champions
@@ -173,19 +179,23 @@ if not True:
     # champion, posterior = max(zip(points, posteriors), key = lambda x: x[1])    
     
         
-#'251122-run_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_Rs1,4,5,6,7,8,11,12,13,15,17,19,20_clustering-sub100_clustering_centres.pickle'
 
 #%%
 # find correlations, dendrograms, and clustered parameters in selected cluster combinations
+# for now: do doing 1) all and 2) most popular cluster
+
 
 cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
 
 # list of lists, each inner list for combinations of cluster to analyse together: 
-cluster_combinations = [[3],[0,1,2,3]]
-# each separately:
-cluster_combinations.extend([x] for x in (models_by_clusters.keys()))
+cluster_combinations = []
+# each separately - CURRENTLY DISABLED:
+if False:
+    cluster_combinations.extend([x] for x in (models_by_clusters.keys()))
 # all together: 
 cluster_combinations.append(list(list(models_by_clusters.keys())))
+# most populare cluster:
+cluster_combinations.append(clusters_by_pop_desc[0:1])
  
 for cluster_combination in cluster_combinations:
     # find and save correlations for this cluster combination
@@ -252,10 +262,9 @@ for cluster_combination in cluster_combinations:
     
 # %%
 # popularity of different processes:
-# manually chosen sets for now... cheeky bit of code
-# i could actually just chose the most popular clusters here...
+# CURRENTLY compare UP TO 4 most popular clusters (slicing capped by number of clusters)
 
-cluster_choices = [1,2,3,0]
+cluster_choices = clusters_by_pop_desc[0:4]
 # cluster_choices = [2,3,4] # for LN D=1
 # formatting - must have options for at least each cluster choice, can be longer:
 colours = ['red', 'blue', 'black', 'purple']
@@ -281,7 +290,7 @@ plt.savefig(output_name + '_process_popularity' + '.svg',
         
         
 #%%        
-# sample set of models (like one cluster), evaluate dynamics, find mean and standard deviation
+# sample subset of models from each of cluster choices, evaluate dynamics, find mean and standard deviation:
 
 # want for each observable numpy array
 # dyynamics produces array in time
@@ -410,7 +419,7 @@ for i, op in enumerate(measurement_observables):
 
 
 #%%
-# also plot parameter vectors for chosen clusters 
+# also plot champion parameter vectors for chosen clusters:
 
 champions = {}
 #champ_posteriors = {}

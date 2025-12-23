@@ -3,6 +3,16 @@
 """
 Effective model learning
 @author: Henry (henry104413)
+
+For all combinations of Ds and noise_stdevs, collects models from different chains (Rs),
+with given subsampling and optional bounds and filtering by annealed status of models,
+according to model parameter vectors, or vectorised Liouvillians, as chosen. 
+Performs k-means clustering over given range of ks, saves assignments, centres, and metrics
+(SSEs and silhouette score) for each k; also outputs metrics as a function of k.
+
+Also saves collated subsampled models used for clustering in form of points 
+(parameter vectors, or optionally vectorised Liouvillians),
+and associalted tuples of (log likelihood, log prior), both as pickles.
 """
 
 import sys # for passing command line arguments
@@ -25,12 +35,12 @@ import copy
 experiment_name_base = '251216'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-noise_stdevs = [0.01]#[0.01, 0.05, 0.1]
-Ds = [1]#[1,2,3]
+noise_stdevs = [0.1]#[0.01, 0.05, 0.1]
+Ds = [3]#[1,2,3]
 Rs = [1,2, 3]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 min_clusters = 2
-max_clusters = 8
+max_clusters = 10
 bounds = []
 verbosity = 0
 burn = 0

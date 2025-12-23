@@ -299,8 +299,8 @@ class Output:
                 accepted_log_likelihood = [x for (x,y) in accepted_log_likelihood_prior]
                 accepted_log_prior = [y for (x,y) in accepted_log_likelihood_prior]
                 plt.figure()
-                plt.plot(accepted_log_likelihood, '-', c = 'red', linewidth = 0.3, markersize = 0.1, label = 'likelihood')
-                plt.plot(accepted_log_prior, '-', c = 'green', linewidth = 0.3, markersize = 0.1, label = 'prior')
+                plt.plot(accepted_log_likelihood, '-', c = 'red', linewidth = 0.3, markersize = 0.1, label = 'likelihood', alpha = 0.6)
+                plt.plot(accepted_log_prior, '-', c = 'green', linewidth = 0.3, markersize = 0.1, label = 'prior', alpha = 0.6)
                 plt.yscale('symlog')
                 plt.xlabel('accepted' + stage_label_axislabels + ' proposal no.')
                 plt.ylabel('log posterior')

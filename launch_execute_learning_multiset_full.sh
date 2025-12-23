@@ -22,15 +22,15 @@
 # !! but in each case must be arrays!  
 declare -a target_csvs=("Wit-Fig4-6-0_025")
 # "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
-experiment_name="251220-test2"
-defects_numbers=(1 2)
-repetitions_numbers=(2)
+experiment_name="251220-test3"
+defects_numbers=(3)
+repetitions_numbers=(1)
 iterations_numbers=(6000) # ...match up with Ds
 shock_anneal_ats=(2400) # ...plural - match up with Ds
 proportion_training=1
 configs=(11)
 full=1
-noise_stdevs=(0.01 0.05)
+noise_stdevs=(0.1)
 # note: iterations_number and shock_anneal_at and repetitions_number arrays allowed to be different for each number of defects,
 # or if array of length one then this is always used; then repetitions carried out with identical setups
 # note: same setups done for each specified noise_stdev; this is done for each of configs; this in turn is done for each target (usually only 1)
