@@ -7,7 +7,7 @@ Effective model learning
 Finds correlations for across selected clusters of models.
 """
 
-CHANGE: POSTERIORS NO LONGER SAVED - SWAP FOR IMPORTING LOG LIKELIHOODS PRIORS AND SUMMING 
+# CHANGE: POSTERIORS NO LONGER SAVED - SWAP FOR IMPORTING LOG LIKELIHOODS PRIORS AND SUMMING 
 
 import pandas as pd
 import pickle
@@ -25,13 +25,13 @@ from definitions import observable_shorthand2pretty as ops_longlabels, ops
 # settings:
 experiment_name = '251216'
 noise_stdev = 0.01 # set None if not included in file name
-D = 1
+D = 2
 Rs = [1,2,3] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e100'
-chosen_k = 4 # 
+chosen_k = 4 #  
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -63,12 +63,12 @@ outputs_each_k_file = (experiment_name + '_' + config_name + '_D' + str(D) + '_R
             + clustering_name + '_outputs_each_k.pickle')
 with open(source_base + '_points.pickle', 'rb') as filestream:
     points = pickle.load(filestream)
-with open(source_base + '_posteriors.pickle', 'rb') as filestream:
-    posteriors = pickle.load(filestream)
 with open(outputs_each_k_file, 'rb') as filestream:
     outputs_each_k = pickle.load(filestream)
 assignments = list(outputs_each_k[chosen_k]['assignments'])
-
+with open(source_base + '_log_likelihoods_priors.pickle', 'rb') as filestream:
+    log_likelihoods_priors = pickle.load(filestream)
+posteriors = [x[0] + x[1] for x in log_likelihoods_priors]
 
 
 #%%
@@ -300,7 +300,7 @@ plt.savefig(output_name + '_process_popularity' + '.svg',
 
 # section settings:
 cluster_choices = list(range(chosen_k)) # note: now taken from above section, enable if required separately
-samples = 10000
+samples = 1000
 
 # target data:
 # note: datasets and observable labels must be encapsulated into lists
