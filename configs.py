@@ -39,21 +39,24 @@ default_chain_hyperparams = {
         'complexity_factor': 10, 
         # note: expected number of processes akin to STD in dynamics - creates natural posterior scale
         
-        'jump_length_rescaling_factor': 1.0, # for scaling up or down jump lengths of parameter handler
-        
         'shock_anneal_at': int(500000), # iteration to perform switch to annealed regime
         # note: currently annealing only parameters handler
         
-        'acceptance_window': 100,
-        'acceptance_target': 0.4,
-        'acceptance_band': 0.2,
+        'tweak_width_annealing_factor': 0.1, # to scale tweak widths for all parameter classes when annealing
+                
+        # window, target acceptance rate, and scaling for adaptive tweak width tuning:
+        # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
+        'acc_window': 1000,
+        'tweak_width_adaptation_factor': 5.0,
+        'acc_rate_max': 0.3,
+        'acc_rate_min': 0.05,
         
         'params_handler_hyperparams': { 
-            'initial_jump_lengths': {'couplings' : 0.4, #0.4,
+            'initial_tweak_widths': {'couplings' : 0.4, #0.4,
                                      'energies' : 0.04, #0.04,
                                      'Ls' : 0.04 #0.04
                                      },
-            'annealed_jump_lengths': {'couplings' : 0.04, #0.04,
+            'annealed_tweak_widths': {'couplings' : 0.04, #0.04,
                                       'energies' : 0.004, #0.004,
                                       'Ls' : 0.004 #0.004
                                       }

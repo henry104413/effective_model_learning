@@ -40,7 +40,7 @@ class LearningChain:
         1) modify chain hyperparameters after initialisation.
         2) update them in existing parameter and process handlers 
     
-    Also potentially take parameter handler jump lengths out of outer dictionary.
+    Also potentially take parameter handler tweak_widths out of outer dictionary.
     """
     
     # bundle of default values for single chain hyperparameters:
@@ -66,16 +66,19 @@ class LearningChain:
         
         temperature_proposal = 0.0005 # or (0.05, 0.05) to sample gamma by default
         
-        jump_length_rescaling_factor = 1 # for scaling up or down jump lengths of parameter handler
-        
         complexity_factor = 1
         
-        acceptance_window = 10
-        acceptance_target = 0.4
-        acceptance_band = 0.2
+        tweak_width_annealing_factor = 0.1
+        
+        # target acceptance rate for tweak width tuning:
+        # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
+        tweak_width_adaptation_factor = 5.0
+        acc_window = 1000
+        acc_rate_max = 0.3
+        acc_rate_min = 0.05
         
         params_handler_hyperparams = {
-            'initial_jump_lengths': {'couplings' : 0.1,
+            'initial_tweak_widths': {'couplings' : 0.1,
                                      'energies' : 0.1,
                                      'Ls' : 0.01
                                      }
@@ -187,7 +190,7 @@ class LearningChain:
                  
                  complexity_factor: float|int = 1,
                  
-                 jump_length_rescaling_factor: float = False, 
+                 tweak_width_adaptation_factor: float = False, 
                  
                  acceptance_window: float = False,
                  acceptance_target: float = False,
@@ -366,7 +369,8 @@ class LearningChain:
             
             # do shock annealing if enabled and reached annealing iteration:
             if bool(self.shock_anneal_at) and i == self.shock_anneal_at: 
-                self.params_handler.set_jump_lengths(self.params_handler_hyperparams['annealed_jump_lengths'])
+                CHANGE HERE
+                self.params_handler.set_tweak_widths(self.params_handler_hyperparams['annealed_tweak_widths'])
                 now_annealed = True
                 print('\n\nPerforming shock annealing at iteration ' + str(i), flush=True)
                 i += 1
@@ -455,7 +459,7 @@ class LearningChain:
                 
                 if not self.params_bounds:
                 # no bounds specified hence only parameter restriction L positivity    
-                    proposal_width = self.params_handler.jump_lengths['Ls']
+                    proposal_width = self.params_handler.tweak_widths['Ls']
                     for TLS in self.current.TLSs:
                         for current_rate in TLS.Ls.values():
                             p_there *= 1/(1-1/2*(1+sp.special.erf(-current_rate/proposal_width/np.sqrt(2))))
@@ -484,20 +488,20 @@ class LearningChain:
                             if not TLS.is_qubit:
                                 # note: bounds not enforced on qubit energy hence could get 0/0!!
                                 m = TLS.energy
-                                s = self.params_handler.jump_lengths['energies']
+                                s = self.params_handler.tweak_widths['energies']
                                 a = self.params_bounds['energies'][0]
                                 b = self.params_bounds['energies'][1]
                                 holder[key] *= (factor := self.xi(m, s, a, b))
                                 
                             # Ls:
-                            s = self.params_handler.jump_lengths['Ls']
+                            s = self.params_handler.tweak_widths['Ls']
                             a = self.params_bounds['Ls'][0]
                             b = self.params_bounds['Ls'][1]
                             for m in TLS.Ls.values():
                                 holder[key] *= (factor := self.xi(m, s, a, b))
                                 
                             # couplings:
-                            s = self.params_handler.jump_lengths['couplings']
+                            s = self.params_handler.tweak_widths['couplings']
                             a = self.params_bounds['couplings'][0]
                             b = self.params_bounds['couplings'][1]
                             for partner in TLS.couplings:
@@ -920,23 +924,23 @@ class LearningChain:
     
     def cool_down(self):
         """
-        Scale down parameter handler jump length by instance-level rescaling factor.
+        Scale down parameter handler tweak width by instance-level adaptation factor.
         """
         
         if not self.params_handler: # ie. first run
             self.initialise_params_handler()
-        self.params_handler.rescale_jump_lengths(1/self.jump_length_rescaling_factor)
+        self.params_handler.rescale_tweak_widths(1/self.tweak_width_adaptation_factor_factor)
         
         
     
     def heat_up(self):
         """
-        Scale up parameter handler jump length by instance-level rescaling factor.
+        Scale up parameter handler tweak width by instance-level adaptation factor.
         """
         
         if not self.params_handler: # ie. first run
             self.initialise_params_handler()
-        self.params_handler.rescale_jump_lengths(self.jump_length_rescaling_factor)
+        self.params_handler.rescale_tweak_widths(self.tweak_width_adaptation_factor)
     
     
     
@@ -953,7 +957,7 @@ class LearningChain:
     
     def initialise_params_handler(self):
         """
-        Constructs parameters handler and sets initial hyperparameters (including jump lenghts).
+        Constructs parameters handler and sets initial hyperparameters (including tweak widths).
         """    
 
         self.params_handler = params_handling.ParamsHandler(self)
