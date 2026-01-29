@@ -188,13 +188,16 @@ class LearningChain:
                  
                  shock_anneal_at: int = False,
                  
-                 complexity_factor: float|int = 1,
+                 fix_tweak_width_at: int = False,
                  
-                 tweak_width_adaptation_factor: float = False, 
+                 complexity_factor: float|int = False,
                  
-                 acceptance_window: float = False,
-                 acceptance_target: float = False,
-                 acceptance_band: float = False,
+                 tweak_width_annealing_factor: float|int = False,
+                 
+                 tweak_width_adaptation_factor: float|int = False, 
+                 acc_window: float = False,
+                 acc_rate_max: float = False,
+                 acc_rate_min: float = False,
                  
                  params_handler_hyperparams: dict[dict] = False,
                  # note: can contain lots of things - class to be simplified
@@ -365,18 +368,26 @@ class LearningChain:
         # carry out all chain steps:
         i = 0
         now_annealed = False
+        adaptation_flag = (type(self.tweak_width_adaptation_factor) in [int, float] 
+                           and self.tweak_width_adaptation_factor != 1) # shorthand flag - true if adaptation on
         while i <= steps:
             
             # do shock annealing if enabled and reached annealing iteration:
-            if bool(self.shock_anneal_at) and i == self.shock_anneal_at: 
-                CHANGE HERE
-                self.params_handler.set_tweak_widths(self.params_handler_hyperparams['annealed_tweak_widths'])
+            if bool(self.shock_anneal_at) and i == self.shock_anneal_at:
+                
+                # anneal either by annealing factor if tweak width adaptation done or widths dictionary not specified,
+                # otherwise set to annealed widths dictionary values:
+                if (adaptation_flag or 'annealed_tweak_widths' not in self.params_handler_hyperparams):
+                    # change each current params handler tweak width (for all process classes)
+                    self.params_handler.rescale_tweak_widths(self.tweak_width_annealing_factor)
+                else:
+                    self.params_handler.set_tweak_widths(self.params_handler_hyperparams['annealed_tweak_widths'])
                 now_annealed = True
                 print('\n\nPerforming shock annealing at iteration ' + str(i), flush=True)
                 i += 1
                 
                 # jump now to best model reached thus far and do more localised exploration from there
-                # - update current model to best and save all statistics:
+                # ie. update current model to best and save all statistics:
                 self.current = copy.deepcopy(self.best)
                 self.current_loss = self.best_loss
                 self.run_acceptance_tracker.append(True)
@@ -393,10 +404,14 @@ class LearningChain:
                 self.run_step_type_tracker.append('jump to best')
                 
             
-            # set Metropolis-Hastings acceptance temperature:
-            self.MH_temperature = self.sample_T()
             
-            # acceptance tally:
+            # calculate acceptance rate if window end reached and adapt tweak width if enabled:
+            # CHANGE: 
+            # ACTUALLY ALREADY HAVE TRACKER FOR BOTH STEP TYPE AND STEP ACCEPTANCE
+            # SO KEEP TRACK OF RATE OF RJ AND RATE OF TWEAK PER CONSECUTIVE WINDOWS?
+            # AND ALSO OVERALL!!
+            # ALSO RENAME TO NEW VARIABLE NAMES - acceptance_window to acc_window etc
+            # SO 3 lists of length of number of windows in chain
             if k >= self.acceptance_window: # ie, end of latest window reached
                 k = 0
                 window_accepted_total = \
@@ -422,7 +437,10 @@ class LearningChain:
                     time_last = new_time
                 k2 += 1
                 
-    
+                
+            # set Metropolis-Hastings acceptance temperature:
+            self.MH_temperature = self.sample_T()
+            
             # new proposal container:
             proposal = copy.deepcopy(self.current)
             
@@ -929,7 +947,7 @@ class LearningChain:
         
         if not self.params_handler: # ie. first run
             self.initialise_params_handler()
-        self.params_handler.rescale_tweak_widths(1/self.tweak_width_adaptation_factor_factor)
+        self.params_handler.rescale_tweak_widths(1/self.tweak_width_adaptation_factor)
         
         
     

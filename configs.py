@@ -42,6 +42,9 @@ default_chain_hyperparams = {
         'shock_anneal_at': int(500000), # iteration to perform switch to annealed regime
         # note: currently annealing only parameters handler
         
+        'fix_tweak_width_at': int(200000), # iteration to fix tweak widths after adaptation
+        # if false or set to zero, no adaptation will take place, same as if adaptation factor False or number 1
+        
         'tweak_width_annealing_factor': 0.1, # to scale tweak widths for all parameter classes when annealing
                 
         # window, target acceptance rate, and scaling for adaptive tweak width tuning:
