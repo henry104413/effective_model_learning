@@ -39,17 +39,17 @@ default_chain_hyperparams = {
         'complexity_factor': 10, 
         # note: expected number of processes akin to STD in dynamics - creates natural posterior scale
         
-        'shock_anneal_at': int(500000), # iteration to perform switch to annealed regime
+        'shock_anneal_at': int(600), # iteration to perform switch to annealed regime
         # note: currently annealing only parameters handler
         
-        'fix_tweak_width_at': int(200000), # iteration to fix tweak widths after adaptation
+        'fix_tweak_width_at': int(400), # iteration to fix tweak widths after adaptation
         # if false or set to zero, no adaptation will take place, same as if adaptation factor False or number 1
         
         'tweak_width_annealing_factor': 0.1, # to scale tweak widths for all parameter classes when annealing
                 
         # window, target acceptance rate, and scaling for adaptive tweak width tuning:
         # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
-        'acc_window': 1000,
+        'acc_window': 100,
         'tweak_width_adaptation_factor': 5.0,
         'acc_rate_max': 0.3,
         'acc_rate_min': 0.05,

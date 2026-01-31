@@ -22,15 +22,16 @@
 # !! but in each case must be arrays!  
 declare -a target_csvs=("Wit-Fig4-6-0_025")
 # "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
-experiment_name="251220-test3"
-defects_numbers=(3)
+experiment_name="260131-test1"
+defects_numbers=(1)
 repetitions_numbers=(1)
-iterations_numbers=(6000) # ...match up with Ds
-shock_anneal_ats=(2400) # ...plural - match up with Ds
+iterations_numbers=(800) # ...match up with Ds
+shock_anneal_ats=(600) # ...plural - match up with Ds
+fix_tweak_width_ats=(400) # ...plural - match up with Ds
 proportion_training=1
 configs=(11)
 full=1
-noise_stdevs=(0.1)
+noise_stdevs=(0.01)
 # note: iterations_number and shock_anneal_at and repetitions_number arrays allowed to be different for each number of defects,
 # or if array of length one then this is always used; then repetitions carried out with identical setups
 # note: same setups done for each specified noise_stdev; this is done for each of configs; this in turn is done for each target (usually only 1)
@@ -67,6 +68,18 @@ for config in ${configs[@]}; do
 		    	shock_anneal_at=0	
 		    fi
 		    
+		    # determine fix_tweak_width_at for this number of defects:
+		    if [ ${#fix_tweak_width_ats[@]} -eq ${#defects_numbers[@]} ]; then
+		    	fix_tweak_width_at=${fix_tweak_width_ats[i]}
+		    elif [ ${#fix_tweak_width_ats[@]} -eq 1 ]; then
+		    	fix_tweak_width_at=${fix_tweak_width_ats[0]}
+		    else
+		    	# if not specified properly, will pass 0
+		    	# then execute file will not replace configs file value
+		    	# note: means cannot tweak at iteration 0 (would be pointless anyway)
+		    	fix_tweak_width_at=0	
+		    fi
+		    
 		    # determine repetitions number for this number of defects:
 		    if [ ${#repetitions_numbers[@]} -eq ${#defects_numbers[@]} ]; then
 		    	repetitions_number=${repetitions_numbers[i]}
@@ -79,8 +92,8 @@ for config in ${configs[@]}; do
 		    
 		    for ((rep=1; rep<=repetitions_number; rep++)); do
 			echo launching for $defects_number defects repetition no. $rep
-			nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt & # regular
-	#		python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt # slurm
+			nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" "$fix_tweak_width_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt & # regular
+	#		python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" "$fix_tweak_width_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt # slurm
 		    done
 		done
 	done

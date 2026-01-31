@@ -347,12 +347,12 @@ class Output:
             
             
         # plot acceptance ratio evolution:
-        if toggles.windows_acc_rates:
+        if toggles.acceptance_windows and windows_acc_rates:
             plt.figure()
             plt.plot(windows_acc_rates['RJ'], '.-', linewidth = 0.1, markersize = 0.5, color = 'firebrick', label = 'RJ')
             plt.plot(windows_acc_rates['tweak'], '.-', linewidth = 0.1, markersize = 0.5, color = 'limegreen', label = 'tweak')
             plt.plot(windows_acc_rates['total'], '.-', linewidth = 0.1, markersize = 0.5, color = 'mediumblue', label = 'total')
-            +plt.yscale('linear')
+            plt.yscale('linear')
             plt.xlabel('window number')
             plt.ylabel('acceptance ratio')
             #plt.xlim([0, 10000])
