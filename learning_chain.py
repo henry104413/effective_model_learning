@@ -310,7 +310,9 @@ class LearningChain:
         self.explored_log_likelihood_prior = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.current)
-        self.chain_windows_acceptance_log = []
+        self.windows_acc_RJ = []
+        self.windows_acc_tweak = []
+        self.windows_acc_tot = []
         
         # evaluate initial setup:
         # (immediately filtering parameters below instance-level thresholds)
@@ -403,29 +405,60 @@ class LearningChain:
                                                            -self.prior(self.current, return_minus_log_of=True)))
                 self.run_step_type_tracker.append('jump to best')
                 
-            
+                # also reset window for acceptance rate:
+                # note: this means final incomplete window before annealing not be logged;
+                # same goes for final incomplete window at end of chain
+                k = 0
+                
             
             # calculate acceptance rate if window end reached and adapt tweak width if enabled:
-            # CHANGE: 
-            # ACTUALLY ALREADY HAVE TRACKER FOR BOTH STEP TYPE AND STEP ACCEPTANCE
-            # SO KEEP TRACK OF RATE OF RJ AND RATE OF TWEAK PER CONSECUTIVE WINDOWS?
-            # AND ALSO OVERALL!!
-            # ALSO RENAME TO NEW VARIABLE NAMES - acceptance_window to acc_window etc
-            # SO 3 lists of length of number of windows in chain
-            if k >= self.acceptance_window: # ie, end of latest window reached
+            
+            # to implement:
+            # fix names to new ones!! (acc_window, acc_rate_max/min)
+            # so always roll windows
+            # at end calculate and save rates (3 separate lists)
+            # then check if doing adaptation and if within adaptation phase
+            # if so do adaptation based on tweak acc rate
+            if k >= self.acc_window: # ie, end of latest window reached
                 k = 0
-                window_accepted_total = \
-                    sum(self.run_acceptance_tracker[len(self.run_acceptance_tracker)-
-                                                    self.acceptance_window : len(self.run_acceptance_tracker)])
-                acceptance_ratio = window_accepted_total/self.acceptance_window
-                self.chain_windows_acceptance_log.append(acceptance_ratio)
+                
+                # replace
+                # chain_windows_acceptance_log
+                # with new trackers
+                
+                # calculate and save acceptance rates separately for tweak steps, RJ steps, all steps in this window:
+                # note: if such type of steps not present, save numpy.NaN instead
+                last_window_acc = self.run_acceptance_tracker[-self.acc_window:]
+                last_window_st = self.run_step_type_tracker[-self.acc_window:]
+                RJ_step_types = ['add qubit L', 'remove qubit L',
+                                 'add defect L', 'remove defect L',
+                                 'add qubit-defect coupling', 'remove qubit-defect coupling',
+                                 'add defect-defect coupling', 'remove defect-defect coupling']
+                if (last_window_RJ_count := sum(True for x in last_window_st if x in RJ_step_types)) > 0:
+                    self.windows_acc_RJ.append(
+                        sum(True for (x,y) in zip(last_window_st, last_window_acc) if y and x in RJ_step_types)
+                        /last_window_RJ_count
+                        )
+                else: self.windows_acc_RJ.append(np.NaN)
+                if (last_window_tweak_count := last_window_st.count('tweak all parameters')) > 0:
+                    self.windows_acc_tweak.append(
+                        sum(True for (x,y) in zip(last_window_st, last_window_acc) if y and x == 'tweak all parameters')
+                        /last_window_tweak_count
+                        )
+                else: self.windows_acc_tweak.append(np.NaN)
+                self.windows_acc_tot.append(last_window_acc.count(True) / self.acc_window)
                 
                 # adaptation:
-                # note: assuming acceptance band is positive = maximum difference either way of ratio and target before adaptation
-                if acceptance_ratio - self.acceptance_target > self.acceptance_band: # ie. accepting too much -> cool down
-                    self.cool_down()
-                elif acceptance_ratio - self.acceptance_target < -self.acceptance_band: # ie. accepting too little -> heat up
-                    self.heat_up()
+                # note: now based on tweak acceptance ratio in last window
+                # - skipped if no tweaks and will be noisy if few tweaks (so choose large enough window!)
+                if last_window_tweak_count > 0:
+                    if not self.params_handler: # legacy safety check - past tweaks mean this should exist 
+                        self.initialise_params_handler()
+                    # note: assumes adaptation factor > 1
+                    if self.windows_acc_tweak[-1] < self.acc_rate_min: # ie. accepting too few
+                        self.params_handler.rescale_tweak_widths(1/self.tweak_width_adaptation_factor)
+                    elif self.windows_acc_tweak[-1] > self.acc_rate_max: # ie. accepting too many
+                        self.params_handler.rescale_tweak_widths(self.tweak_width_adaptation_factor)
             k += 1
 
             # progress timing:
@@ -645,6 +678,8 @@ class LearningChain:
         # while loop end
          
         
+        # full chain outputs:
+            
         if bool(self.iterations_till_progress_update):
             print('\n\nChain run completed.\n'
                   +'_________________________\n\n', flush = True)
@@ -666,6 +701,10 @@ class LearningChain:
         _, self.all_proposals['params_labels'], self.all_proposals['params_labels_latex'] = (
             self.best.vectorise_under_library(hyperparameters = self.process_libraries))
             
+        # package acceptance rates:
+        self.windows_acc_rates = {'tweak': self.windows_acc_tweak,
+                                  'RJ': self.windows_acc_RJ,
+                                  'total': self.windows_acc_tot}
         
         return self.best
     
@@ -938,28 +977,6 @@ class LearningChain:
         
         return best_cost
         
-    
-    
-    def cool_down(self):
-        """
-        Scale down parameter handler tweak width by instance-level adaptation factor.
-        """
-        
-        if not self.params_handler: # ie. first run
-            self.initialise_params_handler()
-        self.params_handler.rescale_tweak_widths(1/self.tweak_width_adaptation_factor)
-        
-        
-    
-    def heat_up(self):
-        """
-        Scale up parameter handler tweak width by instance-level adaptation factor.
-        """
-        
-        if not self.params_handler: # ie. first run
-            self.initialise_params_handler()
-        self.params_handler.rescale_tweak_widths(self.tweak_width_adaptation_factor)
-    
     
     
     def get_init_hyperparams(self):

@@ -98,7 +98,7 @@ except:
 try:
     noise_stdev = float(sys.argv[9])
 except:
-    noise_stdev = False
+    noise_stdev = 0.01
 
 # set iterations at which shock annealing is performed
 # ie. when initial_jump_lengths are updated to annealed_jump_lengths
@@ -257,7 +257,7 @@ if True:
        # !!! TO DO: two lines below are new -- add elsewhere too!
        overall_acceptance = {'parameters tweak': quest.acc_tweak_steps/max(quest.tot_tweak_steps, 1), # avoiding div by 0
                              'reversible jump': quest.acc_RJ_steps/max(quest.tot_RJ_steps, 1)}, # avoiding div by 0
-       acceptance_windows = quest.chain_windows_acceptance_log,
+       windows_acc_rates = quest.windows_acc_rates,
        models_to_save = [best],
        model_names = ['best'],
        chain_hyperparams = quest.get_init_hyperparams(),

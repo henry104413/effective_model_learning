@@ -991,4 +991,9 @@ plt.legend(title = 'noise stdev')
         
 
                                                             
-        
+#%%
+D = []
+D.append(
+        5
+        /2
+        )

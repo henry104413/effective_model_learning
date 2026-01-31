@@ -45,7 +45,7 @@ class Output:
                  dynamics_formatting: list[str] = False,
                  observable_labels: list[str] = None,
                  best_loss: float = None,
-                 acceptance_windows: list[float|int] = None,
+                 windows_acc_rates: list[float|int] = None,
                  overall_acceptance: dict[str,float] = False,
                  models_to_save: list[BasicModel|LearningModel] = None,
                  model_names: list[str] = None,
@@ -61,7 +61,7 @@ class Output:
         if dynamics_datasets is None: dynamics_datasets = [], 
         if dynamics_datasets_labels is None: dynamics_datasets_labels = [],
         if observable_labels is None: observable_labels = [],
-        if acceptance_windows is None: acceptance_windows = [],
+        if windows_acc_rates is None: windows_acc_rates = [],
         if models_to_save is None: models_to_save = [],
         if model_names is None: model_names = [],
         if all_proposals is None: all_proposals = {},
@@ -347,10 +347,12 @@ class Output:
             
             
         # plot acceptance ratio evolution:
-        if toggles.acceptance_windows:
+        if toggles.windows_acc_rates:
             plt.figure()
-            plt.plot(acceptance_windows, '.-', linewidth = 0.1, markersize = 0.5, color = 'firebrick')
-            plt.yscale('linear')
+            plt.plot(windows_acc_rates['RJ'], '.-', linewidth = 0.1, markersize = 0.5, color = 'firebrick', label = 'RJ')
+            plt.plot(windows_acc_rates['tweak'], '.-', linewidth = 0.1, markersize = 0.5, color = 'limegreen', label = 'tweak')
+            plt.plot(windows_acc_rates['total'], '.-', linewidth = 0.1, markersize = 0.5, color = 'mediumblue', label = 'total')
+            +plt.yscale('linear')
             plt.xlabel('window number')
             plt.ylabel('acceptance ratio')
             #plt.xlim([0, 10000])
