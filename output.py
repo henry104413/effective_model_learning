@@ -47,6 +47,7 @@ class Output:
                  best_loss: float = None,
                  windows_acc_rates: list[float|int] = None,
                  overall_acceptance: dict[str,float] = False,
+                 tweak_widths_after_annealing: dict[str,float] = False,
                  models_to_save: list[BasicModel|LearningModel] = None,
                  model_names: list[str] = None,
                  all_proposals: dict[str, list[float]|list[LearningModel]] = None,
@@ -80,6 +81,12 @@ class Output:
             # [True for (x,y,z) in 
             #  zip(all_proposals['acceptance'], all_proposals['step_types'], all_proposals['annealed'])
             #  if x and (y not in ['tweak all parameters', 'jump to best']) and z]
+        
+        # save json of tweak widths after annealing (dependent on annealing choice and any adaptation)
+        tweak_widths_after_annealing
+        if tweak_widths_after_annealing:
+            with open(filename + '_tweak_widths_after_annealing.json', 'w') as filestream:
+                json.dump(tweak_widths_after_annealing, filestream)
         
     
         # save specified model instances (as text and/or pickle):
@@ -357,6 +364,7 @@ class Output:
             plt.ylabel('acceptance ratio')
             #plt.xlim([0, 10000])
             plt.ylim([-0.05,1.05])
+            plt.legend()
             try:
                 plt.savefig(filename + '_acceptance.svg', dpi = 1000, bbox_inches='tight')
             except Exception as exception:

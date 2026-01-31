@@ -410,21 +410,21 @@ class LearningChain:
                 # same goes for final incomplete window at end of chain
                 k = 0
                 
+                # also save tweak widths right after annealing:
+                # note: might still change if adaptation runs after annealing,
+                # ...but generally advisable shock_anneal_at > fix_tweak_widths_at
+                self.tweak_widths_after_annealing = copy.deepcopy(self.params_handler.tweak_widths)
+                
             
             # calculate acceptance rate if window end reached and adapt tweak width if enabled:
-            
-            # to implement:
-            # fix names to new ones!! (acc_window, acc_rate_max/min)
-            # so always roll windows
-            # at end calculate and save rates (3 separate lists)
-            # then check if doing adaptation and if within adaptation phase
-            # if so do adaptation based on tweak acc rate
+            # note: adaptation done only if fix_tweak_width is int > 0 and chain step number doesn't exceed it,
+            # and if adaptation factor > 1 (if <1, rescaling parameters is other way round so they might explode)
+            # note: windows are fixed size, partial window discarded if not completed before end of adaptation phase
+            # also discarded if not completed before end of chain 
+            # note: adaptation currently conditional on tweak acceptance ratio in every window,
+            # skip if no tweaks occured - will be noisy for small windows so choose large enough!
             if k >= self.acc_window: # ie, end of latest window reached
                 k = 0
-                
-                # replace
-                # chain_windows_acceptance_log
-                # with new trackers
                 
                 # calculate and save acceptance rates separately for tweak steps, RJ steps, all steps in this window:
                 # note: if such type of steps not present, save numpy.NaN instead
@@ -451,10 +451,15 @@ class LearningChain:
                 # adaptation:
                 # note: now based on tweak acceptance ratio in last window
                 # - skipped if no tweaks and will be noisy if few tweaks (so choose large enough window!)
-                if last_window_tweak_count > 0:
+                if (type(self.fix_tweak_width_at) == int 
+                    and self.fix_tweak_width_at > 0
+                    and type(self.tweak_width_adaptation_factor) in [float, int] 
+                    and float(self.tweak_width_adaptation_factor) > 1
+                    and i <= self.fix_tweak_width_at 
+                    and last_window_tweak_count > 0):
                     if not self.params_handler: # legacy safety check - past tweaks mean this should exist 
                         self.initialise_params_handler()
-                    # note: assumes adaptation factor > 1
+                    # note: adaptation factor > 1 guaranteed
                     if self.windows_acc_tweak[-1] < self.acc_rate_min: # ie. accepting too few
                         self.params_handler.rescale_tweak_widths(1/self.tweak_width_adaptation_factor)
                     elif self.windows_acc_tweak[-1] > self.acc_rate_max: # ie. accepting too many
@@ -678,7 +683,7 @@ class LearningChain:
         # while loop end
          
         
-        # full chain outputs:
+        # package chain outputs:
             
         if bool(self.iterations_till_progress_update):
             print('\n\nChain run completed.\n'
@@ -701,7 +706,7 @@ class LearningChain:
         _, self.all_proposals['params_labels'], self.all_proposals['params_labels_latex'] = (
             self.best.vectorise_under_library(hyperparameters = self.process_libraries))
             
-        # package acceptance rates:
+        # acceptance rates:
         self.windows_acc_rates = {'tweak': self.windows_acc_tweak,
                                   'RJ': self.windows_acc_RJ,
                                   'total': self.windows_acc_tot}

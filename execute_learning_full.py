@@ -268,6 +268,7 @@ if True:
        # !!! TO DO: two lines below are new -- add elsewhere too!
        overall_acceptance = {'parameters tweak': quest.acc_tweak_steps/max(quest.tot_tweak_steps, 1), # avoiding div by 0
                              'reversible jump': quest.acc_RJ_steps/max(quest.tot_RJ_steps, 1)}, # avoiding div by 0
+       tweak_widths_after_annealing = quest.tweak_widths_after_annealing,
        windows_acc_rates = quest.windows_acc_rates,
        models_to_save = [best],
        model_names = ['best'],
