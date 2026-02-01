@@ -45,12 +45,14 @@ default_chain_hyperparams = {
         'fix_tweak_width_at': int(400), # iteration to fix tweak widths after adaptation
         # if false or set to zero, no adaptation will take place, same as if adaptation factor False or number 1
         
+        'start_tweak_width_adaptation_at': int(200), # earliest iteration to start tweak width adaptation
+        
         'tweak_width_annealing_factor': 0.1, # to scale tweak widths for all parameter classes when annealing
                 
         # window, target acceptance rate, and scaling for adaptive tweak width tuning:
         # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
         'acc_window': 1000,
-        'tweak_width_adaptation_factor': 5.0, # probably 5 is optimal
+        'tweak_width_adaptation_factor': 5, # probably 5 is optimal
         'acc_rate_max': 0.2,
         'acc_rate_min': 0.05,
         

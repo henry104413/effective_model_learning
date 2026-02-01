@@ -22,12 +22,13 @@
 # !! but in each case must be arrays!  
 declare -a target_csvs=("Wit-Fig4-6-0_025")
 # "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
-experiment_name="260131-test5"
+experiment_name="260131-test7noadapt"
 defects_numbers=(2)
 repetitions_numbers=(2)
-iterations_numbers=(200000) # ...match up with Ds
-shock_anneal_ats=(160000) # ...plural - match up with Ds
-fix_tweak_width_ats=(140000) # ...plural - match up with Ds
+iterations_numbers=(6000) # ...match up with Ds
+shock_anneal_ats=(5000) # ...plural - match up with Ds
+fix_tweak_width_ats=(4000) # ...plural - match up with Ds
+start_tweak_width_adaptation_ats=(2000) # ...plural - match up with Ds
 proportion_training=1
 configs=(11)
 full=1
@@ -80,6 +81,18 @@ for config in ${configs[@]}; do
 		    	fix_tweak_width_at=0	
 		    fi
 		    
+		    # determine start_tweak_width_adaptation_at for this number of defects:
+		    if [ ${#start_tweak_width_adaptation_ats[@]} -eq ${#defects_numbers[@]} ]; then
+		    	start_tweak_width_adaptation_at=${start_tweak_width_adaptation_ats[i]}
+		    elif [ ${#start_tweak_width_adaptation_ats[@]} -eq 1 ]; then
+		    	start_tweak_width_adaptation_at=${start_tweak_width_adaptation_ats[0]}
+		    else
+		    	# if not specified properly, will pass 0
+		    	# then execute file will not replace configs file value
+		    	# note: means cannot tweak at iteration 0 (would be pointless anyway)
+		    	start_tweak_width_adaptation_at=0	
+		    fi
+		    
 		    # determine repetitions number for this number of defects:
 		    if [ ${#repetitions_numbers[@]} -eq ${#defects_numbers[@]} ]; then
 		    	repetitions_number=${repetitions_numbers[i]}
@@ -92,8 +105,8 @@ for config in ${configs[@]}; do
 		    
 		    for ((rep=1; rep<=repetitions_number; rep++)); do
 			echo launching for $defects_number defects repetition no. $rep
-			nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" "$fix_tweak_width_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt & # regular
-	#		python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" "$fix_tweak_width_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt # slurm
+			nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" "$fix_tweak_width_at" "$start_tweak_width_adaptation_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt & # regular
+	#		python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" "$fix_tweak_width_at" "$start_tweak_width_adaptation_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt # slurm
 		    done
 		done
 	done

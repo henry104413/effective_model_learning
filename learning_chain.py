@@ -190,6 +190,8 @@ class LearningChain:
                  
                  fix_tweak_width_at: int = False,
                  
+                 start_tweak_width_adaptation_at: int = False,
+                 
                  complexity_factor: float|int = False,
                  
                  tweak_width_annealing_factor: float|int = False,
@@ -418,7 +420,8 @@ class LearningChain:
             
             # calculate acceptance rate if window end reached and adapt tweak width if enabled:
             # note: adaptation done only if fix_tweak_width is int > 0 and chain step number doesn't exceed it,
-            # and if adaptation factor > 1 (if <1, rescaling parameters is other way round so they might explode)
+            # and if step past start_tweak_width_adaptation_at (for initiation),
+            # and if adaptation factor > 1 (<1 means rescaling parameters other way round so value might explode)
             # note: windows are fixed size, partial window discarded if not completed before end of adaptation phase
             # also discarded if not completed before end of chain 
             # note: adaptation currently conditional on tweak acceptance ratio in every window,
@@ -456,6 +459,7 @@ class LearningChain:
                     and type(self.tweak_width_adaptation_factor) in [float, int] 
                     and float(self.tweak_width_adaptation_factor) > 1
                     and i <= self.fix_tweak_width_at 
+                    and i >= self.start_tweak_width_adaptation_at
                     and last_window_tweak_count > 0):
                     if not self.params_handler: # legacy safety check - past tweaks mean this should exist 
                         self.initialise_params_handler()

@@ -117,8 +117,16 @@ try:
 except:
     fix_tweak_width_at = False # check!
     
-# noise_stdev, shock_anneal_at, fix_tweak_width_at
-# note: latter two - if bash launcher sets that at zero, config file values are taken instead
+# set iterations at which tweak width is fixed after adaptation
+# note: as currently named arguments not supported,
+# if subsequent arguments needed, this can be passed as == max_iterations
+try:
+    start_tweak_width_adaptation_at = int(sys.argv[12])
+except:
+    start_tweak_width_adaptation_at = False # check!
+
+# noise_stdev, shock_anneal_at, fix_tweak_width_at, start_tweak_width_adaptation_at
+# note: latter three - if bash launcher sets that at zero, config file values are taken instead
 
 # get subexperiment name and  corresponding chain configuration:    
 subexperiment_name = list(configs.specific_experiment_chain_hyperparams.keys())[configuration_number]
@@ -136,6 +144,9 @@ if shock_anneal_at:
     config['shock_anneal_at'] = shock_anneal_at 
 if fix_tweak_width_at:
     config['fix_tweak_width_at'] = fix_tweak_width_at 
+if start_tweak_width_adaptation_at:
+    config['start_tweak_width_adaptation_at'] = start_tweak_width_adaptation_at 
+
     
 # also FOR NOW append noise stdev to experiment name:
 experiment_name = experiment_name + '_std' + str(noise_stdev).replace('.','p')
