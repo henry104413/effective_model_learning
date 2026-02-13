@@ -39,18 +39,18 @@ default_chain_hyperparams = {
         'complexity_factor': 10, 
         # note: expected number of processes akin to STD in dynamics - creates natural posterior scale
         
-        'shock_anneal_at': int(600), # iteration to perform switch to annealed regime
+        'shock_anneal_at': False, # iteration to perform switch to annealed regime
         # note: currently annealing only parameters handler
         
-        'fix_tweak_width_at': int(400), # iteration to fix tweak widths after adaptation
+        'fix_tweak_width_at': False, # iteration to fix tweak widths after adaptation
         # if false or set to zero, no adaptation will take place, same as if adaptation factor False or number 1
         
-        'start_tweak_width_adaptation_at': int(200), # earliest iteration to start tweak width adaptation
+        'start_tweak_width_adaptation_at': False, # earliest iteration to start tweak width adaptation
         
-        'fix_temperature_at': int(400), # iteration to fix tweak widths after adaptation
+        'fix_temperature_at': False, # iteration to fix tweak widths after adaptation
         # if false or set to zero, no adaptation will take place, same as if adaptation factor False or number 1
         
-        'start_temperature_adaptation_at': int(200), # earliest iteration to start tweak width adaptation
+        'start_temperature_adaptation_at': False, # earliest iteration to start tweak width adaptation
         
         'tweak_width_annealing_factor': 0.1, # to scale tweak widths for all parameter classes when annealing
         
@@ -58,14 +58,14 @@ default_chain_hyperparams = {
         # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
         'acc_window': 1000,
         'tweak_width_adaptation_factor': 5, # probably 5 is optimal
-        'temperature_adaptation_factor': 2, # probably 5 is optimal
+        'temperature_adaptation_factor': 2, # now say 2?
         'acc_rate_max': 0.2,
         'acc_rate_min': 0.05,
         
         'params_handler_hyperparams': { 
-            'initial_tweak_widths': {'couplings' : 0.4, #0.4,
-                                     'energies' : 0.04, #0.04,
-                                     'Ls' : 0.04 #0.04
+            'initial_tweak_widths': {'couplings' : 0.1, #0.4,
+                                     'energies' : 0.01, #0.04,
+                                     'Ls' : 0.01 #0.04
                                      },
             'annealed_tweak_widths': {'couplings' : 0.04, #0.04,
                                       'energies' : 0.004, #0.004,

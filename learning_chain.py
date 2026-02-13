@@ -70,6 +70,13 @@ class LearningChain:
         
         tweak_width_annealing_factor = 0.1
         
+        shock_anneal_at = False
+        fix_tweak_width_at = False,
+        start_tweak_width_adaptation_at = False
+        fix_temperature_at = False
+        start_temperature_adaptation_at = False
+        
+        
         # target acceptance rate for tweak width tuning:
         # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
         tweak_width_adaptation_factor = 5.0
@@ -322,6 +329,7 @@ class LearningChain:
         self.windows_acc_tweak = []
         self.windows_acc_tot = []
         self.windows_temperatures = []
+        self.tweak_widths_after_annealing = {}
         
         # evaluate initial setup:
         # (immediately filtering parameters below instance-level thresholds)
@@ -485,7 +493,7 @@ class LearningChain:
                     and self.fix_temperature_at > 0
                     and type(self.temperature_adaptation_factor) in [float, int] 
                     and float(self.temperature_adaptation_factor) > 1
-                    and i <= self.fix_temperautre_at 
+                    and i <= self.fix_temperature_at 
                     and i >= self.start_temperature_adaptation_at):
                     # note: adaptation factor > 1 guaranteed
                     if self.windows_acc_tot[-1] < self.acc_rate_min: # ie. accepting too few
