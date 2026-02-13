@@ -481,7 +481,8 @@ class LearningChain:
                 
                 
             # set Metropolis-Hastings acceptance temperature:
-            self.MH_temperature = self.sample_T()
+            # !!! note: not done currently as this is adapted along the way, not resampled on iteration
+            # self.MH_temperature = self.sample_T()
             
             # new proposal container:
             proposal = copy.deepcopy(self.current)

@@ -22,7 +22,7 @@
 # !! but in each case must be arrays!  
 declare -a target_csvs=("Wit-Fig4-6-0_025")
 # "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
-experiment_name="260131-test7noadapt"
+experiment_name="260131-test9init"
 defects_numbers=(2)
 repetitions_numbers=(2)
 iterations_numbers=(6000) # ...match up with Ds
