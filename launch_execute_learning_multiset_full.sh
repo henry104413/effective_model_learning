@@ -29,6 +29,8 @@ iterations_numbers=(6000) # ...match up with Ds
 shock_anneal_ats=(5000) # ...plural - match up with Ds
 fix_tweak_width_ats=(4000) # ...plural - match up with Ds
 start_tweak_width_adaptation_ats=(2000) # ...plural - match up with Ds
+fix_temperature_ats=(4000) # ...plural - match up with Ds
+start_temperature_adaptation_ats=(2000) # ...plural - match up with Ds
 proportion_training=1
 configs=(11)
 full=1
@@ -93,6 +95,30 @@ for config in ${configs[@]}; do
 		    	start_tweak_width_adaptation_at=0	
 		    fi
 		    
+		    # determine fix_temperature_at for this number of defects:
+		    if [ ${#fix_temperature_ats[@]} -eq ${#defects_numbers[@]} ]; then
+		    	fix_temperature_at=${fix_temperature_ats[i]}
+		    elif [ ${#fix_temperature_ats[@]} -eq 1 ]; then
+		    	fix_temperature_at=${fix_temperature_ats[0]}
+		    else
+		    	# if not specified properly, will pass 0
+		    	# then execute file will not replace configs file value
+		    	# note: means cannot tweak at iteration 0 (would be pointless anyway)
+		    	fix_temperature_at=0	
+		    fi
+		    
+		    # determine start_temperature_adaptation_at for this number of defects:
+		    if [ ${#start_temperature_adaptation_ats[@]} -eq ${#defects_numbers[@]} ]; then
+		    	start_temperature_adaptation_at=${start_temperature_adaptation_ats[i]}
+		    elif [ ${#start_temperature_adaptation_ats[@]} -eq 1 ]; then
+		    	start_temperature_adaptation_at=${start_temperature_adaptation_ats[0]}
+		    else
+		    	# if not specified properly, will pass 0
+		    	# then execute file will not replace configs file value
+		    	# note: means cannot tweak at iteration 0 (would be pointless anyway)
+		    	start_temperature_adaptation_at=0	
+		    fi
+		    
 		    # determine repetitions number for this number of defects:
 		    if [ ${#repetitions_numbers[@]} -eq ${#defects_numbers[@]} ]; then
 		    	repetitions_number=${repetitions_numbers[i]}
@@ -105,8 +131,8 @@ for config in ${configs[@]}; do
 		    
 		    for ((rep=1; rep<=repetitions_number; rep++)); do
 			echo launching for $defects_number defects repetition no. $rep
-			nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" "$fix_tweak_width_at" "$start_tweak_width_adaptation_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt & # regular
-	#		python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" "$fix_tweak_width_at" "$start_tweak_width_adaptation_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt # slurm
+			nohup python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" "$fix_tweak_width_at" "$start_tweak_width_adaptation_at" "$fix_temperature_at" "$start_temperature_adaptation_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt & # regular
+	#		python execute_learning_full.py "$target_csv" "$experiment_name" "$defects_number" "$rep" "$iterations_number" "$proportion_training" "$config" "$full" "$noise_stdev" "$shock_anneal_at" "$fix_tweak_width_at" "$start_tweak_width_adaptation_at" "$fix_temperature_at" "$start_temperature_adaptation_at" </dev/null &>"$experiment_name"_std"$noise_stdev"_"$target_csv"_conf"$config"_D"$defects_number"_R"$rep"_prog.txt # slurm
 		    done
 		done
 	done

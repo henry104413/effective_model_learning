@@ -73,6 +73,7 @@ class LearningChain:
         # target acceptance rate for tweak width tuning:
         # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
         tweak_width_adaptation_factor = 5.0
+        temperature_adaptation_factor = 2.0
         acc_window = 1000
         acc_rate_max = 0.3
         acc_rate_min = 0.05
@@ -192,11 +193,16 @@ class LearningChain:
                  
                  start_tweak_width_adaptation_at: int = False,
                  
+                 fix_temperature_at: int = False,
+                 
+                 start_temperature_adaptation_at: int = False,
+                 
                  complexity_factor: float|int = False,
                  
                  tweak_width_annealing_factor: float|int = False,
                  
                  tweak_width_adaptation_factor: float|int = False, 
+                 temperature_adaptation_factor: float|int = False, 
                  acc_window: float = False,
                  acc_rate_max: float = False,
                  acc_rate_min: float = False,
@@ -315,6 +321,7 @@ class LearningChain:
         self.windows_acc_RJ = []
         self.windows_acc_tweak = []
         self.windows_acc_tot = []
+        self.windows_temperatures = []
         
         # evaluate initial setup:
         # (immediately filtering parameters below instance-level thresholds)
@@ -429,6 +436,9 @@ class LearningChain:
             if k >= self.acc_window: # ie, end of latest window reached
                 k = 0
                 
+                # save temperature used for that window:
+                self.windows_temperatures.append(self.MH_temperature)
+                    
                 # calculate and save acceptance rates separately for tweak steps, RJ steps, all steps in this window:
                 # note: if such type of steps not present, save numpy.NaN instead
                 last_window_acc = self.run_acceptance_tracker[-self.acc_window:]
@@ -451,7 +461,7 @@ class LearningChain:
                 else: self.windows_acc_tweak.append(np.NaN)
                 self.windows_acc_tot.append(last_window_acc.count(True) / self.acc_window)
                 
-                # adaptation:
+                # tweak width adaptation:
                 # note: now based on tweak acceptance ratio in last window
                 # - skipped if no tweaks and will be noisy if few tweaks (so choose large enough window!)
                 if (type(self.fix_tweak_width_at) == int 
@@ -468,6 +478,21 @@ class LearningChain:
                         self.params_handler.rescale_tweak_widths(1/self.tweak_width_adaptation_factor)
                     elif self.windows_acc_tweak[-1] > self.acc_rate_max: # ie. accepting too many
                         self.params_handler.rescale_tweak_widths(self.tweak_width_adaptation_factor)
+                        
+                # temperature adaptation:
+                # note: now based on overall acceptance ratio in last window
+                if (type(self.fix_temperature_at) == int 
+                    and self.fix_temperature_at > 0
+                    and type(self.temperature_adaptation_factor) in [float, int] 
+                    and float(self.temperature_adaptation_factor) > 1
+                    and i <= self.fix_temperautre_at 
+                    and i >= self.start_temperature_adaptation_at):
+                    # note: adaptation factor > 1 guaranteed
+                    if self.windows_acc_tot[-1] < self.acc_rate_min: # ie. accepting too few
+                        self.MH_temperature *= self.temperature_adaptation_factor
+                    elif self.windows_acc_tot[-1] > self.acc_rate_max: # ie. accepting too many
+                        self.MH_temperature /= self.temperature_adaptation_factor
+        
             k += 1
 
             # progress timing:
@@ -711,10 +736,11 @@ class LearningChain:
         _, self.all_proposals['params_labels'], self.all_proposals['params_labels_latex'] = (
             self.best.vectorise_under_library(hyperparameters = self.process_libraries))
             
-        # acceptance rates:
+        # windows acceptance rates (also corresponding temperature):
         self.windows_acc_rates = {'tweak': self.windows_acc_tweak,
                                   'RJ': self.windows_acc_RJ,
-                                  'total': self.windows_acc_tot}
+                                  'total': self.windows_acc_tot,
+                                  'temperature': self.windows_temperatures}
         
         return self.best
     

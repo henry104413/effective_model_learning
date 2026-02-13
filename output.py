@@ -355,6 +355,8 @@ class Output:
             
         # plot acceptance ratio evolution:
         if toggles.acceptance_windows and windows_acc_rates:
+            
+            # overlay of acceptance rates for different type steps:
             plt.figure()
             plt.plot(windows_acc_rates['RJ'], '.-', linewidth = 0.1, markersize = 0.5, color = 'firebrick', label = 'RJ')
             plt.plot(windows_acc_rates['tweak'], '.-', linewidth = 0.1, markersize = 0.5, color = 'limegreen', label = 'tweak')
@@ -371,7 +373,18 @@ class Output:
                 print('Error when saving acceptance over windows plot:\n' + str(exception))
             plt.clf()
             
-        
+            # corresponding temperatures:
+            plt.figure()
+            plt.plot(windows_acc_rates['temperature'], '.-', linewidth = 0.1, markersize = 0.5, color = 'navy', label = 'temperature')
+            plt.yscale('log')
+            plt.xlabel('window number')
+            plt.ylabel('temperature')
+            try:
+                plt.savefig(filename + '_temperature.svg', dpi = 1000, bbox_inches='tight')
+            except Exception as exception:
+                print('Error when saving temperature over windows plot:\n' + str(exception))
+            plt.clf()
+            
                         
             
     
