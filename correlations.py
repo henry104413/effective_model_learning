@@ -23,15 +23,15 @@ import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # settings:
-experiment_name = '251216'
-noise_stdev = 0.01 # set None if not included in file name
+experiment_name = '260213-test2'
+noise_stdev = 0.05 # set None if not included in file name
 D = 2
-Rs = [1,2,3] # for D2
+Rs = [i+1 for i in range(10)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e100'
-chosen_k = 4 #  
+chosen_k = 5 #  
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')

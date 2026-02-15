@@ -32,20 +32,21 @@ import time
 import copy
 
 # settings and source data:
-experiment_name_base = '251216'
+experiment_name_base = '260213-test2'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-noise_stdevs = [0.1]#[0.01, 0.05, 0.1]
-Ds = [3]#[1,2,3]
-Rs = [1,2, 3]#[1,2,3] # for combining chains - same for all Ds above
+noise_stdevs = [0.1, 0.05, 0.01]#[0.01, 0.05, 0.1]
+Ds = [2]#[1,2,3]
+Rs = [i+1 for i in range(10)]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 min_clusters = 2
 max_clusters = 10
 bounds = []
 verbosity = 0
 burn = 0
-subsample = 100 # take every however-many-eth point; 1 means every point taken
-only_take_annealed = True
+subsample = 1 # take every however-many-eth point; 1 means every point taken
+only_take_annealed = False
+# note: if no annealing was done (flag would have been false), this automatically takes all even if set to true
 vectorisation = 'parameters'
 model_objects_switch = False # switch for importing full models - no longer done 
 

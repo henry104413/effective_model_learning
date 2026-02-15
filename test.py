@@ -992,8 +992,7 @@ plt.legend(title = 'noise stdev')
 
                                                             
 #%%
-D = []
-D.append(
-        5
-        /2
-        )
+import pickle
+with open('260213-test1-fact1p4_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R4_proposals.pickle',
+          'rb') as filestream:
+    A = pickle.load(filestream)
