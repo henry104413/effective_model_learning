@@ -58,14 +58,14 @@ default_chain_hyperparams = {
         # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
         'acc_window': 1000,
         'tweak_width_adaptation_factor': 5, # probably 5 is optimal
-        'temperature_adaptation_factor': 2, # now say 2?
+        'temperature_adaptation_factor': 1.4, # now say 2?
         'acc_rate_max': 0.2,
         'acc_rate_min': 0.05,
         
         'params_handler_hyperparams': { 
-            'initial_tweak_widths': {'couplings' : 0.1, #0.4,
-                                     'energies' : 0.01, #0.04,
-                                     'Ls' : 0.01 #0.04
+            'initial_tweak_widths': {'couplings' : 0.05, #0.4,
+                                     'energies' : 0.005, #0.04,
+                                     'Ls' : 0.005 #0.04
                                      },
             'annealed_tweak_widths': {'couplings' : 0.04, #0.04,
                                       'energies' : 0.004, #0.004,

@@ -993,6 +993,31 @@ plt.legend(title = 'noise stdev')
                                                             
 #%%
 import pickle
-with open('260213-test1-fact1p4_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R4_proposals.pickle',
+with open('260213-test2_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle',
           'rb') as filestream:
     A = pickle.load(filestream)
+    
+for key in A.keys():
+    print('\n' + str(key) + ': ')
+    print(type(A[key]))
+    try:
+        print(str(len(A[key])))
+    except Exception as e:
+        print(e)
+        
+#%%
+
+# generator expression exhaustion example:
+# ie. if reusing generator, need to create/construct it again!!
+
+A = (True if i%2 == 0 else False for i in range(10))
+def A_gen():
+    return (True if i%2 == 0 else False for i in range(10))
+B = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+C = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
+D = [x for (x,y) in zip(B,A_gen()) if y]
+E = [x for (x,y) in zip(C,A_gen()) if y]
+F = [x for (x,y) in zip(B,A) if y]
+G = [x for (x,y) in zip(C,A) if y]
+
+# D, E works; but F, G NOT!! G will be empty, because the generator from the generator expression gets exhausted!!

@@ -330,6 +330,11 @@ class LearningChain:
         self.windows_acc_tot = []
         self.windows_temperatures = []
         self.tweak_widths_after_annealing = {}
+        self.acceptance_tracker = [] # all accept/reject events (bool)
+        if not self.lean_mode:
+            self.annealing_tracker = []
+        self.step_type_tracker = []
+        
         
         # evaluate initial setup:
         # (immediately filtering parameters below instance-level thresholds)
@@ -346,6 +351,13 @@ class LearningChain:
                                                    -self.prior(self.current, return_minus_log_of=True)))
         if self.store_all_proposals: self.explored_proposals.append(copy.deepcopy(self.initial))
         self.explored_acc_vectors.append(self.initial.vectorise_under_library(hyperparameters = self.process_libraries)[0])
+        self.acceptance_tracker.append(True)
+        self.step_type_tracker.append('initialisation')
+        if not self.lean_mode:
+            self.annealing_tracker.append(False)
+        
+        
+        # note: CAREFUL - initial state is automatically accepted
         
         # counters for overall acceptance tracking (separate for reversible-jump type steps and for value tweak)
         self.tot_RJ_steps = 0
@@ -371,14 +383,6 @@ class LearningChain:
         
         # acceptance tracking for this run:
         k = 0 # auxiliary iteration counter    
-        self.run_acceptance_tracker = [] # all accept/reject events (bool)
-        
-        # also binary annealing tracker: (bool - iterations are either annealed or not)
-        if not self.lean_mode:
-            self.run_annealing_tracker = []
-            
-        # step type tracker:
-        self.run_step_type_tracker = []
         
         # progress tracking (also used in redirected output):
         time_last = time.time() # elapsed time (s)
@@ -409,18 +413,18 @@ class LearningChain:
                 # ie. update current model to best and save all statistics:
                 self.current = copy.deepcopy(self.best)
                 self.current_loss = self.best_loss
-                self.run_acceptance_tracker.append(True)
+                self.acceptance_tracker.append(True)
                 if self.store_all_proposals:
                     self.explored_proposals.append(copy.deepcopy(self.current))
                 self.explored_acc_vectors.append(self.current.vectorise_under_library(hyperparameters = self.process_libraries)[0])
                 if not self.lean_mode:
-                    self.run_annealing_tracker.append(now_annealed)
+                    self.annealing_tracker.append(now_annealed)
                     self.explored_loss.append(self.current_loss)
                     self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
                                                          + self.prior(self.current, return_minus_log_of=True)))
                 self.explored_log_likelihood_prior.append((-self.current_loss/self.MH_temperature,
                                                            -self.prior(self.current, return_minus_log_of=True)))
-                self.run_step_type_tracker.append('jump to best')
+                self.step_type_tracker.append('jump to best')
                 
                 # also reset window for acceptance rate:
                 # note: this means final incomplete window before annealing not be logged;
@@ -449,8 +453,8 @@ class LearningChain:
                     
                 # calculate and save acceptance rates separately for tweak steps, RJ steps, all steps in this window:
                 # note: if such type of steps not present, save numpy.NaN instead
-                last_window_acc = self.run_acceptance_tracker[-self.acc_window:]
-                last_window_st = self.run_step_type_tracker[-self.acc_window:]
+                last_window_acc = self.acceptance_tracker[-self.acc_window:]
+                last_window_st = self.step_type_tracker[-self.acc_window:]
                 RJ_step_types = ['add qubit L', 'remove qubit L',
                                  'add defect L', 'remove defect L',
                                  'add qubit-defect coupling', 'remove qubit-defect coupling',
@@ -533,7 +537,7 @@ class LearningChain:
             # choose next step:
             next_step = np.random.choice(self.next_step_labels, p = next_step_probabilities_list)
             next_step = str(next_step)
-            self.run_step_type_tracker.append(next_step)
+            self.step_type_tracker.append(next_step)
             
             # update total counter for appropriate step type:
             if next_step == 'tweak all parameters':
@@ -700,7 +704,7 @@ class LearningChain:
                 if proposal_loss < self.best_loss:
                     self.best_loss = proposal_loss
                     self.best = copy.deepcopy(proposal)
-                self.run_acceptance_tracker.append(True)
+                self.acceptance_tracker.append(True)
                 # save accepted proposal for statistical analysis of chain
                 if self.store_all_proposals:
                     self.explored_proposals.append(copy.deepcopy(proposal))
@@ -713,10 +717,10 @@ class LearningChain:
                     self.acc_RJ_steps += 1
                 
             else: # ie. reject proposal
-                self.run_acceptance_tracker.append(False)
+                self.acceptance_tracker.append(False)
             
             if not self.lean_mode:
-                self.run_annealing_tracker.append(now_annealed)
+                self.annealing_tracker.append(now_annealed)
             i += 1        
         # while loop end
          
@@ -728,15 +732,15 @@ class LearningChain:
                   +'_________________________\n\n', flush = True)
         self.best.final_loss = self.best_loss
         
-        self.all_proposals = {'acceptance': self.run_acceptance_tracker,
+        self.all_proposals = {'acceptance': self.acceptance_tracker,
                               'log_likelihood_prior': self.explored_log_likelihood_prior,
-                              'step_types': self.run_step_type_tracker
+                              'step_types': self.step_type_tracker
                              }
         if not self.lean_mode:
             self.all_proposals['loss'] = self.explored_loss
             self.all_proposals['log_posterior'] = self.explored_log_posterior
             self.all_proposals['acceptance_probability'] = self.explored_acceptance_probability
-            self.all_proposals['annealed'] = self.run_annealing_tracker
+            self.all_proposals['annealed'] = self.annealing_tracker
         if self.store_all_proposals:
             self.all_proposals['proposals'] = self.explored_proposals
         self.all_proposals['vectors'] = self.explored_acc_vectors

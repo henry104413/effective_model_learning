@@ -37,7 +37,7 @@ og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 noise_stdevs = [0.1, 0.05, 0.01]#[0.01, 0.05, 0.1]
 Ds = [2]#[1,2,3]
-Rs = [i+1 for i in range(10)]#[1,2,3] # for combining chains - same for all Ds above
+Rs = [i+1 for i in range(8)]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 min_clusters = 2
 max_clusters = 10
@@ -80,35 +80,49 @@ for noise_stdev in noise_stdevs:
         for R in Rs:
             
             
-            # import accepted proposals and corresponding quantities progression from output dictionary:
-            
+            # import accepted proposals and step-related quantities from chain output dictionary:
             filename = experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R)
-            
             with open(filename + '_proposals.pickle',
                       'rb') as filestream:
                 proposals = pickle.load(filestream)
-            def annealing_generator(): 
-                if 'annealed' in proposals:
-                    return (x for x in proposals['annealed'])  
-                elif 'shock_anneal_at' in proposals:
-                    return (i > proposals['shock_anneal_at'] for i in range(len(proposals['acceptance'])))
-                else:
-                    return (True for x in proposals['acceptance'])
-            accepted_annealing_flags = (x for (x, y) in zip(annealing_generator(), proposals['acceptance']) if y)
-            # ie. true when both annealed and accepted
             
+            # filters for proposals inclusion:
+            def annealing_steps_filter(): 
+                # generator returning true if corresponding step was annealed,
+                # or if no annealing took place (ie. shock_anneal_at set to False)
+                # note: used in zip together with sequences of length of acceptance list (ie. maximum steps) 
+                if 'annealed' in proposals and only_take_annealed:
+                    return (x for x in proposals['annealed'])  
+                elif 'shock_anneal_at' in proposals and only_take_annealed:
+                    return (i > proposals['shock_anneal_at'] for i in range(len(proposals['acceptance'])))
+                else: # ie. treat all as allowed by annealing filter
+                    return (True for x in proposals['acceptance'])
+            def postburn_steps_filter(burn: int = 0):
+                # generator returning true if corresponding step came after burn-in
+                # note: used in zip together with sequences of length of acceptance list (ie. maximum steps) 
+                return (i >= burn for i in range(len(proposals['acceptance'])))
+            def accepted_proposals_to_include_filter():
+                # generator returning true if corresponding ACCEPTED proposal was after burn-in,
+                # and was annealed or annealing switched off or not taking only annealed
+                # note: used in zip together with sequences of length of only accepted proposals list
+                return ((x and y) for (x, y, z) in 
+                        zip(annealing_steps_filter(), postburn_steps_filter(burn), proposals['acceptance'])
+                        if z)
+            
+            # select filtered proposals:
             if (model_objects_used := (model_objects_switch and ('proposals' in proposals))):
                 # ie. using model objects here
-                accepted_proposals = [x for (x,y) in zip(proposals['proposals'], accepted_annealing_flags)
-                                      if (y or not only_take_annealed)]
+                accepted_proposals = [x for (x,y) in zip(proposals['proposals'], accepted_proposals_to_include_filter())
+                                      if y]
             else: accepted_proposals = False
-            accepted_vectors = [x for (x,y) in zip(proposals['vectors'], accepted_annealing_flags)
-                                  if (y or not only_take_annealed)]
-            accepted_log_likelihoods_priors = [x for (x,y,z) 
-                                   in zip(proposals['log_likelihood_prior'][1:], proposals['acceptance'], annealing_generator())
-                                   if y and (z or not only_take_annealed)]
+            accepted_vectors = [x for (x,y) in zip(proposals['vectors'], accepted_proposals_to_include_filter())
+                                  if y]
+            accepted_log_likelihoods_priors = [w for (w,x,y,z) 
+                                               in zip(proposals['log_likelihood_prior'], proposals['acceptance'],
+                                                      annealing_steps_filter(), postburn_steps_filter(burn))
+                                               if x and y and z]
             # !!! note: only accepted proposals and vectors are saved in proposals, 
-            # whereas other entries in proposals dictionary are for all proposals regardless of acceptance
+            # whereas other step-related entries in proposals dictionary are for all proposals regardless of acceptance
             
             # set parameter labels:
             if not labels_obtained:
@@ -372,91 +386,4 @@ for noise_stdev in noise_stdevs:
             
         
             
-        #%% plot assignments and centres given for specified ks
-        # currently deprecated and not up to date
-        # - if needed requires updating with vectors instead of model objects!
         
-        if False:
-            
-            ks = clusters_counts # ks to save assignment and centres for - can be cluster_counts, [elbow], or other
-            # ks = [elbow]
-            
-            for k in ks:
-            
-                final_centres = outputs_each_k[k]['centres']
-                final_assignments = outputs_each_k[k]['assignments']
-                # indices in combined list marking where each chain begins:
-                aux = [0] + [sum(taken_from_each_R_subsampled[:i+1]) for i in range(len(taken_from_each_R_subsampled))]
-                
-                
-                # once again get accepted losses to plot against assignment:
-                for i, R in enumerate(Rs):
-                
-                    # import accepted loss values and accepted proposals from same output dictionary:
-                    # note: already imported earlier for clustering, but not all retained in memory,
-                    # hence must be imported again tor these plots
-                    filename = experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R)
-                    with open(filename + '_proposals.pickle',
-                              'rb') as filestream:
-                        proposals = pickle.load(filestream)
-                    accepted_proposals = [x for (x,y) in zip(proposals['proposals'], accepted_annealing_flags)
-                                          if (y or not only_take_annealed)]
-                    accepted_losses = [x for (x,y,z) in zip(proposals['loss'][1:], proposals['acceptance'], proposals['annealed'])
-                                       if y and (z or not only_take_annealed)]
-                    
-                    # assignment curve (integer values marking pertinent cluster with -1 for burn)
-                    overlay = [-1 for x in range(burn)] + [x for x in final_assignments[aux[i]:aux[i+1]]]
-                    
-                    # subsample also indices and accepted losses for plotting 
-                    indices = list(range(len(accepted_losses)))
-                    indices_overlay = indices[0::subsample]
-                    
-                    # plot assignments for this chain
-                    fig, ax1 = plt.subplots(tight_layout = True)
-                    ax1.plot(indices, accepted_losses, c = 'orange')
-                    ax1.set_xlabel('iteration')
-                    ax1.set_ylabel('loss', c='orange')
-                    ax1.set_yscale('log')
-                    ax2 = ax1.twinx()
-                    ax2.plot(indices_overlay, overlay, ' ', marker='_', c='blue', alpha = 0.8)
-                    ax2.set_ylim([-0.2, k+0.2])
-                    ax2.set_ylabel('assignment', c='blue')
-                    ax2.set_yticks(list(range(k)))
-                    #plt.xticks(clusters_counts, x_tick_labels)
-                    #ax1.set_title('assignment to clusters')
-                    fig.savefig(output_name + '_R' + str(R) + '_assignment_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
-                    plt.cla()
-                    
-                    # this is already available for the all-k output saved above so currently disabled
-                    if False:
-                        np.savetxt(output_name + '_R' + str(R)  + '_assignment_k' + str(k) + '.csv',
-                                   overlay,
-                                   header = 'assignment',
-                                   delimiter = ',', comments = '')
-                        
-                # plot and save cluster centres as parameter vectors (rows for each parameter, columns for each cluster):
-                np.savetxt(output_name + '_centres_k' + str(k) + '.csv',
-                           final_centres,
-                           #header = 'cluster centre parameters vector',
-                           delimiter = ',', comments = '')
-                plt.figure()
-                axisfontsize = 6
-                img = plt.imshow(np.transpose(final_centres), interpolation='none', aspect='1')
-                cbar = plt.colorbar(img, fraction=0.015) # , cmap='viridis' ???? not doing anything?
-                plt.set_cmap('viridis')
-                cbar.ax.tick_params(labelsize=6)
-                plt.xticks(ticks = [x for x in range(final_centres.shape[0])], labels = [x for x in range(final_centres.shape[0])])
-                plt.ylabel('parameter', fontsize=axisfontsize)
-                plt.yticks(range(len(labels_latex)), labels = labels_latex)
-                plt.xlabel('cluster', fontsize=axisfontsize)
-                plt.gca().tick_params(axis='both', which='major', labelsize=4)
-                plt.savefig(output_name + '_centres_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
-                plt.savefig(output_name + '_centres_k' + str(k) + '.png',  dpi = 1000, bbox_inches='tight')
-                plt.clf()
-                # note: viewing the svg in ubuntu's image viewer interpolates between the blocks
-                # - this is not a problem with the file but with the viewer
-                
-                
-                print('Finished potting assignments of consituent models for each chain', flush = True)
-        
-                
