@@ -35,7 +35,7 @@ import copy
 experiment_name_base = '260213-test2'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-noise_stdevs = [0.1, 0.05, 0.01]#[0.01, 0.05, 0.1]
+noise_stdevs = [0.05]#[0.01, 0.05, 0.1]
 Ds = [2]#[1,2,3]
 Rs = [i+1 for i in range(8)]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
@@ -44,7 +44,7 @@ max_clusters = 10
 bounds = []
 verbosity = 0
 burn = 0
-subsample = 1 # take every however-many-eth point; 1 means every point taken
+subsample = 1000 # take every however-many-eth point; 1 means every point taken
 only_take_annealed = False
 # note: if no annealing was done (flag would have been false), this automatically takes all even if set to true
 vectorisation = 'parameters'
@@ -62,7 +62,7 @@ for noise_stdev in noise_stdevs:
     for D in Ds:
         
         # output name:
-        output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_e100'
+        output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_e' + str(subsample)
          
         # container for points to cluster (vectorised and decomplexified Liouvillians, or parameter vectors),
         # as well as corresponding log likelihood-prior pairs
@@ -85,6 +85,8 @@ for noise_stdev in noise_stdevs:
             with open(filename + '_proposals.pickle',
                       'rb') as filestream:
                 proposals = pickle.load(filestream)
+                # note: this is used inside function scopes below as a global variable 
+                # - parser may show error but works fine in Python 3.11
             
             # filters for proposals inclusion:
             def annealing_steps_filter(): 
@@ -386,4 +388,90 @@ for noise_stdev in noise_stdevs:
             
         
             
+        #%% plot assignments and centres given for specified ks
+        # DEPRECATED and not up to date
+        # - if needed requires updating with vectors instead of model objects!
+        # and requires new filter generators!!!
         
+        if False:
+            
+            ks = clusters_counts # ks to save assignment and centres for - can be cluster_counts, [elbow], or other
+            # ks = [elbow]
+            
+            for k in ks:
+            
+                final_centres = outputs_each_k[k]['centres']
+                final_assignments = outputs_each_k[k]['assignments']
+                # indices in combined list marking where each chain begins:
+                aux = [0] + [sum(taken_from_each_R_subsampled[:i+1]) for i in range(len(taken_from_each_R_subsampled))]
+                
+                
+                # once again get accepted losses to plot against assignment:
+                for i, R in enumerate(Rs):
+                
+                    # import accepted loss values and accepted proposals from same output dictionary:
+                    # note: already imported earlier for clustering, but not all retained in memory,
+                    # hence must be imported again tor these plots
+                    filename = experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R)
+                    with open(filename + '_proposals.pickle',
+                              'rb') as filestream:
+                        proposals = pickle.load(filestream)
+                    accepted_proposals = [x for (x,y) in zip(proposals['proposals'], accepted_annealing_flags)
+                                          if (y or not only_take_annealed)]
+                    accepted_losses = [x for (x,y,z) in zip(proposals['loss'][1:], proposals['acceptance'], proposals['annealed'])
+                                       if y and (z or not only_take_annealed)]
+                    
+                    # assignment curve (integer values marking pertinent cluster with -1 for burn)
+                    overlay = [-1 for x in range(burn)] + [x for x in final_assignments[aux[i]:aux[i+1]]]
+                    
+                    # subsample also indices and accepted losses for plotting 
+                    indices = list(range(len(accepted_losses)))
+                    indices_overlay = indices[0::subsample]
+                    
+                    # plot assignments for this chain
+                    fig, ax1 = plt.subplots(tight_layout = True)
+                    ax1.plot(indices, accepted_losses, c = 'orange')
+                    ax1.set_xlabel('iteration')
+                    ax1.set_ylabel('loss', c='orange')
+                    ax1.set_yscale('log')
+                    ax2 = ax1.twinx()
+                    ax2.plot(indices_overlay, overlay, ' ', marker='_', c='blue', alpha = 0.8)
+                    ax2.set_ylim([-0.2, k+0.2])
+                    ax2.set_ylabel('assignment', c='blue')
+                    ax2.set_yticks(list(range(k)))
+                    #plt.xticks(clusters_counts, x_tick_labels)
+                    #ax1.set_title('assignment to clusters')
+                    fig.savefig(output_name + '_R' + str(R) + '_assignment_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
+                    plt.cla()
+                    
+                    # this is already available for the all-k output saved above so currently disabled
+                    if False:
+                        np.savetxt(output_name + '_R' + str(R)  + '_assignment_k' + str(k) + '.csv',
+                                   overlay,
+                                   header = 'assignment',
+                                   delimiter = ',', comments = '')
+                        
+                # plot and save cluster centres as parameter vectors (rows for each parameter, columns for each cluster):
+                np.savetxt(output_name + '_centres_k' + str(k) + '.csv',
+                           final_centres,
+                           #header = 'cluster centre parameters vector',
+                           delimiter = ',', comments = '')
+                plt.figure()
+                axisfontsize = 6
+                img = plt.imshow(np.transpose(final_centres), interpolation='none', aspect='1')
+                cbar = plt.colorbar(img, fraction=0.015) # , cmap='viridis' ???? not doing anything?
+                plt.set_cmap('viridis')
+                cbar.ax.tick_params(labelsize=6)
+                plt.xticks(ticks = [x for x in range(final_centres.shape[0])], labels = [x for x in range(final_centres.shape[0])])
+                plt.ylabel('parameter', fontsize=axisfontsize)
+                plt.yticks(range(len(labels_latex)), labels = labels_latex)
+                plt.xlabel('cluster', fontsize=axisfontsize)
+                plt.gca().tick_params(axis='both', which='major', labelsize=4)
+                plt.savefig(output_name + '_centres_k' + str(k) + '.svg',  dpi = 1000, bbox_inches='tight')
+                plt.savefig(output_name + '_centres_k' + str(k) + '.png',  dpi = 1000, bbox_inches='tight')
+                plt.clf()
+                # note: viewing the svg in ubuntu's image viewer interpolates between the blocks
+                # - this is not a problem with the file but with the viewer
+                
+                
+                print('Finished potting assignments of consituent models for each chain', flush = True)
