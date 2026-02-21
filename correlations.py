@@ -23,15 +23,15 @@ import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # settings:
-experiment_name = '260213-test2'
-noise_stdev = 0.05 # set None if not included in file name
+experiment_name = '260215'
+noise_stdev = 0.01 # set None if not included in file name
 D = 2
-Rs = [i+1 for i in range(10)] # for D2
+Rs = [i+1 for i in range(8)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e100'
-chosen_k = 5 #  
+chosen_k = 4 #  
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -392,7 +392,7 @@ for i, op in enumerate(measurement_observables):
     plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                      alpha=0.3, color='tomato', label = clusters_label)
     plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
-                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
+                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.5)
     plt.legend()
     plt.savefig(output_name + '_Cs' + clusters_label_short
                 + '_samp' + str(min(samples, len(model_set)))
@@ -410,7 +410,7 @@ for i, op in enumerate(measurement_observables):
         plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                          alpha=0.2, label = 'cluster ' + str(key))
     plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
-                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
+                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.5)
     plt.legend()
     plt.savefig(output_name + '_Cs' + clusters_label_short
                 + '_samp' + str(min(samples, len(model_set)))

@@ -32,10 +32,10 @@ import time
 import copy
 
 # settings and source data:
-experiment_name_base = '260213-test2'
+experiment_name_base = '260215'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-noise_stdevs = [0.05]#[0.01, 0.05, 0.1]
+noise_stdevs = [0.01, 0.05, 0.1]
 Ds = [2]#[1,2,3]
 Rs = [i+1 for i in range(8)]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]

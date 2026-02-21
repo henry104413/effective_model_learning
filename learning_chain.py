@@ -338,6 +338,8 @@ class LearningChain:
         
         # evaluate initial setup:
         # (immediately filtering parameters below instance-level thresholds)
+        self.MH_temperature = self.temperature_proposal 
+        # note: sample_T returns MH_temperature if proposal is not tuple, hence need to set first
         self.MH_temperature = self.sample_T()
         self.initialise_process_handler()
         self.process_handler.filter_params(self.current, self.params_thresholds)
@@ -493,12 +495,15 @@ class LearningChain:
                         
                 # temperature adaptation:
                 # note: now based on overall acceptance ratio in last window
+                # note: even if adaptqation factor set and within adaptation range, skipped whenever proposal
+                # ...is not single value (would be pair of values for temperature sampling from gamma dist.)
                 if (type(self.fix_temperature_at) == int 
                     and self.fix_temperature_at > 0
                     and type(self.temperature_adaptation_factor) in [float, int] 
                     and float(self.temperature_adaptation_factor) > 1
                     and i <= self.fix_temperature_at 
-                    and i >= self.start_temperature_adaptation_at):
+                    and i >= self.start_temperature_adaptation_at
+                    and type(self.temperature_proposal) in [float, int]):
                     # note: adaptation factor > 1 guaranteed
                     if self.windows_acc_tot[-1] < self.acc_rate_min: # ie. accepting too few
                         self.MH_temperature *= self.temperature_adaptation_factor
@@ -518,8 +523,7 @@ class LearningChain:
                 
                 
             # set Metropolis-Hastings acceptance temperature:
-            # !!! note: not done currently as this is adapted along the way, not resampled on iteration
-            # self.MH_temperature = self.sample_T()
+            self.MH_temperature = self.sample_T()
             
             # new proposal container:
             proposal = copy.deepcopy(self.current)
@@ -1069,12 +1073,13 @@ class LearningChain:
         Does not directly modify instance variable.
         
         Based on instance level temperature_proposal:            
-        If number, returns this value.
-        If tuple of numbers (shape, scale), returns value sampled from such gamma distribution.
+        If numerical value, current temperature initially set to it at chain initialisation,
+        this then just returns instance level current temperature (adaptation may be done within chain).
+        If tuple of numbers (shape, scale), returns value sampled from corresponding gamma distribution.
         """
         
         match self.temperature_proposal:
-            case int() | float(): return self.temperature_proposal
+            case int() | float(): return self.MH_temperature
             case (int()|float(), int()|float()): return np.random.gamma(*self.temperature_proposal)
             case _: raise RuntimeError('Metropolis-Hastings temperature proposal failed')
 
