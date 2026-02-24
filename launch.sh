@@ -22,13 +22,13 @@
 # !! but in each case must be arrays!  
 declare -a target_csvs=("Wit-Fig4-6-0_025")
 # "Wit-Fig4-5-0_1" "Wit-Fig4-6-0_025" "Wit-Fig4-6-0_1" "Wit-Fig4-6-0_2" "Wit-Fig4-7-0_1"
-experiment_name="260224_test3"
+experiment_name="260224_test8"
 defects_numbers=(2)
 repetitions_numbers=(2)
-iterations_numbers=(10000) # ...match up with Ds
+iterations_numbers=(12000) # ...match up with Ds
 shock_anneal_ats=(0) # ...plural - match up with Ds
-fix_tweak_width_ats=(0) # ...plural - match up with Ds
-start_tweak_width_adaptation_ats=(0) # ...plural - match up with Ds
+fix_tweak_width_ats=(8000) # ...plural - match up with Ds
+start_tweak_width_adaptation_ats=(2000) # ...plural - match up with Ds
 fix_temperature_ats=(0) # ...plural - match up with Ds
 start_temperature_adaptation_ats=(0) # ...plural - match up with Ds
 proportion_training=1

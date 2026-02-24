@@ -385,6 +385,23 @@ class Output:
                 print('Error when saving temperature over windows plot:\n' + str(exception))
             plt.clf()
             
+            # corresponding tweak widths (log scaling for now):
+            plt.figure()
+            colours = ['orange', 'yellowgreen', 'orchid']
+            linestyles = ['.-', '.-', '+--']
+            for i, key in enumerate(['Ls', 'couplings', 'energies']):
+                plt.plot(windows_acc_rates['tweak widths'][key]
+                         , linestyles[i], linewidth = 0.1, markersize = 0.5, color = colours[i], label = key)
+            plt.yscale('log')
+            plt.legend()
+            plt.xlabel('window number')
+            plt.ylabel('tweak width')
+            try:
+                plt.savefig(filename + '_widths.svg', dpi = 1000, bbox_inches='tight')
+            except Exception as exception:
+                print('Error when saving tweak widths over windows plot:\n' + str(exception))
+            plt.clf()
+            
                         
             
     

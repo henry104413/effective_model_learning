@@ -329,6 +329,10 @@ class LearningChain:
         self.windows_acc_tweak = []
         self.windows_acc_tot = []
         self.windows_temperatures = []
+        self.windows_tweak_widths = {'Ls': [],
+                                     'couplings': [],
+                                     'energies': []
+                                     }
         self.tweak_widths_after_annealing = {}
         self.acceptance_tracker = [] # all accept/reject events (bool)
         if not self.lean_mode:
@@ -452,6 +456,10 @@ class LearningChain:
                 
                 # save temperature used for that window:
                 self.windows_temperatures.append(self.MH_temperature)
+                
+                # save tweak widths used for that window (separately lists for 'Ls', 'couplings', 'energies')
+                for key in ['Ls', 'couplings', 'energies']:
+                    self.windows_tweak_widths[key].append(self.params_handler.tweak_widths[key])
                     
                 # calculate and save acceptance rates separately for tweak steps, RJ steps, all steps in this window:
                 # note: if such type of steps not present, save numpy.NaN instead
@@ -752,11 +760,12 @@ class LearningChain:
         _, self.all_proposals['params_labels'], self.all_proposals['params_labels_latex'] = (
             self.best.vectorise_under_library(hyperparameters = self.process_libraries))
             
-        # windows acceptance rates (also corresponding temperature):
+        # windows acceptance rates (also corresponding temperature and tweak widths for each process class):
         self.windows_acc_rates = {'tweak': self.windows_acc_tweak,
                                   'RJ': self.windows_acc_RJ,
                                   'total': self.windows_acc_tot,
-                                  'temperature': self.windows_temperatures}
+                                  'temperature': self.windows_temperatures,
+                                  'tweak widths': self.windows_tweak_widths}
         
         return self.best
     
