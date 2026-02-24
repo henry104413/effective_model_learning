@@ -23,7 +23,7 @@ import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # settings:
-experiment_name = '260217'
+experiment_name = '260224_test3'
 noise_stdev = 0.1 # set None if not included in file name
 D = 2
 Rs = [i+1 for i in range(8)] # for D2
