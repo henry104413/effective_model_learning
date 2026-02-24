@@ -23,7 +23,7 @@ Ls_shape_scale = (1.02, 4)
 
 default_chain_hyperparams = {    
         'chain_step_options': {
-            'tweak all parameters': 36,
+            'tweak all parameters': 72,
             'add qubit L': 1,
             'remove qubit L': 1,
             'add defect L': 1,
@@ -34,7 +34,7 @@ default_chain_hyperparams = {
             'remove defect-defect coupling': 1
             },
         
-        'temperature_proposal': 0.0002, # either value or (shape, scale) of gamma to sample
+        'temperature_proposal': (1, 0.02), # either value or (shape, scale) of gamma to sample
         
         'complexity_factor': 10, 
         # note: expected number of processes akin to STD in dynamics - creates natural posterior scale

@@ -23,15 +23,15 @@ import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # settings:
-experiment_name = '260215'
-noise_stdev = 0.01 # set None if not included in file name
+experiment_name = '260217'
+noise_stdev = 0.1 # set None if not included in file name
 D = 2
 Rs = [i+1 for i in range(8)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e100'
-chosen_k = 4 #  
+chosen_k = 5 #  
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -236,7 +236,7 @@ for cluster_combination in cluster_combinations:
     
     # plot correlation matrix with clustered parameters
     # note: now clustering parameters not models!!
-    if not True:
+    if True:
         for threshold in correlation_hierarchical_clustering_thresholds:
             flattened_dendrogram_labels = fcluster(Z, threshold, criterion='distance')
             

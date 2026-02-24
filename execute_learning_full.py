@@ -156,8 +156,11 @@ for supersede in configs.specific_experiment_chain_hyperparams[subexperiment_nam
 
 # if passed and set above, then populate in config both shock_anneal_at, 
 # and temperature (twice the noise variance, ie. 2* noise_stdev**2)
+# but NOT if in configs set as tuple in which case temperature will be sampled from gamma distribution
+# TO DO: implement passing it here but tricky with  variably 1 or 2 parameter bash argument
 if noise_stdev:
-    config['temperature_proposal'] = 2 * noise_stdev**2
+    if type(config['temperature_proposal']) in [int, float, bool]:
+        config['temperature_proposal'] = 2 * noise_stdev**2
 if shock_anneal_at:
     config['shock_anneal_at'] = shock_anneal_at 
 if fix_tweak_width_at:
