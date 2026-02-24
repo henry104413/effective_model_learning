@@ -497,9 +497,44 @@ if not True:
 
 #%%
 import pickle
-with open('251122-run_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_Rs1,4,5,6,7,8,11,12,13,15,17,19,20_clustering-sub100_clustering_centres.pickle'
+
+# load og proposals dictionary
+with open(
+          #'251111-100k-muchnarrower_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle'
+          #'251110-1M-wider_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D1_R2_proposals.pickle'
+          #'251210-test2_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D3_R2_proposals.pickle'
+          
+          #'251210_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D1_R1_proposals.pickle'
+          # D=1
+          
+          #'251210_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle'
+          # D=2
+          
+          #'251210_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D3_R1_proposals.pickle'
+          # D=3
+          '251216-quicktest2_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D3_R1_proposals.pickle'
           , 'rb') as filestream:
     A = pickle.load(filestream)
+    
+# split
+models = A.pop('proposals')
+models_dict = {'proposals': models}
+rest = A
+# note: pop changes dictionary, removes that key and its values,
+#  AND returns those values - but not as a dictionary
+
+
+with open('memtest-models.pickle'
+          , 'wb') as filestream:
+    pickle.dump(models, filestream)
+with open('memtest-models_dict.pickle'
+          , 'wb') as filestream:
+    pickle.dump(models_dict, filestream)
+with open('memtest-rest.pickle'
+          , 'wb') as filestream:
+    pickle.dump(rest, filestream)
+
+    
     
 #%% 
 # plot selected different proportion learning on top of target data
@@ -898,14 +933,15 @@ import matplotlib.pyplot as plt
 # details of experients to include:
 # note: now assuming same Rs for all configs, can be changed 
 # also assuming all Ds done for all noise levels
-experiment_name =' 251204-LN'
-Rs_tag = '1,2,3,4,5'
+experiment_name =' 251210'
 sampled_each_tag = '_e100'
 noise_stdevs = [0.01, 0.05, 0.1]
 Ds = [1,2,3]
-
+Rs = [1,2,3]
 take_top_percent = 10
+# right now putting og_source and config right into filename_base below - can change later
 
+Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 mean_top_loss = {}
 mean_top_posterior = {}
 
@@ -955,4 +991,33 @@ plt.legend(title = 'noise stdev')
         
 
                                                             
+#%%
+import pickle
+with open('260213-test2_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle',
+          'rb') as filestream:
+    A = pickle.load(filestream)
+    
+for key in A.keys():
+    print('\n' + str(key) + ': ')
+    print(type(A[key]))
+    try:
+        print(str(len(A[key])))
+    except Exception as e:
+        print(e)
         
+#%%
+
+# generator expression exhaustion example:
+# ie. if reusing generator, need to create/construct it again!!
+
+A = (True if i%2 == 0 else False for i in range(10))
+def A_gen():
+    return (True if i%2 == 0 else False for i in range(10))
+B = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+C = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
+D = [x for (x,y) in zip(B,A_gen()) if y]
+E = [x for (x,y) in zip(C,A_gen()) if y]
+F = [x for (x,y) in zip(B,A) if y]
+G = [x for (x,y) in zip(C,A) if y]
+
+# D, E works; but F, G NOT!! G will be empty, because the generator from the generator expression gets exhausted!!

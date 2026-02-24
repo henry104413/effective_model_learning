@@ -7,7 +7,7 @@ Effective model learning
 Finds correlations for across selected clusters of models.
 """
 
-
+# CHANGE: POSTERIORS NO LONGER SAVED - SWAP FOR IMPORTING LOG LIKELIHOODS PRIORS AND SUMMING 
 
 import pandas as pd
 import pickle
@@ -23,15 +23,15 @@ import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # settings:
-experiment_name = '251210'
-noise_stdev = 0.05 # set None if not included in file name
-D = 1
-Rs = [1,2,3] # for D2
+experiment_name = '260224_test3'
+noise_stdev = 0.1 # set None if not included in file name
+D = 2
+Rs = [i+1 for i in range(8)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e100'
-chosen_k = 4 # D2 MN and D2 LN = 4; D1 MN 4,5,7; D1 LN 5 -- D1 not that clearcut
+chosen_k = 5 #  
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -63,18 +63,19 @@ outputs_each_k_file = (experiment_name + '_' + config_name + '_D' + str(D) + '_R
             + clustering_name + '_outputs_each_k.pickle')
 with open(source_base + '_points.pickle', 'rb') as filestream:
     points = pickle.load(filestream)
-with open(source_base + '_posteriors.pickle', 'rb') as filestream:
-    posteriors = pickle.load(filestream)
 with open(outputs_each_k_file, 'rb') as filestream:
     outputs_each_k = pickle.load(filestream)
 assignments = list(outputs_each_k[chosen_k]['assignments'])
-
+with open(source_base + '_log_likelihoods_priors.pickle', 'rb') as filestream:
+    log_likelihoods_priors = pickle.load(filestream)
+posteriors = [x[0] + x[1] for x in log_likelihoods_priors]
 
 
 #%%
 # bar plot of clusters' popularity:
 plt.figure()
-plt.bar(list(models_by_clusters.keys()), [len(models_by_clusters[x]) for x in models_by_clusters],
+clusters_popularity = [len(models_by_clusters[x]) for x in models_by_clusters]
+plt.bar(list(models_by_clusters.keys()), clusters_popularity,
         color = 'navy')
 plt.xlabel('cluster')
 plt.xticks(list(range(chosen_k)), labels = [str(x) for x in list(range(chosen_k))])
@@ -82,6 +83,11 @@ plt.ylabel('number of models')
 plt.savefig(output_name + '_cluster_popularity' + '.svg', 
             dpi = 1000, bbox_inches='tight')
 
+# ordering of clusters by popularity in DESCENDING order:
+clusters_by_pop_desc = sorted(range(len(clusters_popularity)), 
+                               key = lambda i: clusters_popularity[i], reverse=True)
+# note: no need to now order clusters labels by this
+# ordering and ordered set equivalent here because cluster labels are a range(0, chosen_k)
 
 
 #%% also plot dynamics comparison for cluster centres and champions
@@ -173,19 +179,23 @@ if not True:
     # champion, posterior = max(zip(points, posteriors), key = lambda x: x[1])    
     
         
-#'251122-run_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_Rs1,4,5,6,7,8,11,12,13,15,17,19,20_clustering-sub100_clustering_centres.pickle'
 
 #%%
 # find correlations, dendrograms, and clustered parameters in selected cluster combinations
+# for now: do doing 1) all and 2) most popular cluster
+
 
 cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
 
 # list of lists, each inner list for combinations of cluster to analyse together: 
-cluster_combinations = [[3],[0,1,2,3]]
-# each separately:
-cluster_combinations.extend([x] for x in (models_by_clusters.keys()))
+cluster_combinations = []
+# each separately - CURRENTLY DISABLED:
+if False:
+    cluster_combinations.extend([x] for x in (models_by_clusters.keys()))
 # all together: 
 cluster_combinations.append(list(list(models_by_clusters.keys())))
+# most populare cluster:
+cluster_combinations.append(clusters_by_pop_desc[0:1])
  
 for cluster_combination in cluster_combinations:
     # find and save correlations for this cluster combination
@@ -226,7 +236,7 @@ for cluster_combination in cluster_combinations:
     
     # plot correlation matrix with clustered parameters
     # note: now clustering parameters not models!!
-    if not True:
+    if True:
         for threshold in correlation_hierarchical_clustering_thresholds:
             flattened_dendrogram_labels = fcluster(Z, threshold, criterion='distance')
             
@@ -252,9 +262,9 @@ for cluster_combination in cluster_combinations:
     
 # %%
 # popularity of different processes:
-# manually chosen sets for now... cheeky bit of code
+# CURRENTLY compare UP TO 4 most popular clusters (slicing capped by number of clusters)
 
-cluster_choices = [1,2,3,0]
+cluster_choices = clusters_by_pop_desc[0:4]
 # cluster_choices = [2,3,4] # for LN D=1
 # formatting - must have options for at least each cluster choice, can be longer:
 colours = ['red', 'blue', 'black', 'purple']
@@ -280,7 +290,7 @@ plt.savefig(output_name + '_process_popularity' + '.svg',
         
         
 #%%        
-# sample set of models (like one cluster), evaluate dynamics, find mean and standard deviation
+# sample subset of models from each of cluster choices, evaluate dynamics, find mean and standard deviation:
 
 # want for each observable numpy array
 # dyynamics produces array in time
@@ -290,7 +300,7 @@ plt.savefig(output_name + '_process_popularity' + '.svg',
 
 # section settings:
 cluster_choices = list(range(chosen_k)) # note: now taken from above section, enable if required separately
-samples = 10000
+samples = 1000
 
 # target data:
 # note: datasets and observable labels must be encapsulated into lists
@@ -382,7 +392,7 @@ for i, op in enumerate(measurement_observables):
     plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                      alpha=0.3, color='tomato', label = clusters_label)
     plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
-                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
+                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.5)
     plt.legend()
     plt.savefig(output_name + '_Cs' + clusters_label_short
                 + '_samp' + str(min(samples, len(model_set)))
@@ -400,7 +410,7 @@ for i, op in enumerate(measurement_observables):
         plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                          alpha=0.2, label = 'cluster ' + str(key))
     plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
-                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
+                 fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.5)
     plt.legend()
     plt.savefig(output_name + '_Cs' + clusters_label_short
                 + '_samp' + str(min(samples, len(model_set)))
@@ -409,7 +419,7 @@ for i, op in enumerate(measurement_observables):
 
 
 #%%
-# also plot parameter vectors for chosen clusters 
+# also plot champion parameter vectors for chosen clusters:
 
 champions = {}
 #champ_posteriors = {}

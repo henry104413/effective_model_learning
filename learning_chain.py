@@ -40,7 +40,7 @@ class LearningChain:
         1) modify chain hyperparameters after initialisation.
         2) update them in existing parameter and process handlers 
     
-    Also potentially take parameter handler jump lengths out of outer dictionary.
+    Also potentially take parameter handler tweak_widths out of outer dictionary.
     """
     
     # bundle of default values for single chain hyperparameters:
@@ -66,16 +66,27 @@ class LearningChain:
         
         temperature_proposal = 0.0005 # or (0.05, 0.05) to sample gamma by default
         
-        jump_length_rescaling_factor = 1 # for scaling up or down jump lengths of parameter handler
-        
         complexity_factor = 1
         
-        acceptance_window = 10
-        acceptance_target = 0.4
-        acceptance_band = 0.2
+        tweak_width_annealing_factor = 0.1
+        
+        shock_anneal_at = False
+        fix_tweak_width_at = False,
+        start_tweak_width_adaptation_at = False
+        fix_temperature_at = False
+        start_temperature_adaptation_at = False
+        
+        
+        # target acceptance rate for tweak width tuning:
+        # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
+        tweak_width_adaptation_factor = 5.0
+        temperature_adaptation_factor = 2.0
+        acc_window = 1000
+        acc_rate_max = 0.3
+        acc_rate_min = 0.05
         
         params_handler_hyperparams = {
-            'initial_jump_lengths': {'couplings' : 0.1,
+            'initial_tweak_widths': {'couplings' : 0.1,
                                      'energies' : 0.1,
                                      'Ls' : 0.01
                                      }
@@ -128,7 +139,9 @@ class LearningChain:
         
         iterations_till_progress_update = False # number of iterations before iteration number and time elapsed printed
     
-        store_all_proposals = False # switch to keep all proposed models
+        store_all_proposals = False # switch to keep all ACCEPTED proposed model OBJECTS
+        
+        lean_mode = True
     
         
     
@@ -183,13 +196,23 @@ class LearningChain:
                  
                  shock_anneal_at: int = False,
                  
-                 complexity_factor: float|int = 1,
+                 fix_tweak_width_at: int = False,
                  
-                 jump_length_rescaling_factor: float = False, 
+                 start_tweak_width_adaptation_at: int = False,
                  
-                 acceptance_window: float = False,
-                 acceptance_target: float = False,
-                 acceptance_band: float = False,
+                 fix_temperature_at: int = False,
+                 
+                 start_temperature_adaptation_at: int = False,
+                 
+                 complexity_factor: float|int = False,
+                 
+                 tweak_width_annealing_factor: float|int = False,
+                 
+                 tweak_width_adaptation_factor: float|int = False, 
+                 temperature_adaptation_factor: float|int = False, 
+                 acc_window: float = False,
+                 acc_rate_max: float = False,
+                 acc_rate_min: float = False,
                  
                  params_handler_hyperparams: dict[dict] = False,
                  # note: can contain lots of things - class to be simplified
@@ -217,6 +240,8 @@ class LearningChain:
                  # number of iterations before iteration number and time elapsed printed
                  
                  store_all_proposals: bool = False,
+                 
+                 lean_mode: bool = True
                  
                  ):
         
@@ -275,34 +300,66 @@ class LearningChain:
         self.next_step_priorities_list = [self.chain_step_options[option]/temp
                                         for option in options] # actually unused as of algorithm of modification with #-ways-scaling
         
+        # process libraries dictionary:
+        # note: currently used by models' vectorise_under_library method
+        self.process_libraries = {
+            'qubit2defect_couplings_library': self.qubit2defect_couplings_library,
+            'defect2defect_couplings_library': self.defect2defect_couplings_library,
+            'qubit_Ls_library': self.qubit_Ls_library,
+            'defect_Ls_library': self.defect_Ls_library
+            }
+        
         # process and parameter objects to perform chain steps:
         # note: initialised at first call of methods that use them
         self.params_handler = None 
         self.process_handler = None
         
         # chain progression containers:
-        self.explored_proposals = [] # repository of explored models
-        self.explored_loss = []
-        self.explored_acceptance_probability = []
-        self.explored_log_posterior = []
+        if self.store_all_proposals:
+            self.explored_proposals = [] # repository of explored models
+        self.explored_acc_vectors = []
+        if not self.lean_mode:
+            self.explored_loss = []
+            self.explored_acceptance_probability = []
+            self.explored_log_posterior = []
         self.explored_log_likelihood_prior = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.current)
-        self.chain_windows_acceptance_log = []
+        self.windows_acc_RJ = []
+        self.windows_acc_tweak = []
+        self.windows_acc_tot = []
+        self.windows_temperatures = []
+        self.tweak_widths_after_annealing = {}
+        self.acceptance_tracker = [] # all accept/reject events (bool)
+        if not self.lean_mode:
+            self.annealing_tracker = []
+        self.step_type_tracker = []
+        
         
         # evaluate initial setup:
         # (immediately filtering parameters below instance-level thresholds)
+        self.MH_temperature = self.temperature_proposal 
+        # note: sample_T returns MH_temperature if proposal is not tuple, hence need to set first
         self.MH_temperature = self.sample_T()
         self.initialise_process_handler()
         self.process_handler.filter_params(self.current, self.params_thresholds)
         self.current_loss = self.total_dev(self.current)
         self.best_loss = self.current_loss
-        self.explored_loss.append(self.current_loss)
-        self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
+        if not self.lean_mode:
+            self.explored_loss.append(self.current_loss)
+            self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
                                              + self.prior(self.current, return_minus_log_of=True)))
         self.explored_log_likelihood_prior.append((-self.current_loss/self.MH_temperature,
                                                    -self.prior(self.current, return_minus_log_of=True)))
         if self.store_all_proposals: self.explored_proposals.append(copy.deepcopy(self.initial))
+        self.explored_acc_vectors.append(self.initial.vectorise_under_library(hyperparameters = self.process_libraries)[0])
+        self.acceptance_tracker.append(True)
+        self.step_type_tracker.append('initialisation')
+        if not self.lean_mode:
+            self.annealing_tracker.append(False)
+        
+        
+        # note: CAREFUL - initial state is automatically accepted
         
         # counters for overall acceptance tracking (separate for reversible-jump type steps and for value tweak)
         self.tot_RJ_steps = 0
@@ -328,13 +385,6 @@ class LearningChain:
         
         # acceptance tracking for this run:
         k = 0 # auxiliary iteration counter    
-        self.run_acceptance_tracker = [] # all accept/reject events (bool)
-        
-        # also binary annealing tracker: (bool - iterations are either annealed or not)
-        self.run_annealing_tracker = []
-        
-        # step type tracker:
-        self.run_step_type_tracker = []
         
         # progress tracking (also used in redirected output):
         time_last = time.time() # elapsed time (s)
@@ -343,49 +393,123 @@ class LearningChain:
         # carry out all chain steps:
         i = 0
         now_annealed = False
+        adaptation_flag = (type(self.tweak_width_adaptation_factor) in [int, float] 
+                           and self.tweak_width_adaptation_factor != 1) # shorthand flag - true if adaptation on
         while i <= steps:
             
             # do shock annealing if enabled and reached annealing iteration:
-            if bool(self.shock_anneal_at) and i == self.shock_anneal_at: 
-                self.params_handler.set_jump_lengths(self.params_handler_hyperparams['annealed_jump_lengths'])
+            if bool(self.shock_anneal_at) and i == self.shock_anneal_at:
+                
+                # anneal either by annealing factor if tweak width adaptation done or widths dictionary not specified,
+                # otherwise set to annealed widths dictionary values:
+                if (adaptation_flag or 'annealed_tweak_widths' not in self.params_handler_hyperparams):
+                    # change each current params handler tweak width (for all process classes)
+                    self.params_handler.rescale_tweak_widths(self.tweak_width_annealing_factor)
+                else:
+                    self.params_handler.set_tweak_widths(self.params_handler_hyperparams['annealed_tweak_widths'])
                 now_annealed = True
                 print('\n\nPerforming shock annealing at iteration ' + str(i), flush=True)
                 i += 1
                 
                 # jump now to best model reached thus far and do more localised exploration from there
-                # - update current model to best and save all statistics:
+                # ie. update current model to best and save all statistics:
                 self.current = copy.deepcopy(self.best)
                 self.current_loss = self.best_loss
-                self.run_acceptance_tracker.append(True)
+                self.acceptance_tracker.append(True)
                 if self.store_all_proposals:
                     self.explored_proposals.append(copy.deepcopy(self.current))
-                self.explored_loss.append(self.current_loss)
-                self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
-                                                     + self.prior(self.current, return_minus_log_of=True)))
+                self.explored_acc_vectors.append(self.current.vectorise_under_library(hyperparameters = self.process_libraries)[0])
+                if not self.lean_mode:
+                    self.annealing_tracker.append(now_annealed)
+                    self.explored_loss.append(self.current_loss)
+                    self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
+                                                         + self.prior(self.current, return_minus_log_of=True)))
                 self.explored_log_likelihood_prior.append((-self.current_loss/self.MH_temperature,
                                                            -self.prior(self.current, return_minus_log_of=True)))
-                self.run_annealing_tracker.append(now_annealed)
-                self.run_step_type_tracker.append('jump to best')
+                self.step_type_tracker.append('jump to best')
                 
-            
-            # set Metropolis-Hastings acceptance temperature:
-            self.MH_temperature = self.sample_T()
-            
-            # acceptance tally:
-            if k >= self.acceptance_window: # ie, end of latest window reached
+                # also reset window for acceptance rate:
+                # note: this means final incomplete window before annealing not be logged;
+                # same goes for final incomplete window at end of chain
                 k = 0
-                window_accepted_total = \
-                    sum(self.run_acceptance_tracker[len(self.run_acceptance_tracker)-
-                                                    self.acceptance_window : len(self.run_acceptance_tracker)])
-                acceptance_ratio = window_accepted_total/self.acceptance_window
-                self.chain_windows_acceptance_log.append(acceptance_ratio)
                 
-                # adaptation:
-                # note: assuming acceptance band is positive = maximum difference either way of ratio and target before adaptation
-                if acceptance_ratio - self.acceptance_target > self.acceptance_band: # ie. accepting too much -> cool down
-                    self.cool_down()
-                elif acceptance_ratio - self.acceptance_target < -self.acceptance_band: # ie. accepting too little -> heat up
-                    self.heat_up()
+                # also save tweak widths right after annealing:
+                # note: might still change if adaptation runs after annealing,
+                # ...but generally advisable shock_anneal_at > fix_tweak_widths_at
+                self.tweak_widths_after_annealing = copy.deepcopy(self.params_handler.tweak_widths)
+                
+            
+            # calculate acceptance rate if window end reached and adapt tweak width if enabled:
+            # note: adaptation done only if fix_tweak_width is int > 0 and chain step number doesn't exceed it,
+            # and if step past start_tweak_width_adaptation_at (for initiation),
+            # and if adaptation factor > 1 (<1 means rescaling parameters other way round so value might explode)
+            # note: windows are fixed size, partial window discarded if not completed before end of adaptation phase
+            # also discarded if not completed before end of chain 
+            # note: adaptation currently conditional on tweak acceptance ratio in every window,
+            # skip if no tweaks occured - will be noisy for small windows so choose large enough!
+            if k >= self.acc_window: # ie, end of latest window reached
+                k = 0
+                
+                # save temperature used for that window:
+                self.windows_temperatures.append(self.MH_temperature)
+                    
+                # calculate and save acceptance rates separately for tweak steps, RJ steps, all steps in this window:
+                # note: if such type of steps not present, save numpy.NaN instead
+                last_window_acc = self.acceptance_tracker[-self.acc_window:]
+                last_window_st = self.step_type_tracker[-self.acc_window:]
+                RJ_step_types = ['add qubit L', 'remove qubit L',
+                                 'add defect L', 'remove defect L',
+                                 'add qubit-defect coupling', 'remove qubit-defect coupling',
+                                 'add defect-defect coupling', 'remove defect-defect coupling']
+                if (last_window_RJ_count := sum(True for x in last_window_st if x in RJ_step_types)) > 0:
+                    self.windows_acc_RJ.append(
+                        sum(True for (x,y) in zip(last_window_st, last_window_acc) if y and x in RJ_step_types)
+                        /last_window_RJ_count
+                        )
+                else: self.windows_acc_RJ.append(np.NaN)
+                if (last_window_tweak_count := last_window_st.count('tweak all parameters')) > 0:
+                    self.windows_acc_tweak.append(
+                        sum(True for (x,y) in zip(last_window_st, last_window_acc) if y and x == 'tweak all parameters')
+                        /last_window_tweak_count
+                        )
+                else: self.windows_acc_tweak.append(np.NaN)
+                self.windows_acc_tot.append(last_window_acc.count(True) / self.acc_window)
+                
+                # tweak width adaptation:
+                # note: now based on tweak acceptance ratio in last window
+                # - skipped if no tweaks and will be noisy if few tweaks (so choose large enough window!)
+                if (type(self.fix_tweak_width_at) == int 
+                    and self.fix_tweak_width_at > 0
+                    and type(self.tweak_width_adaptation_factor) in [float, int] 
+                    and float(self.tweak_width_adaptation_factor) > 1
+                    and i <= self.fix_tweak_width_at 
+                    and i >= self.start_tweak_width_adaptation_at
+                    and last_window_tweak_count > 0):
+                    if not self.params_handler: # legacy safety check - past tweaks mean this should exist 
+                        self.initialise_params_handler()
+                    # note: adaptation factor > 1 guaranteed
+                    if self.windows_acc_tweak[-1] < self.acc_rate_min: # ie. accepting too few
+                        self.params_handler.rescale_tweak_widths(1/self.tweak_width_adaptation_factor)
+                    elif self.windows_acc_tweak[-1] > self.acc_rate_max: # ie. accepting too many
+                        self.params_handler.rescale_tweak_widths(self.tweak_width_adaptation_factor)
+                        
+                # temperature adaptation:
+                # note: now based on overall acceptance ratio in last window
+                # note: even if adaptqation factor set and within adaptation range, skipped whenever proposal
+                # ...is not single value (would be pair of values for temperature sampling from gamma dist.)
+                if (type(self.fix_temperature_at) == int 
+                    and self.fix_temperature_at > 0
+                    and type(self.temperature_adaptation_factor) in [float, int] 
+                    and float(self.temperature_adaptation_factor) > 1
+                    and i <= self.fix_temperature_at 
+                    and i >= self.start_temperature_adaptation_at
+                    and type(self.temperature_proposal) in [float, int]):
+                    # note: adaptation factor > 1 guaranteed
+                    if self.windows_acc_tot[-1] < self.acc_rate_min: # ie. accepting too few
+                        self.MH_temperature *= self.temperature_adaptation_factor
+                    elif self.windows_acc_tot[-1] > self.acc_rate_max: # ie. accepting too many
+                        self.MH_temperature /= self.temperature_adaptation_factor
+        
             k += 1
 
             # progress timing:
@@ -397,7 +521,10 @@ class LearningChain:
                     time_last = new_time
                 k2 += 1
                 
-    
+                
+            # set Metropolis-Hastings acceptance temperature:
+            self.MH_temperature = self.sample_T()
+            
             # new proposal container:
             proposal = copy.deepcopy(self.current)
             
@@ -414,7 +541,7 @@ class LearningChain:
             # choose next step:
             next_step = np.random.choice(self.next_step_labels, p = next_step_probabilities_list)
             next_step = str(next_step)
-            self.run_step_type_tracker.append(next_step)
+            self.step_type_tracker.append(next_step)
             
             # update total counter for appropriate step type:
             if next_step == 'tweak all parameters':
@@ -434,7 +561,7 @@ class LearningChain:
                 
                 if not self.params_bounds:
                 # no bounds specified hence only parameter restriction L positivity    
-                    proposal_width = self.params_handler.jump_lengths['Ls']
+                    proposal_width = self.params_handler.tweak_widths['Ls']
                     for TLS in self.current.TLSs:
                         for current_rate in TLS.Ls.values():
                             p_there *= 1/(1-1/2*(1+sp.special.erf(-current_rate/proposal_width/np.sqrt(2))))
@@ -463,20 +590,20 @@ class LearningChain:
                             if not TLS.is_qubit:
                                 # note: bounds not enforced on qubit energy hence could get 0/0!!
                                 m = TLS.energy
-                                s = self.params_handler.jump_lengths['energies']
+                                s = self.params_handler.tweak_widths['energies']
                                 a = self.params_bounds['energies'][0]
                                 b = self.params_bounds['energies'][1]
                                 holder[key] *= (factor := self.xi(m, s, a, b))
                                 
                             # Ls:
-                            s = self.params_handler.jump_lengths['Ls']
+                            s = self.params_handler.tweak_widths['Ls']
                             a = self.params_bounds['Ls'][0]
                             b = self.params_bounds['Ls'][1]
                             for m in TLS.Ls.values():
                                 holder[key] *= (factor := self.xi(m, s, a, b))
                                 
                             # couplings:
-                            s = self.params_handler.jump_lengths['couplings']
+                            s = self.params_handler.tweak_widths['couplings']
                             a = self.params_bounds['couplings'][0]
                             b = self.params_bounds['couplings'][1]
                             for partner in TLS.couplings:
@@ -558,9 +685,10 @@ class LearningChain:
                                   
             # evaluate new proposal (system evolution calculated here):
             proposal_loss = self.total_dev(proposal)
-            self.explored_loss.append(proposal_loss)
-            self.explored_log_posterior.append(-(proposal_loss/self.MH_temperature
-                                                 + self.prior(proposal, return_minus_log_of=True)))
+            if not self.lean_mode:
+                self.explored_loss.append(proposal_loss)
+                self.explored_log_posterior.append(-(proposal_loss/self.MH_temperature
+                                                     + self.prior(proposal, return_minus_log_of=True)))
             self.explored_log_likelihood_prior.append((-proposal_loss/self.MH_temperature,
                                                        -self.prior(proposal, return_minus_log_of=True)))
             # !!! note: currently assumes flat priors on allowed parameter values,
@@ -571,7 +699,8 @@ class LearningChain:
             # Metropolis-Hastings acceptance:
             acceptance_probability = self.acceptance_probability(self.current, proposal, p_there, p_back, 
                                                                  params_priors_ratio)
-            self.explored_acceptance_probability.append(acceptance_probability)
+            if not self.lean_mode:
+                self.explored_acceptance_probability.append(acceptance_probability)
             if np.random.uniform() < acceptance_probability: # ie. accept proposal
                 # update current and also best if warranted:
                 self.current = proposal
@@ -579,10 +708,12 @@ class LearningChain:
                 if proposal_loss < self.best_loss:
                     self.best_loss = proposal_loss
                     self.best = copy.deepcopy(proposal)
-                self.run_acceptance_tracker.append(True)
+                self.acceptance_tracker.append(True)
                 # save accepted proposal for statistical analysis of chain
                 if self.store_all_proposals:
                     self.explored_proposals.append(copy.deepcopy(proposal))
+                self.explored_acc_vectors.append(proposal.vectorise_under_library(hyperparameters = self.process_libraries)[0])
+                
                 # update accepted step counter:
                 if next_step == 'tweak all parameters':
                     self.acc_tweak_steps += 1
@@ -590,27 +721,42 @@ class LearningChain:
                     self.acc_RJ_steps += 1
                 
             else: # ie. reject proposal
-                self.run_acceptance_tracker.append(False)
+                self.acceptance_tracker.append(False)
             
-            self.run_annealing_tracker.append(now_annealed)
+            if not self.lean_mode:
+                self.annealing_tracker.append(now_annealed)
             i += 1        
         # while loop end
          
         
+        # package chain outputs:
+            
         if bool(self.iterations_till_progress_update):
             print('\n\nChain run completed.\n'
                   +'_________________________\n\n', flush = True)
         self.best.final_loss = self.best_loss
         
-        self.all_proposals = {'proposals': self.explored_proposals,
-                              'loss': self.explored_loss,
-                              'acceptance': self.run_acceptance_tracker,
-                              'log_posterior': self.explored_log_posterior,
+        self.all_proposals = {'acceptance': self.acceptance_tracker,
                               'log_likelihood_prior': self.explored_log_likelihood_prior,
-                              'acceptance_probability': self.explored_acceptance_probability,
-                              'annealed': self.run_annealing_tracker,
-                              'step_types': self.run_step_type_tracker
-                             } 
+                              'step_types': self.step_type_tracker
+                             }
+        if not self.lean_mode:
+            self.all_proposals['loss'] = self.explored_loss
+            self.all_proposals['log_posterior'] = self.explored_log_posterior
+            self.all_proposals['acceptance_probability'] = self.explored_acceptance_probability
+            self.all_proposals['annealed'] = self.annealing_tracker
+        if self.store_all_proposals:
+            self.all_proposals['proposals'] = self.explored_proposals
+        self.all_proposals['vectors'] = self.explored_acc_vectors
+        self.all_proposals['shock_anneal_at'] = self.shock_anneal_at
+        _, self.all_proposals['params_labels'], self.all_proposals['params_labels_latex'] = (
+            self.best.vectorise_under_library(hyperparameters = self.process_libraries))
+            
+        # windows acceptance rates (also corresponding temperature):
+        self.windows_acc_rates = {'tweak': self.windows_acc_tweak,
+                                  'RJ': self.windows_acc_RJ,
+                                  'total': self.windows_acc_tot,
+                                  'temperature': self.windows_temperatures}
         
         return self.best
     
@@ -885,28 +1031,6 @@ class LearningChain:
         
     
     
-    def cool_down(self):
-        """
-        Scale down parameter handler jump length by instance-level rescaling factor.
-        """
-        
-        if not self.params_handler: # ie. first run
-            self.initialise_params_handler()
-        self.params_handler.rescale_jump_lengths(1/self.jump_length_rescaling_factor)
-        
-        
-    
-    def heat_up(self):
-        """
-        Scale up parameter handler jump length by instance-level rescaling factor.
-        """
-        
-        if not self.params_handler: # ie. first run
-            self.initialise_params_handler()
-        self.params_handler.rescale_jump_lengths(self.jump_length_rescaling_factor)
-    
-    
-    
     def get_init_hyperparams(self):
         """
         Returns JSON compatible dictionary of initial chain hyperparameters.    
@@ -920,7 +1044,7 @@ class LearningChain:
     
     def initialise_params_handler(self):
         """
-        Constructs parameters handler and sets initial hyperparameters (including jump lenghts).
+        Constructs parameters handler and sets initial hyperparameters (including tweak widths).
         """    
 
         self.params_handler = params_handling.ParamsHandler(self)
@@ -949,12 +1073,13 @@ class LearningChain:
         Does not directly modify instance variable.
         
         Based on instance level temperature_proposal:            
-        If number, returns this value.
-        If tuple of numbers (shape, scale), returns value sampled from such gamma distribution.
+        If numerical value, current temperature initially set to it at chain initialisation,
+        this then just returns instance level current temperature (adaptation may be done within chain).
+        If tuple of numbers (shape, scale), returns value sampled from corresponding gamma distribution.
         """
         
         match self.temperature_proposal:
-            case int() | float(): return self.temperature_proposal
+            case int() | float(): return self.MH_temperature
             case (int()|float(), int()|float()): return np.random.gamma(*self.temperature_proposal)
             case _: raise RuntimeError('Metropolis-Hastings temperature proposal failed')
 

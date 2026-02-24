@@ -23,7 +23,7 @@ Ls_shape_scale = (1.02, 4)
 
 default_chain_hyperparams = {    
         'chain_step_options': {
-            'tweak all parameters': 36,
+            'tweak all parameters': 72,
             'add qubit L': 1,
             'remove qubit L': 1,
             'add defect L': 1,
@@ -34,26 +34,40 @@ default_chain_hyperparams = {
             'remove defect-defect coupling': 1
             },
         
-        'temperature_proposal': 0.0002, # either value or (shape, scale) of gamma to sample
+        'temperature_proposal': (1, 0.02), # either value or (shape, scale) of gamma to sample
         
         'complexity_factor': 10, 
         # note: expected number of processes akin to STD in dynamics - creates natural posterior scale
         
-        'jump_length_rescaling_factor': 1.0, # for scaling up or down jump lengths of parameter handler
-        
-        'shock_anneal_at': int(500000), # iteration to perform switch to annealed regime
+        'shock_anneal_at': False, # iteration to perform switch to annealed regime
         # note: currently annealing only parameters handler
         
-        'acceptance_window': 100,
-        'acceptance_target': 0.4,
-        'acceptance_band': 0.2,
+        'fix_tweak_width_at': False, # iteration to fix tweak widths after adaptation
+        # if false or set to zero, no adaptation will take place, same as if adaptation factor False or number 1
+        
+        'start_tweak_width_adaptation_at': False, # earliest iteration to start tweak width adaptation
+        
+        'fix_temperature_at': False, # iteration to fix tweak widths after adaptation
+        # if false or set to zero, no adaptation will take place, same as if adaptation factor False or number 1
+        
+        'start_temperature_adaptation_at': False, # earliest iteration to start tweak width adaptation
+        
+        'tweak_width_annealing_factor': 0.1, # to scale tweak widths for all parameter classes when annealing
+        
+        # window, target acceptance rate, and scaling for adaptive tweak width tuning:
+        # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
+        'acc_window': 1000,
+        'tweak_width_adaptation_factor': 5, # probably 5 is optimal
+        'temperature_adaptation_factor': 1.4, # now say 2?
+        'acc_rate_max': 0.2,
+        'acc_rate_min': 0.05,
         
         'params_handler_hyperparams': { 
-            'initial_jump_lengths': {'couplings' : 0.4, #0.4,
-                                     'energies' : 0.04, #0.04,
-                                     'Ls' : 0.04 #0.04
+            'initial_tweak_widths': {'couplings' : 0.05, #0.4,
+                                     'energies' : 0.005, #0.04,
+                                     'Ls' : 0.005 #0.04
                                      },
-            'annealed_jump_lengths': {'couplings' : 0.04, #0.04,
+            'annealed_tweak_widths': {'couplings' : 0.04, #0.04,
                                       'energies' : 0.004, #0.004,
                                       'Ls' : 0.004 #0.004
                                       }

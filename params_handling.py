@@ -23,7 +23,7 @@ class ParamsHandler:
 
     Includes tweak method to simultaneously change all existing parameters except qubit energies,
     each by amount from normal distribution around zero,
-    with variance given by instance-level jump length for that class of parameters.
+    with variance given by instance-level tweak width for that class of parameters.
 
     Currently initialised for specific chain whose target data and loss-related methods
     are accessed by the full optimisation method.
@@ -59,19 +59,19 @@ class ParamsHandler:
         Sets parameter handler hyperparameters according to argument dictionary.
         Those without corresponding entry set to defaults defined here.     
     
-        Most related to full optimisation method, jump lengths also used in tweak method.
+        Most related to full optimisation method, tweak widths also used in tweak method.
         """
         
         # default values (keys also determine instance attributes to be set):
-        default_jump_lengths = {'couplings' : 0.001,
+        default_tweak_widths = {'couplings' : 0.001,
                                 'energies' : 0.01,
                                 'Ls' : 0.00001
                                 }   
         default_optimisation_config = {'max_optimisation_steps': int(1e3), 
                         'MH_acceptance': False, 
                         'MH_temperature': 0.1, 
-                        'initial_jump_lengths': default_jump_lengths, 
-                        'jump_annealing_rate': 0,
+                        'initial_tweak_widths': default_tweak_widths, 
+                        'tweak_annealing_rate': 0,
                         'acceptance_window': 200,
                         'acceptance_target': 0.4
                         }
@@ -84,7 +84,7 @@ class ParamsHandler:
             else: # else assign default
                 setattr(self, key, default_optimisation_config[key])
             self.hyperparams_init_output[key] = getattr(self, key)
-        self.jump_lengths = copy.deepcopy(self.initial_jump_lengths)
+        self.tweak_widths = copy.deepcopy(self.initial_tweak_widths)
         
         # mark done:
         self.config_done = True
@@ -103,15 +103,15 @@ class ParamsHandler:
         
         
         
-    def set_jump_lengths(self,
-                         jump_lengths: dict[str, float|int]
+    def set_tweak_widths(self,
+                         tweak_widths: dict[str, float|int]
                          ) -> None:
         
         """
-        Sets jump lengths to argument dictionary (no checks on entries). 
+        Sets tweak widths to argument dictionary (no checks on entries). 
         """
         
-        self.jump_lengths = copy.deepcopy(jump_lengths)
+        self.tweak_widths = copy.deepcopy(tweak_widths)
     
     
     def output_hyperparams_init(self) -> dict:
@@ -129,7 +129,7 @@ class ParamsHandler:
         """
         Returns dictionary of instance-level current hyperparameters.
         
-        Most related to full optimisation method, jump lengths also used in tweak method.
+        Most related to full optimisation method, tweak widths also used in tweak method.
         """
         
         # note: keys taken from initial hyperparams dictionary
@@ -142,13 +142,13 @@ class ParamsHandler:
                              ) -> (learning_model.LearningModel, int):
         
         """
-        Tweaks all existing parameters of argument model according instance-level jump lengths.
+        Tweaks all existing parameters of argument model according instance-level tweak widths.
         
         Modifies argument model and returns it.
         
         Calls model method which currently adds to each existing model parameter
         a value sampled from normal distribution around zero
-        with variance based on parameter-handler jump length for that type of parameter.
+        with variance based on parameter-handler tweak width for that type of parameter.
         
         Currently called without explicit argument for bounds,
         which are instead set at instance level of params handler.
@@ -160,7 +160,7 @@ class ParamsHandler:
         if not self.config_done:
             raise RuntimeError('Parameter handler hyperparameters need to be specified!')
         else:
-            model.change_params(self.jump_lengths, bounds = self.bounds)
+            model.change_params(self.tweak_widths, bounds = self.bounds)
             
         return model
         
@@ -185,7 +185,7 @@ class ParamsHandler:
         best model found returned after completion.
         """
         
-        # check hyperparameters and jump lengths set:
+        # check hyperparameters and tweak widths set:
         if not self.config_done:
             raise RuntimeError('Parameter handler hyperparameters not specified!')
     
@@ -205,13 +205,13 @@ class ParamsHandler:
             
             # make copy of model, propose new parameters and evaluate cost:
             proposed = copy.deepcopy(current) 
-            proposed.change_params(passed_jump_lengths = self.jump_lengths)
+            proposed.change_params(passed_tweak_widths = self.tweak_widths)
             proposed_cost = self.chain.cost(proposed)
             costs.append(proposed_cost)
     
-            # anneal jump length:
-            if self.jump_annealing_rate:
-                self.rescale_jump_lengths(np.exp(-self.jump_annealing_rate))
+            # anneal tweak widths:
+            if self.tweak_annealing_rate:
+                self.rescale_tweak_widths(np.exp(-self.tweak_annealing_rate))
             
             # if improvement -- accept and update current, check if best and save then:
             if proposed_cost < current_cost: 
@@ -252,17 +252,17 @@ class ParamsHandler:
     
         
     
-    def rescale_jump_lengths(self, factor:int | float) -> None:
+    def rescale_tweak_widths(self, factor:int | float) -> None:
         
         """
-        Rescales instance-level current jump lengths for all parameters by argument factor.
+        Rescales instance-level current tweak widths for all parameters by argument factor.
         """
         
         if not self.config_done:
             raise RuntimeError('Parameter handler hyperparameters not specified!')
     
-        for key in self.jump_lengths:
-            self.jump_lengths[key] = self.jump_lengths[key]*factor
+        for key in self.tweak_widths:
+            self.tweak_widths[key] = self.tweak_widths[key]*factor
         
         
         

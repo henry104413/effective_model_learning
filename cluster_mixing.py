@@ -3,6 +3,16 @@
 """
 Effective model learning
 @author: Henry (henry104413)
+
+For all combinations of Ds and noise_stdevs, collects models from different chains (Rs),
+with given subsampling and optional bounds and filtering by annealed status of models,
+according to model parameter vectors, or vectorised Liouvillians, as chosen. 
+Performs k-means clustering over given range of ks, saves assignments, centres, and metrics
+(SSEs and silhouette score) for each k; also outputs metrics as a function of k.
+
+Also saves collated subsampled models used for clustering in form of points 
+(parameter vectors, or optionally vectorised Liouvillians),
+and associalted tuples of (log likelihood, log prior), both as pickles.
 """
 
 import sys # for passing command line arguments
@@ -22,41 +32,42 @@ import time
 import copy
 
 # settings and source data:
-experiment_name = '251210'
+experiment_name_base = '260215'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 noise_stdevs = [0.01, 0.05, 0.1]
-Ds = [1,2,3]
-Rs = [1,2,3] # for combining chains - same for all Ds above
+Ds = [2]#[1,2,3]
+Rs = [i+1 for i in range(8)]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
-hyperparams = configs.get_hyperparams(config_name)
 min_clusters = 2
 max_clusters = 10
-loss_threshold = False # if zero, watch the conditional 
 bounds = []
 verbosity = 0
 burn = 0
-subsample = 100 # take every however-many-eth point; 1 means every point taken
-only_take_annealed = True
+subsample = 1000 # take every however-many-eth point; 1 means every point taken
+only_take_annealed = False
+# note: if no annealing was done (flag would have been false), this automatically takes all even if set to true
 vectorisation = 'parameters'
+model_objects_switch = False # switch for importing full models - no longer done 
 
 # note: assumings all Rs for each D and all Ds for each noise_stdev
 
 # go over all combinations of noise_stdevs and Ds:
 if not noise_stdevs: noise_stdevs = [False]
 for noise_stdev in noise_stdevs:
-    if type(noise_stdev) not in [int, float] and not noise_stdev:
+    experiment_name = experiment_name_base
+    if type(noise_stdev) in [int, float]:
         experiment_name += '_std' + str(noise_stdev).replace('.','p')
     experiment_name += og_source
     for D in Ds:
         
         # output name:
-        output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_e100'
+        output_name = experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_e' + str(subsample)
          
         # container for points to cluster (vectorised and decomplexified Liouvillians, or parameter vectors),
-        # as well as corresponding loss and posterior
+        # as well as corresponding log likelihood-prior pairs
         points = []
-        losses, posteriors = [], []
+        log_likelihoods_priors = []
         
         # time trackers for profiling:
         new_time = time.time()
@@ -68,42 +79,97 @@ for noise_stdev in noise_stdevs:
         labels_obtained = False
         for R in Rs:
             
-            # import accepted loss values and accepted proposals from same output dictionary:
-            filename = experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R)
             
+            # import accepted proposals and step-related quantities from chain output dictionary:
+            filename = experiment_name + '_' + config_name + '_D' + str(D) + '_R' + str(R)
             with open(filename + '_proposals.pickle',
                       'rb') as filestream:
                 proposals = pickle.load(filestream)
-            accepted_annealing_flags = [x for (x, y) in zip(proposals['annealed'], proposals['acceptance']) if y]
-            accepted_proposals = [x for (x,y) in zip(proposals['proposals'], accepted_annealing_flags)
-                                  if (y or not only_take_annealed)]
-            accepted_losses = [x for (x,y,z) in zip(proposals['loss'][1:], proposals['acceptance'], proposals['annealed'])
-                               if y and (z or not only_take_annealed)]
-            accepted_posteriors = [x for (x,y,z) in zip(proposals['log_posterior'][1:], proposals['acceptance'], proposals['annealed'])
-                               if y and (z or not only_take_annealed)]
-            # !!! note: only accepted proposals are saved in proposals, 
-            # whereas other entries in proposals dictionary are for all proposals regardless of acceptance
+                # note: this is used inside function scopes below as a global variable 
+                # - parser may show error but works fine in Python 3.11
             
-            # get parameter labels off of 1st proposal:
+            # filters for proposals inclusion:
+            def annealing_steps_filter(): 
+                # generator returning true if corresponding step was annealed,
+                # or if no annealing took place (ie. shock_anneal_at set to False)
+                # note: used in zip together with sequences of length of acceptance list (ie. maximum steps) 
+                if 'annealed' in proposals and only_take_annealed:
+                    return (x for x in proposals['annealed'])  
+                elif 'shock_anneal_at' in proposals and only_take_annealed:
+                    return (i > proposals['shock_anneal_at'] for i in range(len(proposals['acceptance'])))
+                else: # ie. treat all as allowed by annealing filter
+                    return (True for x in proposals['acceptance'])
+            def postburn_steps_filter(burn: int = 0):
+                # generator returning true if corresponding step came after burn-in
+                # note: used in zip together with sequences of length of acceptance list (ie. maximum steps) 
+                return (i >= burn for i in range(len(proposals['acceptance'])))
+            def accepted_proposals_to_include_filter():
+                # generator returning true if corresponding ACCEPTED proposal was after burn-in,
+                # and was annealed or annealing switched off or not taking only annealed
+                # note: used in zip together with sequences of length of only accepted proposals list
+                return ((x and y) for (x, y, z) in 
+                        zip(annealing_steps_filter(), postburn_steps_filter(burn), proposals['acceptance'])
+                        if z)
+            
+            # select filtered proposals:
+            if (model_objects_used := (model_objects_switch and ('proposals' in proposals))):
+                # ie. using model objects here
+                accepted_proposals = [x for (x,y) in zip(proposals['proposals'], accepted_proposals_to_include_filter())
+                                      if y]
+            else: accepted_proposals = False
+            accepted_vectors = [x for (x,y) in zip(proposals['vectors'], accepted_proposals_to_include_filter())
+                                  if y]
+            accepted_log_likelihoods_priors = [w for (w,x,y,z) 
+                                               in zip(proposals['log_likelihood_prior'], proposals['acceptance'],
+                                                      annealing_steps_filter(), postburn_steps_filter(burn))
+                                               if x and y and z]
+            # !!! note: only accepted proposals and vectors are saved in proposals, 
+            # whereas other step-related entries in proposals dictionary are for all proposals regardless of acceptance
+            
+            # set parameter labels:
             if not labels_obtained:
-                hyperparams = configs.get_hyperparams(config_name)
-                _, labels, labels_latex = accepted_proposals[0].vectorise_under_library(hyperparameters = hyperparams)
-                
+                def load_best():
+                    try:
+                        with open(filename + '_best.pickle', 'rb') as filestream:
+                            best = pickle.load(filestream)
+                        return True, best
+                    except:
+                        return False, None
+                if model_objects_switch: 
+                # take parameter labels off of 1st proposal model object if loaded:
+                    hyperparams = configs.get_hyperparams(config_name)
+                    _, labels, labels_latex = (
+                        accepted_proposals[0].vectorise_under_library(hyperparameters = hyperparams))
+                elif 'params_labels_latex' in proposals and 'params_labels' in proposals:
+                # take directly from proposals dictionary if stored:
+                    labels, labels_latex = (
+                        proposals['params_labels'], proposals['params_labels_latex'])
+                elif (temp := load_best())[0]:
+                # try and take from best if loaded succesfully;
+                # note: temp is tuple of (success flag of loading best, best model, hyperparams)
+                    hyperparams = configs.get_hyperparams(config_name)
+                    _, best = temp
+                    _, labels, labels_latex = (
+                        best.vectorise_under_library(hyperparameters = hyperparams))
+                else:
+                    # if not obtained otherwise, just use parameter numbers as labels:
+                    print('Could not obtain parameters labels - using numerals instead', flush = True)
+                    labels = [str(x) for x in range(len(accepted_vectors[0]))]
+                    labels_latex = [str(x) for x in range(len(accepted_vectors[0]))]
+                labels_obtained = True
             
-            # collect all points including loss and posterior:
+            
+            # collect all points including log likelihood-prior pairs:
             
             # split into segments determined by bounds:    
-            bounds = [
-                      (0, len(accepted_losses))
-                      ]
             if len(bounds) > 1: # plot chain segments determined by bounds:
-                indices = list(range(len(accepted_losses)))
+                indices = list(range(len(accepted_log_likelihoods_priors)))
                 plt.figure()
-                plt.plot(indices, accepted_losses, '-', c = 'orange', linewidth = 0.5)
+                plt.plot(indices, log_likelihoods := [x[0] for x in accepted_log_likelihoods_priors], '-', c = 'orange', linewidth = 0.5)
                 plt.yscale('log')
-                ymin = min(accepted_losses)
-                ymax = max(accepted_losses)
-                plt.ylabel('loss')
+                ymin = min(log_likelihoods)
+                ymax = max(log_likelihoods)
+                plt.ylabel('log likelihoods')
                 plt.xlabel('accepted model')
                 for region in bounds:
                     plt.plot([region[0], region[0]], [ymin, ymax], 'r-', linewidth = 1)
@@ -111,24 +177,24 @@ for noise_stdev in noise_stdevs:
                 plt.savefig(output_name + '_chain_segments.svg')
                 plt.clf()
                 
-            # remove points with loss below some threshold - don't combine this with bounds!
-            elif type(loss_threshold) in [int, float]:
-                print('Earlier: ' + str(len(accepted_proposals)), flush = True)
-                working_proposals = [x for (x, y) in zip(accepted_proposals, accepted_losses) if y < loss_threshold]
-                print('After: ' + str(len(accepted_proposals)), flush = True)
-            
             # take only points between the specified regions (sets of bounds),
-            # also corresponding losses and posteriors:
-            if True:
+            # also corresponding log likelihood-prior pairs:
+            if bounds:
                 working_proposals = []
-                working_losses, working_posteriors = [], []
+                working_vectors = []
+                working_log_likelihoods_priors = []
                 for region in bounds:
-                    working_proposals.extend(accepted_proposals[region[0]:region[1]])
-                    working_losses.extend(accepted_losses[region[0]:region[1]])
-                    working_posteriors.extend(accepted_posteriors[region[0]:region[1]])
+                    if model_objects_used:
+                        working_proposals.extend(accepted_proposals[region[0]:region[1]])
+                    working_vectors.extend(accepted_vectors[region[0]:region[1]])
+                    working_log_likelihoods_priors.extend(accepted_log_likelihoods_priors[region[0]:region[1]])
+            else:
+                working_proposals = accepted_proposals
+                working_vectors = accepted_vectors
+                working_log_likelihoods_priors = accepted_log_likelihoods_priors
+                
+            # turn proposals into points for clustering as per vectorisation choice:
             new_points = []
-            
-            # turn proposals into points (vectors):
             if vectorisation == 'Liouvillian': # use Liouvillian
                 for new_model in working_proposals:
                     # build Liouvillian, turn into 1D vector, separate real and imaginary parts and concatenate:
@@ -138,13 +204,18 @@ for noise_stdev in noise_stdevs:
                     Liouvillian_vect_separated = np.concatenate((Liouvillian_vect_complex.real, Liouvillian_vect_complex.imag))
                     new_points.append(Liouvillian_vect_separated)
             elif vectorisation == 'parameters': # use model vector
-                for new_model in working_proposals:
-                    new_points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
+                if False: 
+                # now vectors are saved by chain and imported so this is redundant
+                # retained here for legacy reasons
+                    for new_model in working_proposals:
+                        new_points.append(new_model.vectorise_under_library(hyperparameters = hyperparams)[0])
+                else:
+                    new_points = working_vectors
             
-            taken_from_each_R_subsampled.append(len(working_proposals[0::subsample]))
+            # append points for this R with subsampling as specified (reducing requirements):
+            taken_from_each_R_subsampled.append(len(working_log_likelihoods_priors[0::subsample]))
             points.extend(new_points[0::subsample])
-            losses.extend(working_losses[0::subsample])
-            posteriors.extend(working_posteriors[0::subsample])
+            log_likelihoods_priors.extend(working_log_likelihoods_priors[0::subsample])
             
             
         # final array to feed into clusterer 
@@ -152,17 +223,12 @@ for noise_stdev in noise_stdevs:
         points_array = np.stack(points)
         #points_array = points_array[0::subsample,:] # if sampling subsampling combined chains, not now - changes edge cases!
         
-        
-        # also export lists of points, losses, posteriors:
+        # also export lists of points and log likelihood-prior pairs:
         with open(output_name + '_points.pickle', 'wb') as filestream:
             pickle.dump(points, filestream)
-        with open(output_name + '_losses.pickle', 'wb') as filestream:
-            pickle.dump(losses, filestream)
-        with open(output_name + '_posteriors.pickle', 'wb') as filestream:
-            pickle.dump(posteriors, filestream)
+        with open(output_name + '_log_likelihoods_priors.pickle', 'wb') as filestream:
+            pickle.dump(log_likelihoods_priors, filestream)
         
-        
-            
         print('\n.....\ndata preparation time pre-clustering (s):' 
               + str(np.round((new_time := time.time()) - time_last,2)) + '\n.....\n', flush = True)
           
@@ -323,6 +389,9 @@ for noise_stdev in noise_stdevs:
         
             
         #%% plot assignments and centres given for specified ks
+        # DEPRECATED and not up to date
+        # - if needed requires updating with vectors instead of model objects!
+        # and requires new filter generators!!!
         
         if False:
             
@@ -406,5 +475,3 @@ for noise_stdev in noise_stdevs:
                 
                 
                 print('Finished potting assignments of consituent models for each chain', flush = True)
-        
-                
