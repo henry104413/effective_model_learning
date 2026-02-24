@@ -388,7 +388,7 @@ class Output:
             # corresponding tweak widths (log scaling for now):
             plt.figure()
             colours = ['orange', 'yellowgreen', 'orchid']
-            linestyles = ['.-', '.-', '+--']
+            linestyles = ['.-', '.-', '+:']
             for i, key in enumerate(['Ls', 'couplings', 'energies']):
                 plt.plot(windows_acc_rates['tweak widths'][key]
                          , linestyles[i], linewidth = 0.1, markersize = 0.5, color = colours[i], label = key)
