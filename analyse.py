@@ -23,10 +23,10 @@ import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # settings:
-experiment_name = '260224_test3'
-noise_stdev = 0.1 # set None if not included in file name
+experiment_name = '260213-test2' #'260224_test8'
+noise_stdev = 0.01 # set None if not included in file name
 D = 2
-Rs = [i+1 for i in range(8)] # for D2
+Rs = [i+1 for i in range(10)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
@@ -450,3 +450,28 @@ plt.savefig(output_name + '_champions_k' + str(chosen_k) + '.svg',  dpi = 1000, 
 plt.savefig(output_name + '_champions_k' + str(chosen_k) + '.png',  dpi = 1000, bbox_inches='tight')
 
     
+
+#%%
+# histogram of chosen parameter values as a slice of posterior distrubution (pdf)
+
+points_array = np.stack(points) # columns for each parameter so that this[:, j] are j-th parameter values
+
+for j in range(20):
+    vals = points_array[:, j]
+    if True: 
+        # remove zeros:
+        vals_onlynonzero = vals[vals != 0]
+    param_label = labels_latex[j]
+    plt.figure()
+    #bins = 10 ** np.linspace(min(vals), max(vals), 100)
+    if False:
+        plt.hist(vals, alpha = 0.7, color = 'turquoise'
+                 ,bins = 100, label = 'all'
+                 )
+    plt.hist(vals_onlynonzero, alpha = 0.5, color = 'firebrick'
+             ,bins = 100, label = 'non-zero'
+             )
+    plt.xlabel(param_label)
+    plt.ylim(0,600)
+    #plt.xscale('log')
+    plt.ylabel('count')
