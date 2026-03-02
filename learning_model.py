@@ -133,7 +133,7 @@ class LearningModel(basic_model.BasicModel):
         # set max attempts for rejection sampling and infinite bounds if none set to enable comparison:
         # (except  Ls >= 0)
         # (alternatively TO DO: can implement conditional for bounds checking rather than this shortcut)
-        max_attempts = 10
+        max_attempts = 100
         if not bounds: # type validity otherwise not checked
             #print('Bounds not passed to learning model')        
             bounds = {'energies': (-np.inf, np.inf),
@@ -145,12 +145,15 @@ class LearningModel(basic_model.BasicModel):
                     
             # modify its energy if not qubit:
             if not TLS.is_qubit:
-                for _ in range(max_attempts):
+                for _ in range(max_attempts + 1):
                     candidate = TLS.energy + np.random.normal(0, self.jump_lengths['energies'])
                     if candidate >= bounds['energies'][0] and candidate <= bounds['energies'][1]:
                         # within bounds hence update
                         TLS.energy = candidate
                         #print('Energy: accepted ' + str(candidate))
+                        break
+                    elif _ == max_attempts:
+                        TLS.energy = np.random.uniform(bounds['energies'][0], bounds['energies'][1])
                         break
                     else:
                         #print('Energy: rejected ' + str(candidate))
@@ -162,7 +165,7 @@ class LearningModel(basic_model.BasicModel):
                 this_partner_couplings = TLS.couplings[partner] # list of couplings to current partner
                 for i, coupling in enumerate(TLS.couplings[partner]): # coupling now (rate, [(op_on_self, op_on_partner), ...])
                     strength, op_pairs = coupling
-                    for _ in range(max_attempts):
+                    for _ in range(max_attempts + 1):
                         candidate = strength + np.random.normal(0, self.jump_lengths['couplings'])
                         if candidate >= bounds['couplings'][0] and candidate <= bounds['couplings'][1]:
                             # within bounds hence update
@@ -173,6 +176,10 @@ class LearningModel(basic_model.BasicModel):
                             TLS.couplings[partner][i] = (candidate, op_pairs)
                             #print('Coupling: accepted ' + str(candidate))
                             break
+                        elif _ == max_attempts:
+                            candidate = np.random.uniform(bounds['couplings'][0], bounds['couplings'][1])
+                            TLS.couplings[partner][i] = (candidate, op_pairs)
+                            break
                         else:
                             #print('Coupling: rejected ' + str(candidate))
                             continue
@@ -180,11 +187,14 @@ class LearningModel(basic_model.BasicModel):
             # modify all its Lindblad ops:
             for L in TLS.Ls:
                 # make up to specified number of proposals ensuring result positive
-                for _ in range(max_attempts):    
+                for _ in range(max_attempts + 1):    
                     candidate = TLS.Ls[L] + np.random.normal(0, self.jump_lengths['Ls'])
                     if candidate >= bounds['Ls'][0] and candidate <= bounds['Ls'][1]:
                         TLS.Ls[L] = candidate
                         #print('L: accepted ' + str(candidate))
+                        break
+                    elif _ == max_attempts:
+                        TLS.Ls[L] = np.random.uniform(bounds['Ls'][0], bounds['Ls'][1])
                         break
                     else:
                         #print('L: rejected ' + str(candidate))
