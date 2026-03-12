@@ -992,8 +992,10 @@ plt.legend(title = 'noise stdev')
 
                                                             
 #%%
+# for inspection of proposals pickle (saved model attributes and accepted proposals)
+
 import pickle
-with open('260213-test2_std0p01_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R1_proposals.pickle',
+with open('260302_test1_std0p1_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R3_proposals.pickle',
           'rb') as filestream:
     A = pickle.load(filestream)
     

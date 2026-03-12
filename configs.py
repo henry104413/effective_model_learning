@@ -57,7 +57,7 @@ default_chain_hyperparams = {
         # window, target acceptance rate, and scaling for adaptive tweak width tuning:
         # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
         'acc_window': 1000,
-        'tweak_width_adaptation_factor': 3, # probably 5 is optimal
+        'tweak_width_adaptation_factor': 5, # probably 5 is optimal
         'temperature_adaptation_factor': 1.4, # now say 2?
         'acc_rate_max': 0.3,
         'acc_rate_min': 0.1,
