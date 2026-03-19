@@ -34,7 +34,7 @@ default_chain_hyperparams = {
             'remove defect-defect coupling': 1
             },
         
-        'temperature_proposal': (1, 0.02), # either value or (shape, scale) of gamma to sample
+        'temperature_proposal': (2.1, 0.001), # either value or (shape, scale) of gamma to sample
         
         'complexity_factor': 10, 
         # note: expected number of processes akin to STD in dynamics - creates natural posterior scale
