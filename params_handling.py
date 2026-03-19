@@ -262,7 +262,14 @@ class ParamsHandler:
             raise RuntimeError('Parameter handler hyperparameters not specified!')
     
         for key in self.tweak_widths:
-            self.tweak_widths[key] = self.tweak_widths[key]*factor
+            
+            if self.bounds:
+            # tweak width (proposal standard deviation) capped at half length of allowed interval if defined
+                self.tweak_widths[key] = min(self.tweak_widths[key]*factor, 
+                                             (self.bounds[key][1]-self.bounds[key][0])/2)
+            else:
+                self.tweak_widths[key] = self.tweak_widths[key]*factor
+            
         
         
         
