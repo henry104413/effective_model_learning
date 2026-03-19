@@ -342,11 +342,11 @@ class LearningChain:
         
         # evaluate initial setup:
         # (immediately filtering parameters below instance-level thresholds)
-        self.MH_temperature = self.sample_T()
         self.initialise_process_handler()
         self.process_handler.filter_params(self.current, self.params_thresholds)
         self.current_loss = self.total_dev(self.current)
         self.best_loss = self.current_loss
+        self.MH_temperature = self.sample_T()
         if not self.lean_mode:
             self.explored_loss.append(self.current_loss)
             self.explored_log_posterior.append(-(self.current_loss/(2*self.MH_temperature)
@@ -727,7 +727,12 @@ class LearningChain:
                     self.acc_RJ_steps += 1
                 
             else: # ie. reject proposal
+                # note: means current model repeated in chain
                 self.acceptance_tracker.append(False)
+                if self.store_all_proposals:
+                    self.explored_proposals.append(copy.deepcopy(self.current))
+                self.explored_acc_vectors.append(self.current.vectorise_under_library(hyperparameters = self.process_libraries)[0])
+                
             
             if not self.lean_mode:
                 self.annealing_tracker.append(now_annealed)
