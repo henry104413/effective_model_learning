@@ -342,18 +342,16 @@ class LearningChain:
         
         # evaluate initial setup:
         # (immediately filtering parameters below instance-level thresholds)
-        self.MH_temperature = self.temperature_proposal 
-        # note: sample_T returns MH_temperature if proposal is not tuple, hence need to set first
-        self.MH_temperature = self.sample_T()
         self.initialise_process_handler()
         self.process_handler.filter_params(self.current, self.params_thresholds)
         self.current_loss = self.total_dev(self.current)
         self.best_loss = self.current_loss
+        self.MH_temperature = self.sample_T()
         if not self.lean_mode:
             self.explored_loss.append(self.current_loss)
-            self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
+            self.explored_log_posterior.append(-(self.current_loss/(2*self.MH_temperature)
                                              + self.prior(self.current, return_minus_log_of=True)))
-        self.explored_log_likelihood_prior.append((-self.current_loss/self.MH_temperature,
+        self.explored_log_likelihood_prior.append((-self.current_loss/(2*self.MH_temperature),
                                                    -self.prior(self.current, return_minus_log_of=True)))
         if self.store_all_proposals: self.explored_proposals.append(copy.deepcopy(self.initial))
         self.explored_acc_vectors.append(self.initial.vectorise_under_library(hyperparameters = self.process_libraries)[0])
@@ -426,9 +424,9 @@ class LearningChain:
                 if not self.lean_mode:
                     self.annealing_tracker.append(now_annealed)
                     self.explored_loss.append(self.current_loss)
-                    self.explored_log_posterior.append(-(self.current_loss/self.MH_temperature
+                    self.explored_log_posterior.append(-(self.current_loss/(2*self.MH_temperature)
                                                          + self.prior(self.current, return_minus_log_of=True)))
-                self.explored_log_likelihood_prior.append((-self.current_loss/self.MH_temperature,
+                self.explored_log_likelihood_prior.append((-self.current_loss/(2*self.MH_temperature),
                                                            -self.prior(self.current, return_minus_log_of=True)))
                 self.step_type_tracker.append('jump to best')
                 
@@ -695,9 +693,9 @@ class LearningChain:
             proposal_loss = self.total_dev(proposal)
             if not self.lean_mode:
                 self.explored_loss.append(proposal_loss)
-                self.explored_log_posterior.append(-(proposal_loss/self.MH_temperature
+                self.explored_log_posterior.append(-(proposal_loss/(2*self.MH_temperature)
                                                      + self.prior(proposal, return_minus_log_of=True)))
-            self.explored_log_likelihood_prior.append((-proposal_loss/self.MH_temperature,
+            self.explored_log_likelihood_prior.append((-proposal_loss/(2*self.MH_temperature),
                                                        -self.prior(proposal, return_minus_log_of=True)))
             # !!! note: currently assumes flat priors on allowed parameter values,
             # as prior evaluation method only depends on number of processes present 
@@ -729,7 +727,12 @@ class LearningChain:
                     self.acc_RJ_steps += 1
                 
             else: # ie. reject proposal
+                # note: means current model repeated in chain
                 self.acceptance_tracker.append(False)
+                if self.store_all_proposals:
+                    self.explored_proposals.append(copy.deepcopy(self.current))
+                self.explored_acc_vectors.append(self.current.vectorise_under_library(hyperparameters = self.process_libraries)[0])
+                
             
             if not self.lean_mode:
                 self.annealing_tracker.append(now_annealed)
@@ -955,7 +958,7 @@ class LearningChain:
             # then effectively guaranteed acceptance for non-subprecision prior proposal
         else:
             model_priors_ratio = PP/PC
-        return (np.exp(-1/T * (proposal_loss-current_loss)) 
+        return (np.exp(-1/(2*T) * (proposal_loss-current_loss)) 
                 * model_priors_ratio # prior(proposal) / prior(current) 
                 * back / there 
                 * params_priors_ratio)
@@ -1082,14 +1085,23 @@ class LearningChain:
         Does not directly modify instance variable.
         
         Based on instance level temperature_proposal:            
-        If numerical value, current temperature initially set to it at chain initialisation,
-        this then just returns instance level current temperature (adaptation may be done within chain).
-        If tuple of numbers (shape, scale), returns value sampled from corresponding gamma distribution.
+        If numerical value, returns this.
+        If tuple of numbers (a, b), take these as (shape, scale) priors,
+        and returns sample from inverse gamma distribution whose:
+        shape = number of target datapoints/2 + a;
+        scale = current loss (MSE)/2 + b.
         """
         
         match self.temperature_proposal:
-            case int() | float(): return self.MH_temperature
-            case (int()|float(), int()|float()): return np.random.gamma(*self.temperature_proposal)
+            case int() | float(): return self.temperature_proposal
+            case (int()|float(), int()|float()):
+                a, b = self.temperature_proposal
+                N = sum([len(x) for x in self.target_datasets])
+                shape = N/2 + a
+                scale = self.current_loss/2 + b
+                return 1/np.random.gamma(shape, 1/scale)
+                # note: x sampled from gamma(shape, 1/scale)
+                # means 1/x sampled from inverse_gamma(shape, scale) 
             case _: raise RuntimeError('Metropolis-Hastings temperature proposal failed')
 
 

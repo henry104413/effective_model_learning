@@ -208,8 +208,8 @@ ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
 # measurement data:
 # (encapsulate into lists of datasets and corresponding observable lables)
 if full_switch:
-    measurement_datasets = [sx, sy, sz]
-    measurement_observables = ['sigmax', 'sigmay', 'sigmaz']
+    measurement_datasets = [sx, sy]
+    measurement_observables = ['sigmax', 'sigmay']
     print('using full observable set')
 else:
     measurement_datasets = [sx]
