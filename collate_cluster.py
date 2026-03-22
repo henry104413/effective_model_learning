@@ -32,12 +32,12 @@ import time
 import copy
 
 # settings and source data:
-experiment_name_base = '260215'
+experiment_name_base = '260319_test1'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-noise_stdevs = [0.01, 0.05, 0.1]
+noise_stdevs = [0.1]
 Ds = [2]#[1,2,3]
-Rs = [i+1 for i in range(8)]#[1,2,3] # for combining chains - same for all Ds above
+Rs = [i+1 for i in range(6)]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 min_clusters = 2
 max_clusters = 10
@@ -45,6 +45,8 @@ bounds = []
 verbosity = 0
 burn = 0
 subsample = 1000 # take every however-many-eth point; 1 means every point taken
+only_saving_freshly_accepted = False # generally false as current proposal repeated in chain when new proposal rejected
+# note: needs to be set correctly for other lists lengths (likelihood etc) to match proposal lists lengths
 only_take_annealed = False
 # note: if no annealing was done (flag would have been false), this automatically takes all even if set to true
 vectorisation = 'parameters'
@@ -104,12 +106,13 @@ for noise_stdev in noise_stdevs:
                 # note: used in zip together with sequences of length of acceptance list (ie. maximum steps) 
                 return (i >= burn for i in range(len(proposals['acceptance'])))
             def accepted_proposals_to_include_filter():
-                # generator returning true if corresponding ACCEPTED proposal was after burn-in,
-                # and was annealed or annealing switched off or not taking only annealed
+                # generator returning true if corresponding proposal was after burn-in,
+                # and was annealed or annealing switched off or not taking only annealed,
+                # acceptance checked if only fresh accepted proposals were being saved (default is to repeat when rejected)
                 # note: used in zip together with sequences of length of only accepted proposals list
                 return ((x and y) for (x, y, z) in 
                         zip(annealing_steps_filter(), postburn_steps_filter(burn), proposals['acceptance'])
-                        if z)
+                        if (z or not only_saving_freshly_accepted))
             
             # select filtered proposals:
             if (model_objects_used := (model_objects_switch and ('proposals' in proposals))):
@@ -122,7 +125,8 @@ for noise_stdev in noise_stdevs:
             accepted_log_likelihoods_priors = [w for (w,x,y,z) 
                                                in zip(proposals['log_likelihood_prior'], proposals['acceptance'],
                                                       annealing_steps_filter(), postburn_steps_filter(burn))
-                                               if x and y and z]
+                                               if (x or not only_saving_freshly_accepted) and y and z]
+            
             # !!! note: only accepted proposals and vectors are saved in proposals, 
             # whereas other step-related entries in proposals dictionary are for all proposals regardless of acceptance
             
