@@ -59,8 +59,10 @@ default_chain_hyperparams = {
         'acc_window': 1000,
         'tweak_width_adaptation_factor': 5, # probably 5 is optimal
         'temperature_adaptation_factor': 1.4, # now say 2?
-        'acc_rate_max': 0.3,
+        'acc_rate_max': 0.5,
         'acc_rate_min': 0.1,
+        'tweak_width_adaptation_factor_rescaling': 0.9, 
+        
         
         'params_handler_hyperparams': { 
             'initial_tweak_widths': {'couplings' : 0.05, #0.4,

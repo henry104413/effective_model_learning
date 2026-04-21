@@ -80,6 +80,7 @@ class LearningChain:
         # target acceptance rate for tweak width tuning:
         # note: currently window covers all step types, but rate taken from only tweak steps (open to changing)
         tweak_width_adaptation_factor = 5.0
+        tweak_width_adaptation_factor_rescaling = 0.9
         temperature_adaptation_factor = 2.0
         acc_window = 1000
         acc_rate_max = 0.3
@@ -209,6 +210,7 @@ class LearningChain:
                  tweak_width_annealing_factor: float|int = False,
                  
                  tweak_width_adaptation_factor: float|int = False, 
+                 tweak_width_adaptation_factor_rescaling: float|int = False,
                  temperature_adaptation_factor: float|int = False, 
                  acc_window: float = False,
                  acc_rate_max: float = False,
@@ -498,6 +500,9 @@ class LearningChain:
                         self.params_handler.rescale_tweak_widths(1/self.tweak_width_adaptation_factor)
                     elif self.windows_acc_tweak[-1] > self.acc_rate_max: # ie. accepting too many
                         self.params_handler.rescale_tweak_widths(self.tweak_width_adaptation_factor)
+                    self.tweak_width_adaptation_factor *= self.tweak_width_adaptation_factor_rescaling
+                    # note: rescaling adaptation factor by another factor (assumed to be 0<x<1 !!),
+                    # to ensure asymptotic redution of adaptation for unique stationary distribution convergence
                         
                 # temperature adaptation:
                 # note: now based on overall acceptance ratio in last window
