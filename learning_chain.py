@@ -344,7 +344,7 @@ class LearningChain:
         # (immediately filtering parameters below instance-level thresholds)
         self.initialise_process_handler()
         self.process_handler.filter_params(self.current, self.params_thresholds)
-        self.current_loss = self.total_dev(self.current)
+        self.current_loss = self.SSE(self.current)
         self.best_loss = self.current_loss
         self.MH_temperature = self.sample_T()
         if not self.lean_mode:
@@ -690,7 +690,7 @@ class LearningChain:
             
                                   
             # evaluate new proposal (system evolution calculated here):
-            proposal_loss = self.total_dev(proposal)
+            proposal_loss = self.SSE(proposal)
             if not self.lean_mode:
                 self.explored_loss.append(proposal_loss)
                 self.explored_log_posterior.append(-(proposal_loss/(2*self.MH_temperature)
@@ -870,9 +870,9 @@ class LearningChain:
     
     
     
-    def total_dev(self, model: TYPE_MODEL) -> float:
+    def MSE(self, model: TYPE_MODEL) -> float:
         """
-        Calculates total deviation of argument model from target data. 
+        Calculates mean squared error of argument model prediction vs instance-level target data. 
         
         Returns equal sum over all instance-level target observables
         of mean squared error between instance-level target data
@@ -903,6 +903,38 @@ class LearningChain:
     
     
     
+    def SSE(self, model: TYPE_MODEL) -> float:
+        """
+        Calculates sum of squared errors of argument model prediction vs instance-level target data. 
+        
+        Returns equal sum over all instance-level target observables
+        of squared errors between instance-level target data
+        and argument model data evaluated at instance-level target times.
+        
+        Assumes target data is list of numpy arrays,
+        and target observables is same-length list of corresponding observable labels.
+        Also assumes all data arrays and times are same length (!).
+        Encapsulates data and observable in lists if single array and single label.
+        """
+        
+        if isinstance(self.target_datasets, np.ndarray) and isinstance(self.target_observables, str):
+            self.target_datasets =  [self.target_datasets]
+            self.target_observables = [self.target_observables]
+        
+        model_datasets = model.calculate_dynamics(evaluation_times = self.target_times, 
+                                                  observable_ops = self.target_observables,
+                                                  custom_function_on_return = self.custom_function_on_dynamics_return)
+        
+            
+        # add up sum of squared errors over different observables, assuming equal weighting:
+        # note: now datasets should all be lists of numpy arrays
+        total_SSE = 0
+        for i in range(len(model_datasets)):
+            total_SSE += np.sum(np.square(abs(model_datasets[i]-self.target_datasets[i])))
+        return total_SSE
+    
+
+
     def acceptance_probability(self, 
                    current: TYPE_MODEL | tuple[TYPE_MODEL, int | float], 
                    proposal: TYPE_MODEL | tuple[TYPE_MODEL, int | float], 
@@ -974,7 +1006,7 @@ class LearningChain:
         Arguments are either just model, or (model, loss of model);
         note: in latter case just returns arguments as is. 
         
-        Loss calculation uses instance level total_dev: callable[model: TYPE_MODEL]
+        Loss calculation uses instance level SSE: callable[model: TYPE_MODEL]
         - currently total deviation from chain instance level target data,
         as equal sum over all specified observables.
         
@@ -985,7 +1017,7 @@ class LearningChain:
         """
         
         if isinstance(arg, TYPE_MODEL):
-            return (arg, self.total_dev(arg))
+            return (arg, self.SSE(arg))
         elif (type(arg) == tuple and len(arg) == 2 
               and isinstance(arg[0], TYPE_MODEL) and isinstance(arg[1], int|float)):
             return (arg[0], arg[1]) # ie. return arg as is
