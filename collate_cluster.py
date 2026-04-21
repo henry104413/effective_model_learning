@@ -32,7 +32,7 @@ import time
 import copy
 
 # settings and source data:
-experiment_name_base = '260319_test1'
+experiment_name_base = '260319_test3'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 noise_stdevs = [0.1]

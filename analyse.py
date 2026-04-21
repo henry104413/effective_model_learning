@@ -23,14 +23,14 @@ import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # settings:
-experiment_name = '260213-test2' #'260224_test8'
-noise_stdev = 0.01 # set None if not included in file name
+experiment_name = '260326-4M' #'260224_test8'
+noise_stdev = 0.1 # set None if not included in file name
 D = 2
 Rs = [i+1 for i in range(10)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
-clustering_name = 'e100'
+clustering_name = 'e1000'
 chosen_k = 5 #  
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
@@ -43,7 +43,7 @@ if noise_stdev:
     experiment_name += '_std' + str(noise_stdev).replace('.','p')
 experiment_name += og_source
 output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
-               + clustering_name + '_k' + str(chosen_k))
+               + clustering_name + '_k' + str(chosen_k) + '_select')
 
 # import lists of models in each cluster (currenlty not centres though),
 # and example model (for parameter labels):
@@ -231,7 +231,7 @@ for cluster_combination in cluster_combinations:
     plt.figure(figsize=(10,5))
     dendrogram(Z, labels=data.columns, orientation='top', 
                leaf_rotation=90);
-    plt.ylabel('correlation')
+    plt.ylabel('dissimilarity')
     plt.savefig(output_name + '_Cs' + Cs_tag + '_dendrogram.svg', dpi = 1000, bbox_inches='tight')
     
     # plot correlation matrix with clustered parameters
@@ -300,6 +300,7 @@ plt.savefig(output_name + '_process_popularity' + '.svg',
 
 # section settings:
 cluster_choices = list(range(chosen_k)) # note: now taken from above section, enable if required separately
+cluster_choices = [1,3,4]
 samples = 1000
 
 # target data:
