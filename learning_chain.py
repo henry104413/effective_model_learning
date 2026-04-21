@@ -891,7 +891,8 @@ class LearningChain:
         model_datasets = model.calculate_dynamics(evaluation_times = self.target_times, 
                                                   observable_ops = self.target_observables,
                                                   custom_function_on_return = self.custom_function_on_dynamics_return)
-          
+        
+            
         # add up mean-squared-error over different observables, assuming equal weighting:
         # note: now datasets should all be lists of numpy arrays
         total_MSE = 0

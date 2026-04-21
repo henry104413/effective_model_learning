@@ -994,18 +994,25 @@ plt.legend(title = 'noise stdev')
 #%%
 # for inspection of proposals pickle (saved model attributes and accepted proposals)
 
+#simulated-std0p1_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle.py
+
 import pickle
-with open('260302_test1_std0p1_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R3_proposals.pickle',
+with open('250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
           'rb') as filestream:
     A = pickle.load(filestream)
+with open('260326-4M_std0p1_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
+          'rb') as filestream:
+    B = pickle.load(filestream)
     
-for key in A.keys():
-    print('\n' + str(key) + ': ')
-    print(type(A[key]))
-    try:
-        print(str(len(A[key])))
-    except Exception as e:
-        print(e)
+
+    
+# for key in A.keys():
+#     print('\n' + str(key) + ': ')
+#     print(type(A[key]))
+#     try:
+#         print(str(len(A[key])))
+#     except Exception as e:
+#         print(e)
         
 #%%
 
