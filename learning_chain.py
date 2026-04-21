@@ -83,8 +83,8 @@ class LearningChain:
         tweak_width_adaptation_factor_rescaling = 0.9
         temperature_adaptation_factor = 2.0
         acc_window = 1000
-        acc_rate_max = 0.3
-        acc_rate_min = 0.05
+        acc_rate_max = 0.5
+        acc_rate_min = 0.1
         
         params_handler_hyperparams = {
             'initial_tweak_widths': {'couplings' : 0.1,
