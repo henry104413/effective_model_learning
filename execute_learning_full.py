@@ -98,7 +98,7 @@ except:
 try:
     noise_stdev = float(sys.argv[9])
 except:
-    noise_stdev = 0.1
+    noise_stdev = 0.0
 
 # set iterations at which shock annealing is performed
 # ie. when initial_jump_lengths are updated to annealed_jump_lengths
@@ -156,7 +156,7 @@ for supersede in configs.specific_experiment_chain_hyperparams[subexperiment_nam
 
 # if passed and set above, then populate in config both shock_anneal_at, 
 # and temperature (twice the noise variance, ie. 2* noise_stdev**2)
-# but NOT if in configs set as tuple in which case temperature will be sampled from gamma distribution
+# but NOT if in configs set as tuple in which case temperature will be sampled from inverse gamma distribution
 # TO DO: implement passing it here but tricky with  variably 1 or 2 parameter bash argument
 if noise_stdev:
     if type(config['temperature_proposal']) in [int, float, bool]:
@@ -188,34 +188,46 @@ print(filename, flush = True)
 #%% prepare simulated multi-observable training datasets:
 # !!! NOTE: this currently means not using specified target file but taking data from file below instead:
 
-# note - current use:
-# known noise stdev used to load data,
-# anod to specify Metropolis-Hastings temperature as = 2 * noise VARIANCE;
-# target data filename contains after experiment name this noise stdev as e.g. std0p01, meaning stdev = 0.01
-# - hence now temperature proposal taken as static (as opposed to sampling from a gamma distribution)
-    
-# import dictionary of ts, sx, sy, sz observable values 
-# (sx equal to original and rest simulated, all with noise with std = 0.01)   
-noise_level_in_filename = str(noise_stdev).replace('.', 'p') if type(noise_stdev) in [int, float] else ''
-with open('simulated-std' 
-          + noise_level_in_filename
-          + '_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle.csv',
-          'rb') as filestream:
-    simulated_data = pickle.load(filestream)    
-ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
-        
+simulated_switch = False
 
-# measurement data:
-# (encapsulate into lists of datasets and corresponding observable lables)
-if full_switch:
-    measurement_datasets = [sx, sy]
-    measurement_observables = ['sigmax', 'sigmay']
-    print('using full observable set')
+if simulated_switch:    
+    
+    # note - current use:
+    # known noise stdev used to load data,
+    # anod to specify Metropolis-Hastings temperature as = 2 * noise VARIANCE;
+    # target data filename contains after experiment name this noise stdev as e.g. std0p01, meaning stdev = 0.01
+    # - hence now temperature proposal taken as static (as opposed to sampling from a gamma distribution)
+        
+    # import dictionary of ts, sx, sy, sz observable values 
+    # (sx equal to original and rest simulated, all with noise with std = 0.01)   
+    noise_level_in_filename = str(noise_stdev).replace('.', 'p') if type(noise_stdev) in [int, float] else ''
+    with open('simulated-std' 
+              + noise_level_in_filename
+              + '_250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle.csv',
+              'rb') as filestream:
+        simulated_data = pickle.load(filestream)    
+    ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
+            
+    
+    # measurement data:
+    # (encapsulate into lists of datasets and corresponding observable lables)
+    if full_switch:
+        measurement_datasets = [sx, sy]
+        measurement_observables = ['sigmax', 'sigmay']
+        print('using full observable set')
+    else:
+        measurement_datasets = [sx]
+        measurement_observables = ['sigmax']
+        print('using single observable')
+                
 else:
+    # if this, then using imported experiment data (corresponding to sigma x)
+    imported_data = np.genfromtxt(target_file, delimiter=',').transpose()
+    ts, sx = imported_data[0], imported_data[1]
     measurement_datasets = [sx]
     measurement_observables = ['sigmax']
-    print('using single observable')
-            
+    
+        
 # times and measurement data to use for training:
 # (encapsulate into lists of datasets and corresponding observable lables:)
 # note: currently here not training on subset but can be implemented like below:

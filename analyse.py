@@ -23,15 +23,15 @@ import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # settings:
-experiment_name = '260326-4M' #'260224_test8'
+experiment_name = '260422-4M' #'260224_test8'
 noise_stdev = 0.1 # set None if not included in file name
 D = 2
-Rs = [i+1 for i in range(10)] # for D2
+Rs = [i+1 for i in range(9)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e1000'
-chosen_k = 5 #  
+chosen_k = 5 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -136,7 +136,7 @@ if not True:
             plt.errorbar(ts, simulated_data[op], yerr = noise_stdev, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
             plt.plot(evaluation_ts, centres_datasets[op][c], 
                      'r-', linewidth = 1, alpha = 0.7, label = 'model')
-            plt.legend()
+            plt.legend(fontsize = 'small')
             plt.title('cluster centre ' + str(c))
             plt.savefig(output_name + '_C' + str(c) + '_centre_' + str(op) + '_comparison' + '.svg', 
                         dpi = 1000, bbox_inches='tight')
@@ -170,7 +170,7 @@ if not True:
             plt.errorbar(ts, simulated_data[op], yerr = noise_stdev, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
             plt.plot(evaluation_ts, champions_datasets[op][c], 
                      'r-', linewidth = 1, alpha = 0.7, label = 'model')
-            plt.legend()
+            plt.legend(fontsize = 'small')
             plt.title('cluster champion ' + str(c))
             plt.savefig(output_name + '_C' + str(c) + '_champion_' + str(op) + '_comparison' + '.svg',
                         dpi = 1000, bbox_inches='tight')
@@ -283,7 +283,7 @@ for i, cluster_choice in enumerate(cluster_choices):
 plt.xlabel('presence')
 plt.ylabel('parameter')
 plt.yticks(range(len(labels)), labels_latex)
-plt.legend()
+plt.legend(fontsize = 'small')
 plt.savefig(output_name + '_process_popularity' + '.svg', 
             dpi = 1000, bbox_inches='tight')
 
@@ -300,7 +300,7 @@ plt.savefig(output_name + '_process_popularity' + '.svg',
 
 # section settings:
 cluster_choices = list(range(chosen_k)) # note: now taken from above section, enable if required separately
-cluster_choices = [1,3,4]
+#cluster_choices = [1,3,4]
 samples = 1000
 
 # target data:
@@ -358,7 +358,7 @@ for j, chosen_cluster in enumerate(cluster_choices):
                          alpha=0.3, color='tomato', label = 'cluster ' + str(chosen_cluster))
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                      fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
-        plt.legend()
+        plt.legend(fontsize = 'small')
         plt.savefig(output_name + '_C' + str(chosen_cluster)
                     + '_samp' + str(min(samples, len(model_set)))
                     + '_' + op + '_solo.svg', dpi = 1000, bbox_inches='tight')
@@ -371,7 +371,7 @@ for j, chosen_cluster in enumerate(cluster_choices):
         elif j > 0:
             cumul_evaluated_arrays[obs] = np.concatenate((cumul_evaluated_arrays[obs], evaluated_arrays[obs]), axis = 0)
     
-    
+#%%    
 # plot all chosen clusters combined, and all chosen clusters separate dynamics overlay 
 key = tuple(cluster_choices)
 clusters_label = 'clusters ' + ''.join([str(x) + ', ' for x in cluster_choices])[:-2]
@@ -394,7 +394,7 @@ for i, op in enumerate(measurement_observables):
                      alpha=0.3, color='tomato', label = clusters_label)
     plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                  fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.5)
-    plt.legend()
+    plt.legend(fontsize = 'small')
     plt.savefig(output_name + '_Cs' + clusters_label_short
                 + '_samp' + str(min(samples, len(model_set)))
                 + '_' + op + '_lump.svg', dpi = 1000, bbox_inches='tight')
@@ -409,10 +409,10 @@ for i, op in enumerate(measurement_observables):
     for key in cluster_choices: 
         plt.plot(evaluation_ts, means[key][op], '-', linewidth = 0.7, alpha = 0.7)
         plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
-                         alpha=0.2, label = 'cluster ' + str(key))
+                         alpha=0.2, label = '' + str(key))
     plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                  fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.5)
-    plt.legend()
+    plt.legend(ncol = 2, fontsize = 'small')
     plt.savefig(output_name + '_Cs' + clusters_label_short
                 + '_samp' + str(min(samples, len(model_set)))
                 + '_' + op + '_overlay.svg', dpi = 1000, bbox_inches='tight')
@@ -453,7 +453,7 @@ plt.savefig(output_name + '_champions_k' + str(chosen_k) + '.png',  dpi = 1000, 
     
 
 #%%
-# histogram of chosen parameter values as a slice of posterior distrubution (pdf)
+# histogram of chosen parameter values as a marginal of posterior distrubution (pdf)
 
 points_array = np.stack(points) # columns for each parameter so that this[:, j] are j-th parameter values
 
@@ -463,6 +463,7 @@ for j in range(20):
         # remove zeros:
         vals_onlynonzero = vals[vals != 0]
     param_label = labels_latex[j]
+    filename_label = labels[j]
     plt.figure()
     #bins = 10 ** np.linspace(min(vals), max(vals), 100)
     if False:
@@ -470,9 +471,13 @@ for j in range(20):
                  ,bins = 100, label = 'all'
                  )
     plt.hist(vals_onlynonzero, alpha = 0.5, color = 'firebrick'
-             ,bins = 100, label = 'non-zero'
+             ,bins = 400, label = 'non-zero'
              )
     plt.xlabel(param_label)
     plt.ylim(0,600)
     #plt.xscale('log')
     plt.ylabel('count')
+    
+    plt.savefig(output_name
+                + '_samp' + str(min(samples, len(model_set)))
+                + '_hist' + filename_label + '.svg', dpi = 1000, bbox_inches='tight')

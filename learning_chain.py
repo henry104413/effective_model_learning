@@ -323,7 +323,7 @@ class LearningChain:
         if not self.lean_mode:
             self.explored_loss = []
             self.explored_acceptance_probability = []
-            self.explored_log_posterior = []
+        self.explored_log_posterior = []
         self.explored_log_likelihood_prior = []
         self.current = copy.deepcopy(self.initial)
         self.best = copy.deepcopy(self.current)
@@ -351,8 +351,8 @@ class LearningChain:
         self.MH_temperature = self.sample_T()
         if not self.lean_mode:
             self.explored_loss.append(self.current_loss)
-            self.explored_log_posterior.append(-(self.current_loss/(2*self.MH_temperature)
-                                             + self.prior(self.current, return_minus_log_of=True)))
+        self.explored_log_posterior.append(-(self.current_loss/(2*self.MH_temperature)
+                                         + self.prior(self.current, return_minus_log_of=True)))
         self.explored_log_likelihood_prior.append((-self.current_loss/(2*self.MH_temperature),
                                                    -self.prior(self.current, return_minus_log_of=True)))
         if self.store_all_proposals: self.explored_proposals.append(copy.deepcopy(self.initial))
@@ -426,8 +426,8 @@ class LearningChain:
                 if not self.lean_mode:
                     self.annealing_tracker.append(now_annealed)
                     self.explored_loss.append(self.current_loss)
-                    self.explored_log_posterior.append(-(self.current_loss/(2*self.MH_temperature)
-                                                         + self.prior(self.current, return_minus_log_of=True)))
+                self.explored_log_posterior.append(-(self.current_loss/(2*self.MH_temperature)
+                                                     + self.prior(self.current, return_minus_log_of=True)))
                 self.explored_log_likelihood_prior.append((-self.current_loss/(2*self.MH_temperature),
                                                            -self.prior(self.current, return_minus_log_of=True)))
                 self.step_type_tracker.append('jump to best')
@@ -698,8 +698,8 @@ class LearningChain:
             proposal_loss = self.SSE(proposal)
             if not self.lean_mode:
                 self.explored_loss.append(proposal_loss)
-                self.explored_log_posterior.append(-(proposal_loss/(2*self.MH_temperature)
-                                                     + self.prior(proposal, return_minus_log_of=True)))
+            self.explored_log_posterior.append(-(proposal_loss/(2*self.MH_temperature)
+                                                 + self.prior(proposal, return_minus_log_of=True)))
             self.explored_log_likelihood_prior.append((-proposal_loss/(2*self.MH_temperature),
                                                        -self.prior(proposal, return_minus_log_of=True)))
             # !!! note: currently assumes flat priors on allowed parameter values,
@@ -758,9 +758,9 @@ class LearningChain:
                              }
         if not self.lean_mode:
             self.all_proposals['loss'] = self.explored_loss
-            self.all_proposals['log_posterior'] = self.explored_log_posterior
             self.all_proposals['acceptance_probability'] = self.explored_acceptance_probability
             self.all_proposals['annealed'] = self.annealing_tracker
+        self.all_proposals['log_posterior'] = self.explored_log_posterior
         if self.store_all_proposals:
             self.all_proposals['proposals'] = self.explored_proposals
         self.all_proposals['vectors'] = self.explored_acc_vectors
