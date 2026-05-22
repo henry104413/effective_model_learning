@@ -129,7 +129,7 @@ if not True:
         for o, op in enumerate(centres_datasets.keys()):
             centres_datasets[op].append(temp[o])
             plt.figure()
-            plt.xlabel('t (us)')
+            plt.xlabel(r't ($\mu s$)')
             plt.ylabel(ops_longlabels[op])
             plt.ylim([-1, 1])
             #plt.plot(ts, simulated_data[op], 'b.', markersize = 1, label = 'target')
@@ -164,7 +164,7 @@ if not True:
         for o, op in enumerate(champions_datasets.keys()):
             champions_datasets[op].append(temp[o])
             plt.figure()
-            plt.xlabel('t (us)')
+            plt.xlabel(r't ($\mu s$)')
             plt.ylabel(ops_longlabels[op])
             plt.ylim([-1, 1])
             plt.errorbar(ts, simulated_data[op], yerr = noise_stdev, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
@@ -350,7 +350,7 @@ for j, chosen_cluster in enumerate(cluster_choices):
     
     for i, op in enumerate(measurement_observables):
         plt.figure()
-        plt.xlabel('t (us)')
+        plt.xlabel(r't ($\mu s$)')
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-1, 1])
         plt.plot(evaluation_ts, means[chosen_cluster][op], 'r-', linewidth = 0.7, alpha = 0.7)
@@ -386,7 +386,7 @@ for i, op in enumerate(measurement_observables):
     # plot cumulative means and stds (combining all chosen clusters):
     key = tuple(cluster_choices)
     plt.figure()
-    plt.xlabel('t (us)')
+    plt.xlabel(r't ($\mu s$)')
     plt.ylabel(ops_longlabels[op])
     plt.ylim([-1, 1])
     plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = 0.7, alpha = 0.7)
@@ -403,7 +403,7 @@ for i, op in enumerate(measurement_observables):
     # plot together means with stds filling for all clusters (overlay)
     # note: maybe manually specify list of colours
     plt.figure()
-    plt.xlabel('t (us)')
+    plt.xlabel(r't ($\mu s$)')
     plt.ylabel(ops_longlabels[op])
     plt.ylim([-1, 1])
     for key in cluster_choices: 

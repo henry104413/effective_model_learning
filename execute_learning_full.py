@@ -188,7 +188,7 @@ print(filename, flush = True)
 #%% prepare simulated multi-observable training datasets:
 # !!! NOTE: this currently means not using specified target file but taking data from file below instead:
 
-simulated_switch = False
+simulated_switch = True
 
 if simulated_switch:    
     
@@ -222,8 +222,8 @@ if simulated_switch:
                 
 else:
     # if this, then using imported experiment data (corresponding to sigma x)
-    imported_data = np.genfromtxt(target_file, delimiter=',').transpose()
-    ts, sx = imported_data[0], imported_data[1]
+    imported_data = np.genfromtxt(target_file + '.csv', delimiter=',').transpose()
+    ts, sx = imported_data[0]/1000, imported_data[1] # note: convert time to us here (from original ns)
     measurement_datasets = [sx]
     measurement_observables = ['sigmax']
     
