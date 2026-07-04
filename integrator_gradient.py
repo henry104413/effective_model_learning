@@ -24,10 +24,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import diffrax
 
-a,b,c = 2,3,4
-y0 = 0
-ts = np.linspace(0, 3, 2)
-variance = 1
+a,b,c = float(2), float(3), float(4)
+y0 = float(0)
+ts = np.linspace(0, 3, 100)
+variance = float(1)
 
 # differential equation term:
 def H(t,y,args): 
@@ -44,12 +44,15 @@ def H(t,y,args):
 ys_scipy = sp.integrate.odeint(H, y0, ts, args=((a,b,c),), tfirst=True)
 D = jax.numpy.reshape(jax.numpy.array(ys_scipy), shape = (len(ys_scipy)))
 
+
 # take care!!! shapes of arrays from scipy and diffrax are different!!!
 # it automatically converts for the difference but as one has more dimensions, element wise no longer works as intended - recast!!!
 # scipy comes out as numpy array [[y1,y2,...]] - need to reshape that to single dimension array (of shape (len(ys))
 
 # find gradient of likelihood now as function of guessed a,b,c
-def FL(D,variance,ts,y0,a,b,c):
+def FL(guess_a,guess_b,guess_c,D,variance,ts,y0):
+    
+    a,b,c = guess_a,guess_b,guess_c 
     
     # differential equation term:
     def H(t,y,args): 
@@ -77,7 +80,7 @@ def FL(D,variance,ts,y0,a,b,c):
     
     ys = sol_diffrax.ys
     
-    # check against scipy: (just for verification)
+    #check against scipy: (just for verification)
     # print('D:\n' + str(D))
     # print('ys:\n' + str(ys))
     # print('D-ys:\n' + str((D - ys)))
@@ -90,9 +93,56 @@ def FL(D,variance,ts,y0,a,b,c):
     # plt.legend()
     
     SSE = jax.numpy.sum(jax.numpy.square((D - ys)))
-    likelihood = jax.numpy.exp(-SSE/variance)
-    return float(likelihood)
+    
+    # # normal likelihood:
+    # likelihood = jax.numpy.exp(-SSE/variance)
+    # return likelihood
 
-likelihood = FL(D,variance,ts,y0,a,b,c)
+    # log likelihood:
+    return -SSE/variance
+
+
+variance = jax.numpy.array(variance)
+y0 = jax.numpy.array(y0) 
+ts = jax.numpy.array(ts)
+
+grad_FL = jax.grad(FL, argnums = (0,1,2), allow_int=True)
+
+init_a, init_b, init_c = float(2.5), float(2.5), float(4.5)
+
+guess_a, guess_b, guess_c = jax. numpy.array(init_a), jax. numpy.array(init_b), jax. numpy.array(init_c)
+likelihood = FL(guess_a, guess_b, guess_c, D,variance,ts,y0)
 print(likelihood)
 
+gradient = grad_FL(guess_a, guess_b, guess_c, D, variance, ts, y0)
+grad_a, grad_b, grad_c = gradient
+print('grad a: ')
+print(grad_a)
+print('grad b: ')
+print(grad_b)
+print('grad b: ')
+print(grad_c)
+
+step_size = jax.numpy.array(0.1)
+max_steps = int(100)
+for i in range(max_steps):
+    guess_a += step_size*grad_a
+    guess_b += step_size*grad_b
+    guess_c += step_size*grad_c
+    gradient = grad_FL(guess_a, guess_b, guess_c, D, variance, ts, y0)
+    grad_a, grad_b, grad_c = gradient
+    print('grad a: ')
+    print(grad_a)
+    print('grad b: ')
+    print(grad_b)
+    print('grad b: ')
+    print(grad_c)
+    
+print(likelihood)
+print(guess_a)
+print(guess_b)
+print(guess_c)    
+    
+# grad_FL_wrt_a = jax.grad(FL, argnums = (0), allow_int=True)
+# print(grad_FL_wrt_a(guess_a,guess_b,guess_c,D,variance,ts,y0))
+# evaluated at arguments of function to be differentiated
