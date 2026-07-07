@@ -30,12 +30,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import diffrax
 
-params = (float(2)) #, float(3), float(4)) # must be a tuple, formerly (a,b,c)
+params = (float(2),float(3), float(2.5)) # must be a tuple of floats!!! formerly (a,b,c)
 # this seriously must be floats!! jax hates int... even with explicit argument to allow int it breaks
 dim = len(params)
 y0 = float(0)
 ts = np.linspace(0, 3, 100)
-variance = float(1)
+variance = float(0.1)
 
 # differential equation term:
 def H(t,y,args): 
@@ -48,10 +48,10 @@ def H(t,y,args):
     #a,b,c = args
     #return a - b*t - c*y
     
-    return args[0] # ie. dy/dt = a
+    return args[0] - args[1]*t - args[2]*y
 
 
-# scipy solution:
+# scipy solution - target data:
 ys_scipy = sp.integrate.odeint(H, y0, ts, args=(params,), tfirst=True)
 D = jax.numpy.reshape(jax.numpy.array(ys_scipy), shape = (len(ys_scipy)))
 
@@ -71,7 +71,7 @@ def FL(guess_params,D,variance,ts,y0):
         # and 2) need to set tfirst = True in scipy integrator
         
         #return a - b*t - c*y
-        return guess_params[0]
+        return guess_params[0] - guess_params[1]*t - guess_params[2]*y
     
     # diffrax (using jax) solution:
     stepsize_controller = diffrax.PIDController(rtol=1e-3, atol=1e-6)
@@ -114,7 +114,8 @@ variance = jax.numpy.array(variance)
 y0 = jax.numpy.array(y0) 
 ts = jax.numpy.array(ts)
 
-guess_params = jax.numpy.array(params) # this is immutable so can save without deepcopy (tested)
+#guess_params = jax.numpy.array(tuple(i+0.5 for i in params)) # this is immutable so can save without deepcopy (tested)
+guess_params = jax.numpy.array((float(2.5), float(2.5), float(2.5)))
 guess_params_init = guess_params
 likelihood_init = FL(guess_params, D,variance,ts,y0)
 print('starting params:\n' + str(guess_params_init))
@@ -134,20 +135,52 @@ grad_FL = jax.grad(FL, argnums = 0, allow_int=True)
 
 
 # optimise parameters:
-step_size = jax.numpy.array(0.1)
-max_steps = int(100)
+step_size_mean_std = (0.05, 0.05) #jax.numpy.array(0.1)
+# note: currently same for all parameters
+max_steps = int(30)
+explored_params = []
+explored_likelihood = []
 for i in range(max_steps):
     
     # find gradient at current parameters
     gradient = grad_FL(guess_params, D, variance, ts, y0)
     
-    # update with step of fixed size - MAYBE CHANGE THIS?
-    guess_params += step_size*gradient
+    # sample step size AND CONVERT TO JAX
+    step_size = np.random.normal(*step_size_mean_std)
+    step_size = jax.numpy.array(step_size)
     
-likelihood_final = FL(guess_params, D,variance,ts,y0)
+    # update with step of fixed size times gradient - unstable as hell (sometimes gradient is very steep!)
+    # guess_params += step_size*gradient
+    guess_params += step_size*jax.numpy.sign(gradient)
+    
+    likelihood_current = FL(guess_params, D,variance,ts,y0)
+    # print for troubleshooting:
+    # print('gradient: ' + str(gradient))
+    # print('new params: ' + str(guess_params))
+    # print('current likelihood: ' + str(likelihood_current))
+    
+    explored_params.append(guess_params)
+    explored_likelihood.append(likelihood_current)
+    
 print('final params:\n' + str(guess_params))
-print('final log likelihood:\n' + str(likelihood_final))
-    
+print('final log likelihood:\n' + str(likelihood_current))
+
+#%%  
+plt.figure()
+params_progression = [[] for i in guess_params]
+for i in range(len(params)):
+    params_progression[i] = [x[i] for x in explored_params]
+    plt.plot(params_progression[i])
+plt.figure()
+plt.plot(explored_likelihood)#, yscale='log')
+
 # grad_FL_wrt_a = jax.grad(FL, argnums = (0), allow_int=True)
 # print(grad_FL_wrt_a(guess_a,guess_b,guess_c,D,variance,ts,y0))
 # evaluated at arguments of function to be differentiated
+
+# CONTINUE HERE
+# TRIPLE CHECK THAT GRADIENT APPLIED WITH CORRECT SIGN!!!
+# # in both cases now likelihood epxplodes downwards...
+
+
+## mm the parameters dont start where they should - 
