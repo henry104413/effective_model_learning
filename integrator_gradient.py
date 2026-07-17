@@ -135,9 +135,9 @@ grad_FL = jax.grad(FL, argnums = 0, allow_int=True)
 
 
 # optimise parameters:
-step_size_mean_std = (0.05, 0.05) #jax.numpy.array(0.1)
+step_size_mean_std = (0.01, 0.0) #jax.numpy.array(0.1)
 # note: currently same for all parameters
-max_steps = int(30)
+max_steps = int(10)
 explored_params = []
 explored_likelihood = []
 for i in range(max_steps):
@@ -150,8 +150,8 @@ for i in range(max_steps):
     step_size = jax.numpy.array(step_size)
     
     # update with step of fixed size times gradient - unstable as hell (sometimes gradient is very steep!)
-    # guess_params += step_size*gradient
-    guess_params += step_size*jax.numpy.sign(gradient)
+    guess_params += step_size*gradient
+    #guess_params += step_size*jax.numpy.sign(gradient)
     
     likelihood_current = FL(guess_params, D,variance,ts,y0)
     # print for troubleshooting:
@@ -166,13 +166,25 @@ print('final params:\n' + str(guess_params))
 print('final log likelihood:\n' + str(likelihood_current))
 
 #%%  
+mu, sigma = step_size_mean_std
+experiment = r'grad $\times \alpha$' + '\n' + r'$\mu=0.01, \sigma=0.0$'
 plt.figure()
 params_progression = [[] for i in guess_params]
+colours = ['r','g','b','m']
 for i in range(len(params)):
     params_progression[i] = [x[i] for x in explored_params]
-    plt.plot(params_progression[i])
+    plt.plot(params_progression[i], c = colours[i], label = 'learned')
+    plt.plot([params[i] for x in range(len(params_progression[i]))], ':', c = colours[i], label = 'true', alpha = 0.7)
+plt.ylabel('parameter')
+plt.xlabel('step')
+plt.title(experiment)
+plt.savefig(experiment + 'params.svg', dpi = 1000, bbox_inches='tight')
 plt.figure()
 plt.plot(explored_likelihood)#, yscale='log')
+plt.ylabel('log likelihood')
+plt.xlabel('step')
+plt.title(experiment)
+plt.savefig(experiment + 'LL.svg', dpi = 1000, bbox_inches='tight')
 
 # grad_FL_wrt_a = jax.grad(FL, argnums = (0), allow_int=True)
 # print(grad_FL_wrt_a(guess_a,guess_b,guess_c,D,variance,ts,y0))
