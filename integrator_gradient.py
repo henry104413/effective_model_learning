@@ -135,29 +135,39 @@ grad_FL = jax.grad(FL, argnums = 0, allow_int=True)
 
 
 # optimise parameters:
-step_size_mean_std = (0.01, 0.0) #jax.numpy.array(0.1)
+step_size_mean_std = (0.002, 0.0004) #jax.numpy.array(0.1)
+grad_scale = 100
+grad_min, grad_max = -float(grad_scale), float(grad_scale)
 # note: currently same for all parameters
-max_steps = int(10)
+max_steps = int(200)
 explored_params = []
 explored_likelihood = []
 for i in range(max_steps):
     
-    # find gradient at current parameters
+    # find gradient at current parameters AND CLIP
     gradient = grad_FL(guess_params, D, variance, ts, y0)
+    clipped_gradient = jax.numpy.clip(gradient, min = grad_min, max = grad_max)
     
     # sample step size AND CONVERT TO JAX
-    step_size = np.random.normal(*step_size_mean_std)
+    step_size = np.random.normal(*step_size_mean_std, size = clipped_gradient.shape)
+    print(step_size)
+    # now separatly drawing step size for each parameter
     step_size = jax.numpy.array(step_size)
     
+    guess_params += step_size*clipped_gradient
+    
+    
+    # ok do jax element wise clipping on gradient rather than step size... seems more standard!
+    
     # update with step of fixed size times gradient - unstable as hell (sometimes gradient is very steep!)
-    guess_params += step_size*gradient
-    #guess_params += step_size*jax.numpy.sign(gradient)
+    # guess_params += step_size*jax.numpy.sign(gradient)
     
     likelihood_current = FL(guess_params, D,variance,ts,y0)
     # print for troubleshooting:
-    # print('gradient: ' + str(gradient))
-    # print('new params: ' + str(guess_params))
-    # print('current likelihood: ' + str(likelihood_current))
+    print('gradient: ' + str(gradient))
+    print('clipped gradient: ' + str(clipped_gradient))
+    print('new params: ' + str(guess_params))
+    print('current likelihood: ' + str(likelihood_current))
     
     explored_params.append(guess_params)
     explored_likelihood.append(likelihood_current)
