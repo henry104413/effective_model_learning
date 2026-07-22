@@ -60,23 +60,50 @@ D = jax.numpy.reshape(jax.numpy.array(ys_scipy), shape = (len(ys_scipy)))
 # it automatically converts for the difference but as one has more dimensions, element wise no longer works as intended - recast!!!
 # scipy comes out as numpy array [[y1,y2,...]] - need to reshape that to single dimension array (of shape (len(ys))
 
+stepsize_controller = diffrax.PIDController(rtol=1e-3, atol=1e-6)
+solver = diffrax.Kvaerno5()
+# getting "LLVM compilation error: Cannot allocate memory" earlier
+# probably recompiling and eating memory
+# with both stepsize controller and solver out of FL, 122 iteration with no LLVM 
+# just try which one was causing it...
+# and got it at interation 145...
+# "E0721 09:48:13.935939   46283 execution_engine.cc:54] LLVM compilation error: Cannot allocate memory"
+# does that mean compilation happens at every step?
+# check how both the gradient and the ODE solver work, if they require compilation...
+# error tracing suggests diffrax.diffeqsolve call
+# then calls JIT compiler... 
+# also maybe try with lambda instead of def H??
+# lambda doesn't work either and already crashes after 20 iterations - maybe it keeps stuff from previous runs?
+# the compiler doesn't reset between runs btw. so need to restart kernel/spyder?
+# after error no more iterations possible when rerun...
+# so basically diffrax solution leads to compilation and one can only do so many cause
+# ....the compiled stuff gets held in the memory??
+# ram taken (by "python") grows with every iteration... it shouldn't... not explained by what's stored
+# so it keeps the compiled functions for each iteration???
+# either dump it or better still stop it being recompliled every time??? ok at 154 5.4GB RAM crashed
+
+
 # find gradient of likelihood now as function of guessed a,b,c
 def FL(guess_params,D,variance,ts,y0):
     
-    # differential equation term:
-    def H(t,y,args): 
-        # two things!! 
-        # scipy by default assumes arguments (y,t, *args), whereas diffrax (t,y,args) - so:
-        # so 1) passing ((a,b,c),) 
-        # and 2) need to set tfirst = True in scipy integrator
+    # # differential equation term:
+    # def H(t,y,args): 
+    #     # two things!! 
+    #     # scipy by default assumes arguments (y,t, *args), whereas diffrax (t,y,args) - so:
+    #     # so 1) passing ((a,b,c),) 
+    #     # and 2) need to set tfirst = True in scipy integrator
         
-        #return a - b*t - c*y
-        return guess_params[0] - guess_params[1]*t - guess_params[2]*y
+    #     #return a - b*t - c*y
+    #     #return guess_params[0] - guess_params[1]*t - guess_params[2]*y
+    #     return args[0] - args[1]*t - args[2]*y
+    
+    # wait a moment... should this not be args for the guess params????
+    # also rewrite with lambda...
+    #lambda t,y,args:  
     
     # diffrax (using jax) solution:
-    stepsize_controller = diffrax.PIDController(rtol=1e-3, atol=1e-6)
-    sol_diffrax = diffrax.diffeqsolve(terms = diffrax.ODETerm(H),
-                                     solver = diffrax.Kvaerno5(),
+    sol_diffrax = diffrax.diffeqsolve(terms = diffrax.ODETerm(lambda t,y,args: args[0] - args[1]*t - args[2]*y),
+                                     solver = solver,
                                      t0 = ts[0], t1 = ts[-1],
                                      dt0 = (ts[1] - ts[0])/100,
                                      y0 = y0,
@@ -135,13 +162,16 @@ grad_FL = jax.grad(FL, argnums = 0, allow_int=True)
 
 
 # optimise parameters:
-step_size_mean_std = (0.002, 0.0004) #jax.numpy.array(0.1)
+step_size_mean_std = (0.001, 0.0002) #jax.numpy.array(0.1)
 grad_scale = 100
 grad_min, grad_max = -float(grad_scale), float(grad_scale)
 # note: currently same for all parameters
 max_steps = int(200)
 explored_params = []
 explored_likelihood = []
+explored_params.append(guess_params)
+explored_likelihood.append(likelihood_init)
+
 for i in range(max_steps):
     
     # find gradient at current parameters AND CLIP
@@ -150,7 +180,7 @@ for i in range(max_steps):
     
     # sample step size AND CONVERT TO JAX
     step_size = np.random.normal(*step_size_mean_std, size = clipped_gradient.shape)
-    print(step_size)
+    
     # now separatly drawing step size for each parameter
     step_size = jax.numpy.array(step_size)
     
@@ -164,6 +194,8 @@ for i in range(max_steps):
     
     likelihood_current = FL(guess_params, D,variance,ts,y0)
     # print for troubleshooting:
+    print('iteration: ' + str(i))    
+    print('step sizes: ' + str(step_size))
     print('gradient: ' + str(gradient))
     print('clipped gradient: ' + str(clipped_gradient))
     print('new params: ' + str(guess_params))
