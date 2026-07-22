@@ -33,26 +33,14 @@ import equinox as eqx # this is for debugging and checking compilation...
 
 params = jax.numpy.array([2.1,8,4,1], dtype=float) # must be a tuple of floats!!! formerly (a,b,c)
 #guess_params = jax.numpy.array([2.5 for i in params], dtype=float)
-guess_params = jax.numpy.array([5,10,4.1,1.3], dtype=float)
+guess_params = jax.numpy.array([5,10,2,1.3], dtype=float)
 # this seriously must be floats!! jax hates int... even with explicit argument to allow int it breaks
-y0 = jax.numpy.array(0, dtype=float)
-ts = jax.numpy.linspace(0, 3, 1000, dtype=float)
+y0 = jax.numpy.array(2, dtype=float)
+ts = jax.numpy.linspace(0, 1, 1000, dtype=float)
 variance = jax.numpy.array(1, dtype=float)
 
-# # differential equation term:
-# def H(t,y,args): 
-#     # two things!! 
-#     # scipy by default assumes arguments (y,t, *args), whereas diffrax (t,y,args) - so:
-#     # so 1) passing ((a,b,c),) - this receives already unwrapped whatever was passed
-#     # hence assuming args is a TUPLE now
-#     # and 2) need to set tfirst = True in scipy integrator
-    
-#     #a,b,c = args
-#     #return a - b*t - c*y
-    
-#     return args[0] - args[1]*t - args[2]*y
 
-dy_dt = lambda t,y,args: args[0] - args[1]*t - args[2]*y + args[3]*y*t
+dy_dt = lambda t,y,args: args[0] + args[1]*t - args[2]*y
 
 switch_print_iterations = False
 switch_save_likelihood = False
@@ -62,58 +50,30 @@ ys_scipy = sp.integrate.odeint(dy_dt, y0, ts, args=(params,), tfirst=True)
 D = jax.numpy.reshape(jax.numpy.array(ys_scipy), shape = (len(ys_scipy)))
 
 
-
-
-
-# take care!!! shapes of arrays from scipy and diffrax are different!!!
-# it automatically converts for the difference but as one has more dimensions, element wise no longer works as intended - recast!!!
-# scipy comes out as numpy array [[y1,y2,...]] - need to reshape that to single dimension array (of shape (len(ys))
+# note: array shapes from scipy and diffrax different!!!
+# recasting automatic but since one has more dimensions, element wise no longer works as intended - convert manually
+# scipy comes out as numpy array [[y1,y2,...]] so reshape to single dimension array (shape (len(ys))
 
 stepsize_controller = diffrax.PIDController(rtol=1e-3, atol=1e-6)
 solver = diffrax.Kvaerno5()
-# getting "LLVM compilation error: Cannot allocate memory" earlier
-# probably recompiling and eating memory
-# with both stepsize controller and solver out of FL, 122 iteration with no LLVM 
-# just try which one was causing it...
-# and got it at interation 145...
-# "E0721 09:48:13.935939   46283 execution_engine.cc:54] LLVM compilation error: Cannot allocate memory"
-# does that mean compilation happens at every step?
-# check how both the gradient and the ODE solver work, if they require compilation...
-# error tracing suggests diffrax.diffeqsolve call
-# then calls JIT compiler... 
-# also maybe try with lambda instead of def H??
-# lambda doesn't work either and already crashes after 20 iterations - maybe it keeps stuff from previous runs?
-# the compiler doesn't reset between runs btw. so need to restart kernel/spyder?
-# after error no more iterations possible when rerun...
-# so basically diffrax solution leads to compilation and one can only do so many cause
-# ....the compiled stuff gets held in the memory??
-# ram taken (by "python") grows with every iteration... it shouldn't... not explained by what's stored
-# so it keeps the compiled functions for each iteration???
-# either dump it or better still stop it being recompliled every time??? ok at 154 5.4GB RAM crashed
-# still - at 154
-
-# ok... Patrick says recomplilation might be caused by feeding python types into JITed functions... explicitly only feed jax arrays!!!
 
 
 # find gradient of likelihood now as function of guessed a,b,c
-@jax.jit # this causes it to not be recompiled!!!
+#@jax.jit # this causes it to not be recompiled!!!
+@eqx.filter_jit
 @eqx.debug.assert_max_traces(max_traces=1)
 def FL(guess_params,D,variance,ts,y0):
+    """
+    Returns log likelihood of current parameters,
+    given by sum of squared errors between integrated function with these parameters and target data,
+    normalised by predefined variance.
     
-    # # differential equation term:
-    # def H(t,y,args): 
-    #     # two things!! 
-    #     # scipy by default assumes arguments (y,t, *args), whereas diffrax (t,y,args) - so:
-    #     # so 1) passing ((a,b,c),) 
-    #     # and 2) need to set tfirst = True in scipy integrator
-        
-    #     #return a - b*t - c*y
-    #     #return guess_params[0] - guess_params[1]*t - guess_params[2]*y
-    #     return args[0] - args[1]*t - args[2]*y
+    Note! Massive slowdown and memory overflows occur if recompiled every time it's called or autodifferentiated.
+    @jax.jit decorator seems to prevent this, and @eqx.debug.assert_max_traces(max_traces=1) enforces it.
     
-    # wait a moment... should this not be args for the guess params????
-    # also rewrite with lambda...
-    #lambda t,y,args:  
+    Arguments:
+    guess parameters, target data, variance, y0; all assumed to be jax arrays. 
+    """
     
     # diffrax (using jax) solution:
     sol_diffrax = diffrax.diffeqsolve(terms = diffrax.ODETerm(dy_dt),
@@ -129,24 +89,8 @@ def FL(guess_params,D,variance,ts,y0):
     
     ys = sol_diffrax.ys
     
-    # check against scipy: (just for verification)
-    # print('D:\n' + str(D))
-    # print('ys:\n' + str(ys))
-    # print('D-ys:\n' + str((D - ys)))
-    # print('square:\n' + str(jax.numpy.square((D - ys))))
-    # print('sum:\n' + str(jax.numpy.sum(jax.numpy.square((D - ys)))))
-    # plt.figure()
-    # # plt.plot(ts, D, 'b-', label = 'analytical', alpha = 0.5)
-    # plt.plot(ts, D, 'r-', label = 'scipy odeint', alpha = 0.5) 
-    # plt.plot(sol_diffrax.ts, sol_diffrax.ys, 'm:', label = 'diffrax', alpha = 1) 
-    # plt.legend()
-    
     SSE = jax.numpy.sum(jax.numpy.square((D - ys)))
     
-    # # normal likelihood:
-    # likelihood = jax.numpy.exp(-SSE/variance)
-    # return likelihood
-
     # log likelihood:
     return -SSE/variance
 
@@ -179,7 +123,7 @@ step_size_mean_std = jax.numpy.array([0.0002, 0.00002], dtype = float) #jax.nump
 grad_max_val = jax.numpy.array(200, dtype = float)
 
 # note: currently same for all parameters
-max_steps = int(10)
+max_steps = int(1000)
 explored_params = []
 explored_likelihood = []
 explored_params.append(guess_params)
@@ -198,12 +142,6 @@ for i in range(max_steps):
     step_size = jax.numpy.array(step_size)
     
     guess_params += step_size*clipped_gradient
-    
-    
-    # ok do jax element wise clipping on gradient rather than step size... seems more standard!
-    
-    # update with step of fixed size times gradient - unstable as hell (sometimes gradient is very steep!)
-    # guess_params += step_size*jax.numpy.sign(gradient)
     
     if switch_save_likelihood:
         likelihood_current = FL(guess_params, D,variance,ts,y0)
@@ -262,7 +200,18 @@ sol_diffrax = diffrax.diffeqsolve(terms = diffrax.ODETerm(dy_dt),
                                  saveat = diffrax.SaveAt(ts = ts), # steps=True),
                                  args = guess_params,
                                  stepsize_controller = stepsize_controller,
-                                 max_steps=int(1e6)
+                                 max_steps=int(1e8)
                                  )
-plt.plot(ts,sol_diffrax.ys, 'r:', label='diffrax, learned')
+plt.plot(ts,sol_diffrax.ys, 'r:', label='diffrax, learned', alpha = 0.7)
+sol_diffrax = diffrax.diffeqsolve(terms = diffrax.ODETerm(dy_dt),
+                                 solver = solver,
+                                 t0 = ts[0], t1 = ts[-1],
+                                 dt0 = (ts[1] - ts[0])/100,
+                                 y0 = y0,
+                                 saveat = diffrax.SaveAt(ts = ts), # steps=True),
+                                 args = guess_params_init,
+                                 stepsize_controller = stepsize_controller,
+                                 max_steps=int(1e8)
+                                 )
+plt.plot(ts,sol_diffrax.ys, 'k--', label='diffrax, initial', alpha = 0.3)
 plt.legend()
