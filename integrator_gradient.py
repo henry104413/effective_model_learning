@@ -48,6 +48,7 @@ switch_save_likelihood = False
 # scipy solution - target data:
 ys_scipy = sp.integrate.odeint(dy_dt, y0, ts, args=(params,), tfirst=True)
 D = jax.numpy.reshape(jax.numpy.array(ys_scipy), shape = (len(ys_scipy)))
+D = D + jax.numpy.array(np.random.normal(0,0.1, size = (len(ys_scipy))))
 
 
 # note: array shapes from scipy and diffrax different!!!
