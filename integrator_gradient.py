@@ -14,15 +14,6 @@ Created on Fri Jul  3 16:52:20 2026
 @author: henry
 """
 
-# ok ok so no way to define function of variable number of params probably (where they are not a tuple)
-# but... grad should accept vectorised parameters??? so like tuple, or maybe jax array???
-# AND SURE ENOUGH IT DOES< SIMPLE AS!!!
-# just make sure to include float conversion in array definition
-
-
-#%%% integrator test
-
-
 
 import jax
 import scipy as sp # nope! not with jax
@@ -32,9 +23,8 @@ import diffrax
 import equinox as eqx # this is for debugging and checking compilation...
 
 params = jax.numpy.array([2.1,8,4,1], dtype=float) # must be a tuple of floats!!! formerly (a,b,c)
-#guess_params = jax.numpy.array([2.5 for i in params], dtype=float)
 guess_params = jax.numpy.array([5,10,2,1.3], dtype=float)
-# this seriously must be floats!! jax hates int... even with explicit argument to allow int it breaks
+# make sure these are floats!! jax seems to dislike int...
 y0 = jax.numpy.array(2, dtype=float)
 ts = jax.numpy.linspace(0, 1, 1000, dtype=float)
 variance = jax.numpy.array(1, dtype=float)
@@ -45,7 +35,7 @@ dy_dt = lambda t,y,args: args[0] + args[1]*t - args[2]*y
 switch_print_iterations = False
 switch_save_likelihood = False
 
-# scipy solution - target data:
+# scipy solution - target data with some noise:
 ys_scipy = sp.integrate.odeint(dy_dt, y0, ts, args=(params,), tfirst=True)
 D = jax.numpy.reshape(jax.numpy.array(ys_scipy), shape = (len(ys_scipy)))
 D = D + jax.numpy.array(np.random.normal(0,0.1, size = (len(ys_scipy))))
@@ -61,7 +51,7 @@ solver = diffrax.Kvaerno5()
 
 # find gradient of likelihood now as function of guessed a,b,c
 #@jax.jit # this causes it to not be recompiled!!!
-@eqx.filter_jit
+@eqx.filter_jit # this also and recommended by Patrick? same purpose as jax.jit?
 @eqx.debug.assert_max_traces(max_traces=1)
 def FL(guess_params,D,variance,ts,y0):
     """
