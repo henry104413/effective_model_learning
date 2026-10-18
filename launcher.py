@@ -11,6 +11,7 @@ import sys # for passing command line arguments
 import time
 import copy
 import pickle
+import multiprocessing
 # note: import os also called below in case of an exception
 
 
@@ -30,10 +31,10 @@ import definitions
 # note: files are overwritten if saved with same name
 
 target_file = 'Wit-Fig4-6-0_025'
-experiment_name = '261016-test'
+experiment_name = '261017-6M'
 defects_count = 2
-repetition_number = 3
-max_iterations = 10000
+repetition_numbers = list(range(30))
+max_iterations = 6000000
 if max_iterations == 0:
     raise Exception('Maximum iterations not specified by launcher, hence using default.')
 proportion_to_use = 1
@@ -56,12 +57,12 @@ shock_anneal_at = 0
 # set iterations at which tweak width is fixed after adaptation
 # note: as currently named arguments not supported,
 # if subsequent arguments needed, this can be passed as == max_iterations
-fix_tweak_width_at = 5000
+fix_tweak_width_at = 500000
     
 # set iterations at which tweak width adaptation begins
 # note: as currently named arguments not supported,
 # if subsequent arguments needed, this can be passed as == max_iterations
-start_tweak_width_adaptation_at = 1000
+start_tweak_width_adaptation_at = 10000
     
 # set iterations at which temperature is fixed after adaptation
 # note: as currently named arguments not supported,
@@ -108,14 +109,6 @@ if start_temperature_adaptation_at:
 # also FOR NOW append noise stdev to experiment name:
 experiment_name = experiment_name + '_std' + str(noise_stdev).replace('.','p')
 
-# run's output files common name:
-# example: '250421_Wit4b-grey_ForClusters'
-filename = (experiment_name + '_' + target_file.replace('.csv', '') + '_' + subexperiment_name + '_D' + str(defects_count) +
-    '_R' + str(repetition_number))
- 
-print(filename, flush = True)
-
-
 
 #%% prepare simulated multi-observable training datasets:
 # !!! NOTE: this currently means not using specified target file but taking data from file below instead:
@@ -158,8 +151,7 @@ else:
     ts, sx = imported_data[0]/1000, imported_data[1] # note: convert time to us here (from original ns)
     measurement_datasets = [sx]
     measurement_observables = ['sigmax']
-    
-        
+            
 # times and measurement data to use for training:
 # (encapsulate into lists of datasets and corresponding observable lables:)
 # note: currently here not training on subset but can be implemented like below:
@@ -169,96 +161,108 @@ training_measurement_datasets = measurement_datasets
 training_measurement_observables = measurement_observables
 
 
-
-#%% AD HOC: load best to use as initial for testing:
-
-# with open('250810-batch_Wit-Fig4-6-0_025_Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-_D2_R2_best.pickle',
-#           'rb') as filestream:
-#     initial_model = pickle.load(filestream)
-
-#%% perform learning:
-
 # if qubit initial state required:
 qubit_initial_state = definitions.ops['plus']
 defect_initial_state = definitions.ops['mm']    
 
 
-
-# instance of learning (quest for best model):
-quest = learning_chain.LearningChain(target_times = training_ts,
-                      target_datasets = training_measurement_datasets,
-                      target_observables = training_measurement_observables,
-                      
-                      initial = (1, defects_count), # (qubit energy, number of defects)
-                      #initial = initial_model,
-                      qubit_initial_state = qubit_initial_state,
-                      defect_initial_state = definitions.ops['mm'],    
-
-                      max_chain_steps = max_iterations,
-                      
-                      store_all_proposals = False,
-                      
-                      **config # specific experiment chain hyperparameters
-                      
-                      )
-
-# import matplotlib.pyplot as plt
-# plt.figure()
-# plt.plot(new_ts := np.linspace(min(ts), max(ts)/1, 1000),
-#           quest.initial.calculate_dynamics(new_ts, ['sigmax'])[0])
-
-#%%
-best = quest.run()
+#%% perform learning:
 
 
-
-#%%
-best = quest.best
-evaluation_ts = np.linspace(ts[0], ts[-1], max(10*len(ts), int(1000)))
-best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables,
-                                        custom_function_on_return = False)
-
-
-#%% chain run outputs:
-
-# output controls bundle:
-class Toggles:    
-    comparison = True # plot comparison of dynamics
-    loss = True # loss progression
-    log_posterior = True # log posterior 
-    log_likelihood_prior = True # superimposed log likelihood and prior
-    acceptance_probability = False
-    acceptance_windows = True # plot acceptance ratios over subsequenct windows
-    graphs = False # plot model graphs with corresponding labels
-    pickle = True # save selected models as pickles
-    text = True # save selected models as text
-    all_proposals = True # save all proposals dictionary as created by chain 
-    hyperparams = True # save chain hyperparameters as json
-
-
-# create outputs - measurements, training subset, prediction on evaluation_ts:
-if True:
-    output.Output(toggles = Toggles, filename = filename,
-       dynamics_ts = [ts, training_ts, evaluation_ts],
-       dynamics_datasets = [measurement_datasets, training_measurement_datasets, best_datasets],
-       dynamics_datasets_labels = ['all measurements', 'training subset', 'prediction'],
-       dynamics_formatting = ['b+', 'b.', 'r-'],
-       observable_labels = measurement_observables,
-       best_loss = quest.best_loss,
-       # !!! TO DO: two lines below are new -- add elsewhere too!
-       overall_acceptance = {'parameters tweak': quest.acc_tweak_steps/max(quest.tot_tweak_steps, 1), # avoiding div by 0
-                             'reversible jump': quest.acc_RJ_steps/max(quest.tot_RJ_steps, 1)}, # avoiding div by 0
-       tweak_widths_after_annealing = quest.tweak_widths_after_annealing,
-       windows_acc_rates = quest.windows_acc_rates,
-       models_to_save = [best],
-       model_names = ['best'],
-       chain_hyperparams = quest.get_init_hyperparams(),
-       all_proposals = quest.all_proposals,
-       shock_anneal_at = config['shock_anneal_at']
-       )
+def execute_chain(repetition_number: int) -> None:
+    """
+    Make and run new chain for each R from repetition_numbers
+    
+    Argument: repetition_number aka R (passed by multiprocessing map() function)
+    """
+    
+    # run's output files common name:
+    # example: '250421_Wit4b-grey_ForClusters'
+    filename = (experiment_name + '_' + target_file.replace('.csv', '') + '_' + subexperiment_name + '_D' + str(defects_count) +
+        '_R' + str(repetition_number))
+     
+    print(filename, flush = True)
     
     
+    # instance of learning (quest for best model):
+    quest = learning_chain.LearningChain(target_times = training_ts,
+                          target_datasets = training_measurement_datasets,
+                          target_observables = training_measurement_observables,
+                          
+                          initial = (1, defects_count), # (qubit energy, number of defects)
+                          #initial = initial_model,
+                          qubit_initial_state = qubit_initial_state,
+                          defect_initial_state = definitions.ops['mm'],    
+    
+                          max_chain_steps = max_iterations,
+                          
+                          store_all_proposals = False,
+                          
+                          **config # specific experiment chain hyperparameters
+                          
+                          )
+    
+    # import matplotlib.pyplot as plt
+    # plt.figure()
+    # plt.plot(new_ts := np.linspace(min(ts), max(ts)/1, 1000),
+    #           quest.initial.calculate_dynamics(new_ts, ['sigmax'])[0])
+    
+    #%%
+    best = quest.run()
+    
+    
+    
+    #%%
+    best = quest.best
+    evaluation_ts = np.linspace(ts[0], ts[-1], max(10*len(ts), int(1000)))
+    best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables,
+                                            custom_function_on_return = False)
+    
+    
+    #%% chain run outputs:
+    
+    # output controls bundle:
+    class Toggles:    
+        comparison = True # plot comparison of dynamics
+        loss = True # loss progression
+        log_posterior = True # log posterior 
+        log_likelihood_prior = True # superimposed log likelihood and prior
+        acceptance_probability = False
+        acceptance_windows = True # plot acceptance ratios over subsequenct windows
+        graphs = False # plot model graphs with corresponding labels
+        pickle = True # save selected models as pickles
+        text = True # save selected models as text
+        all_proposals = True # save all proposals dictionary as created by chain 
+        hyperparams = True # save chain hyperparameters as json
+    
+    
+    # create outputs - measurements, training subset, prediction on evaluation_ts:
+    if True:
+        output.Output(toggles = Toggles, filename = filename,
+           dynamics_ts = [ts, training_ts, evaluation_ts],
+           dynamics_datasets = [measurement_datasets, training_measurement_datasets, best_datasets],
+           dynamics_datasets_labels = ['all measurements', 'training subset', 'prediction'],
+           dynamics_formatting = ['b+', 'b.', 'r-'],
+           observable_labels = measurement_observables,
+           best_loss = quest.best_loss,
+           # !!! TO DO: two lines below are new -- add elsewhere too!
+           overall_acceptance = {'parameters tweak': quest.acc_tweak_steps/max(quest.tot_tweak_steps, 1), # avoiding div by 0
+                                 'reversible jump': quest.acc_RJ_steps/max(quest.tot_RJ_steps, 1)}, # avoiding div by 0
+           tweak_widths_after_annealing = quest.tweak_widths_after_annealing,
+           windows_acc_rates = quest.windows_acc_rates,
+           models_to_save = [best],
+           model_names = ['best'],
+           chain_hyperparams = quest.get_init_hyperparams(),
+           all_proposals = quest.all_proposals,
+           shock_anneal_at = config['shock_anneal_at']
+           )
+        
 
+if __name__ == '__main__' and True:
+        
 
+    with multiprocessing.Pool() as pool:
+        
+        chain_outputs = pool.map(execute_chain, repetition_numbers)
 
 
