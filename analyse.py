@@ -9,9 +9,9 @@ Finds correlations for across selected clusters of models.
 
 # CHANGE: POSTERIORS NO LONGER SAVED - SWAP FOR IMPORTING LOG LIKELIHOODS PRIORS AND SUMMING 
 
-#import pandas as pd
+import pandas as pd
 import pickle
-#import seaborn
+import seaborn
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -22,16 +22,23 @@ import configs
 import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
+# global plotting settings:
+plt.rcParams.update({'font.size': 6})
+plt.rcParams['font.family'] = 'Times New Roman'
+plt.rcParams['axes.labelpad'] = 0
+single_col_figsize=(1.6,1)
+
+
 # settings:
-experiment_name = '260522-12M' #'260224_test8'
-noise_stdev = 0.1 # set None if not included in file name
+experiment_name = '261017-test1-MP' #'260224_test8'
+noise_stdev = 0.01 # set None if not included in file name
 D = 2
-Rs = [1,2,4,7,8,9,10] #[i+1 for i in range(9)] # for D2
+Rs = [i for i in range(3)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
-clustering_name = 'e1000'
-chosen_k = 4 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
+clustering_name = 'e1'
+chosen_k = 5 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -72,9 +79,9 @@ posteriors = [x[0] + x[1] for x in log_likelihoods_priors]
 
 
 #%%
-if False:
+if True:
     # bar plot of clusters' popularity:
-    plt.figure()
+    plt.figure(figsize=single_col_figsize)
     clusters_popularity = [len(models_by_clusters[x]) for x in models_by_clusters]
     plt.bar(list(models_by_clusters.keys()), clusters_popularity,
             color = 'navy')
@@ -129,7 +136,7 @@ if not True:
         temp = centre_model.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables)
         for o, op in enumerate(centres_datasets.keys()):
             centres_datasets[op].append(temp[o])
-            plt.figure()
+            plt.figure(figsize=single_col_figsize)
             plt.xlabel(r't ($\mu s$)')
             plt.ylabel(ops_longlabels[op])
             plt.ylim([-1, 1])
@@ -164,7 +171,7 @@ if not True:
         temp = champion_model.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables)
         for o, op in enumerate(champions_datasets.keys()):
             champions_datasets[op].append(temp[o])
-            plt.figure()
+            plt.figure(figsize=single_col_figsize)
             plt.xlabel(r't ($\mu s$)')
             plt.ylabel(ops_longlabels[op])
             plt.ylim([-1, 1])
@@ -185,7 +192,7 @@ if not True:
 # find correlations, dendrograms, and clustered parameters in selected cluster combinations
 # for now: do doing 1) all and 2) most popular cluster
 
-if False:
+if True:
     cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
     
     # list of lists, each inner list for combinations of cluster to analyse together: 
@@ -264,7 +271,7 @@ if False:
 # %%
 # popularity of different processes:
 # CURRENTLY compare UP TO 4 most popular clusters (slicing capped by number of clusters)
-if False:
+if True:
     cluster_choices = clusters_by_pop_desc[0:4]
     # cluster_choices = [2,3,4] # for LN D=1
     # formatting - must have options for at least each cluster choice, can be longer:
@@ -273,7 +280,7 @@ if False:
     alphas = [0.3, 0.3, 0.3, 1] # ideally ascending or same
     pops_all = [sum([True for point in points if abs(point[p]) > 0])/len(points)
                 for p in range(len(labels))]
-    plt.figure()
+    plt.figure(figsize=single_col_figsize)
     plt.barh(range(len(labels)), pops_all,
             edgecolor = 'black', color = 'none', alpha = 0.5, height = 1, label = 'all clusters')
     for i, cluster_choice in enumerate(cluster_choices):
@@ -351,7 +358,7 @@ for j, chosen_cluster in enumerate(cluster_choices):
     
     if False:
         for i, op in enumerate(measurement_observables):
-            plt.figure()
+            plt.figure(figsize=single_col_figsize)
             plt.xlabel(r't ($\mu s$)')
             plt.ylabel(ops_longlabels[op])
             plt.ylim([-1, 1])
@@ -390,7 +397,7 @@ if True:
         
         # plot cumulative means and stds (combining all chosen clusters):
         key = tuple(cluster_choices)
-        plt.figure()
+        plt.figure(figsize=single_col_figsize)
         plt.xlabel(r't ($\mu s$)')
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-0.2, 0.8])
@@ -407,7 +414,7 @@ if True:
     
         # plot together means with stds filling for all clusters (overlay)
         # note: maybe manually specify list of colours
-        plt.figure()
+        plt.figure(figsize=single_col_figsize)
         plt.xlabel(r't ($\mu s$)')
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-0.2, 0.8])
@@ -426,7 +433,7 @@ if True:
 
 #%%
 # also plot champion parameter vectors for chosen clusters:
-if False:
+if True:
     champions = {}
     #champ_posteriors = {}
     
@@ -441,7 +448,7 @@ if False:
         
     champions_array = np.stack([champions[x] for x in cluster_choices])
     
-    plt.figure()
+    plt.figure(figsize=single_col_figsize)
     axisfontsize = 6
     img = plt.imshow(np.transpose(champions_array), interpolation='none', aspect='1')
     cbar = plt.colorbar(img, fraction=0.015) # , cmap='viridis' ???? not doing anything?
@@ -459,7 +466,7 @@ if False:
 
 #%%
 # histogram of chosen parameter values as a marginal of posterior distrubution (pdf)
-if False:
+if True:
     points_array = np.stack(points) # columns for each parameter so that this[:, j] are j-th parameter values
     
     for j in range(20):
@@ -469,7 +476,7 @@ if False:
             vals_onlynonzero = vals[vals != 0]
         param_label = labels_latex[j]
         filename_label = labels[j]
-        plt.figure()
+        plt.figure(figsize=single_col_figsize)
         #bins = 10 ** np.linspace(min(vals), max(vals), 100)
         if False:
             plt.hist(vals, alpha = 0.7, color = 'turquoise'
@@ -503,7 +510,7 @@ if True:
     if False: # can't remove zeros or not same length (no longer coordinates of same vectors)
         vals_first = vals_first[vals_first != 0]
         vals_second = vals_second[vals_second != 0]
-    plt.figure()
+    plt.figure(figsize=single_col_figsize)
     cs, xs, ys, _ = plt.hist2d(vals_first, vals_second, bins=100, density = False, cmin=1, cmax=1000)
     # temp = plt.hist2d(vals_first, vals_second, bins=50, density = False, cmap = 'Purples',
     #                    cmin = 1, cmax = max(temp[0][0])/100)
@@ -529,7 +536,7 @@ if True:
     # if False: # can't remove zeros or not same length (no longer coordinates of same vectors)
     #     vals_first = vals_first[vals_first != 0]
     #     vals_second = vals_second[vals_second != 0]
-    # plt.figure()
+    # plt.figure(figsize=single_col_figsize)
     # plt.hist2d(vals_first, vals_second, bins=50, density = True, cmin=0, cmap = 'Purples')
     # plt.xlabel(param_label_first)
     # #plt.ylim(0,600)

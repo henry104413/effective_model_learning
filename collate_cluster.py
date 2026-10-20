@@ -31,20 +31,27 @@ import numpy as np
 import time
 import copy
 
+# global plotting settings:
+plt.rcParams.update({'font.size': 6})
+plt.rcParams['font.family'] = 'Times New Roman'
+plt.rcParams['axes.labelpad'] = 0
+single_col_figsize=(1.6,1)
+
+
 # settings and source data:
-experiment_name_base = '260319_test3'
+experiment_name_base = '261017-test1-MP'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-noise_stdevs = [0.1]
+noise_stdevs = [0.01]
 Ds = [2]#[1,2,3]
-Rs = [i+1 for i in range(6)]#[1,2,3] # for combining chains - same for all Ds above
+Rs = [i for i in range(3)]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 min_clusters = 2
 max_clusters = 10
 bounds = []
 verbosity = 0
 burn = 0
-subsample = 1000 # take every however-many-eth point; 1 means every point taken
+subsample = 1 # take every however-many-eth point; 1 means every point taken
 only_saving_freshly_accepted = False # generally false as current proposal repeated in chain when new proposal rejected
 # note: needs to be set correctly for other lists lengths (likelihood etc) to match proposal lists lengths
 only_take_annealed = False
@@ -168,7 +175,7 @@ for noise_stdev in noise_stdevs:
             # split into segments determined by bounds:    
             if len(bounds) > 1: # plot chain segments determined by bounds:
                 indices = list(range(len(accepted_log_likelihoods_priors)))
-                plt.figure()
+                plt.figure(figsize=single_col_figsize)
                 plt.plot(indices, log_likelihoods := [x[0] for x in accepted_log_likelihoods_priors], '-', c = 'orange', linewidth = 0.5)
                 plt.yscale('log')
                 ymin = min(log_likelihoods)
@@ -331,8 +338,8 @@ for noise_stdev in noise_stdevs:
             clusters_counts[0]] = elbow
         
         # plot and save SSE vs number of clusters:
-        plt.figure(tight_layout = True)
-        plt.plot(clusters_counts, SSEs, 'b')
+        plt.figure(tight_layout = True, figsize=single_col_figsize)
+        plt.plot(clusters_counts, SSEs, 'b', linewidth = 0.5)
         plt.xlabel('number of clusters')
         plt.ylabel('SSE')
         plt.xticks(ticks = clusters_counts, labels = x_tick_labels)
@@ -341,8 +348,8 @@ for noise_stdev in noise_stdevs:
         plt.clf()
         
         # plot and save silhouette score vs number of clusters
-        plt.figure(tight_layout = True)
-        plt.plot(clusters_counts, silhouette_scores, 'r')
+        plt.figure(tight_layout = True, figsize=single_col_figsize)
+        plt.plot(clusters_counts, silhouette_scores, 'r', linewidth = 0.5)
         plt.xlabel('number of clusters')
         plt.ylabel('silhouette score')
         plt.ylim([-0.1,1])
@@ -460,7 +467,7 @@ for noise_stdev in noise_stdevs:
                            final_centres,
                            #header = 'cluster centre parameters vector',
                            delimiter = ',', comments = '')
-                plt.figure()
+                plt.figure(figsize=single_col_figsize)
                 axisfontsize = 6
                 img = plt.imshow(np.transpose(final_centres), interpolation='none', aspect='1')
                 cbar = plt.colorbar(img, fraction=0.015) # , cmap='viridis' ???? not doing anything?
