@@ -9,9 +9,9 @@ Finds correlations for across selected clusters of models.
 
 # CHANGE: POSTERIORS NO LONGER SAVED - SWAP FOR IMPORTING LOG LIKELIHOODS PRIORS AND SUMMING 
 
-import pandas as pd
+#import pandas as pd
 import pickle
-import seaborn
+#import seaborn
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -22,22 +22,27 @@ import configs
 import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
-# global plotting settings:
+# global plotting settings (works locally):
 plt.rcParams.update({'font.size': 6})
 plt.rcParams['font.family'] = 'Times New Roman'
 plt.rcParams['axes.labelpad'] = 0
 single_col_figsize=(1.6,1)
+single_col_tall_figsize=(1.6,2)
+
+# # to try on cluster -- doesn't seem to work:
+# plt.rcParams['font.family'] = 'serif'
+# plt.rcParams['font.serif'] = ['Times New Roman'] + plt.rcParams['font.serif']
 
 
 # settings:
-experiment_name = '261017-test1-MP' #'260224_test8'
+experiment_name = '261017-6M'
 noise_stdev = 0.01 # set None if not included in file name
 D = 2
-Rs = [i for i in range(3)] # for D2
+Rs = [i for i in range(30)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
-clustering_name = 'e1'
+clustering_name = 'e1000'
 chosen_k = 5 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
@@ -192,7 +197,7 @@ if not True:
 # find correlations, dendrograms, and clustered parameters in selected cluster combinations
 # for now: do doing 1) all and 2) most popular cluster
 
-if True:
+if False:
     cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
     
     # list of lists, each inner list for combinations of cluster to analyse together: 
@@ -270,17 +275,17 @@ if True:
     
 # %%
 # popularity of different processes:
-# CURRENTLY compare UP TO 4 most popular clusters (slicing capped by number of clusters)
+# CURRENTLY compare UP TO 5 most popular clusters (slicing capped by number of clusters)
 if True:
-    cluster_choices = clusters_by_pop_desc[0:4]
+    cluster_choices = clusters_by_pop_desc[0:5]
     # cluster_choices = [2,3,4] # for LN D=1
     # formatting - must have options for at least each cluster choice, can be longer:
-    colours = ['red', 'blue', 'black', 'purple']
-    heights = [0.8, 0.5, 0.3, 0.1] # ideally descending
-    alphas = [0.3, 0.3, 0.3, 1] # ideally ascending or same
+    colours = ['red', 'blue', 'black', 'purple', 'orange']
+    heights = [0.8, 0.65, 0.40, 0.25, 0.1] # ideally descending
+    alphas = [0.3, 0.3, 0.5, 0.7, 1] # ideally ascending or same
     pops_all = [sum([True for point in points if abs(point[p]) > 0])/len(points)
                 for p in range(len(labels))]
-    plt.figure(figsize=single_col_figsize)
+    plt.figure(figsize=single_col_tall_figsize)
     plt.barh(range(len(labels)), pops_all,
             edgecolor = 'black', color = 'none', alpha = 0.5, height = 1, label = 'all clusters')
     for i, cluster_choice in enumerate(cluster_choices):
@@ -307,8 +312,8 @@ if True:
 # plot this vs target
 
 # section settings:
-#cluster_choices = list(range(chosen_k)) # note: now taken from above section, enable if required separately
-cluster_choices = [0,2]#1,3,4]
+cluster_choices = list(range(chosen_k)) # note: now taken from above section, enable if required separately
+# cluster_choices = [0,2]#1,3,4]
 samples = 1000
 
 # target data:
@@ -356,7 +361,7 @@ for j, chosen_cluster in enumerate(cluster_choices):
     stds[chosen_cluster] = {obs: evaluated_arrays[obs].std(axis=0)
              for obs in measurement_observables}
     
-    if False:
+    if not True: # individual plots for each cluster
         for i, op in enumerate(measurement_observables):
             plt.figure(figsize=single_col_figsize)
             plt.xlabel(r't ($\mu s$)')
@@ -383,8 +388,8 @@ for j, chosen_cluster in enumerate(cluster_choices):
 #%%    
 # plot all chosen clusters combined, and all chosen clusters separate dynamics overlay 
 if True:
-    measurement_observables = ['sigmax']
-    colours = ['orange','purple']
+    measurement_observables = ['sigmax', 'sigmay']
+    colours = ['orange','purple', 'green', 'yellow', 'blue', 'firebrick']
     key = tuple(cluster_choices)
     clusters_label = 'clusters ' + ''.join([str(x) + ', ' for x in cluster_choices])[:-2]
     clusters_label_short = ''.join([str(x) + ',' for x in cluster_choices])[:-1]
@@ -401,8 +406,8 @@ if True:
         plt.xlabel(r't ($\mu s$)')
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-0.2, 0.8])
-        if False: plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = 0.7, alpha = 0.7)
-        if False: plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
+        plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = 0.7, alpha = 0.7)
+        plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                          alpha=0.3, color='tomato', label = clusters_label)
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                      fmt = 'b.', ecolor = 'b', markersize = 2, label = 'target', alpha = 1, linewidth = 0.3)
@@ -422,7 +427,7 @@ if True:
             plt.plot(evaluation_ts, means[key][op], '-', linewidth = 0.7, alpha = 0.7, color = colours[j])
             plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                              alpha=0.2, label = '' + str(key), color = colours[j])
-        if False: plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
+        plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                      fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.5)
         #plt.legend(ncol = 2, fontsize = 'small')
         plt.savefig(output_name + '_Cs' + clusters_label_short
@@ -466,7 +471,7 @@ if True:
 
 #%%
 # histogram of chosen parameter values as a marginal of posterior distrubution (pdf)
-if True:
+if False:
     points_array = np.stack(points) # columns for each parameter so that this[:, j] are j-th parameter values
     
     for j in range(20):
@@ -497,7 +502,7 @@ if True:
 #%%
 # 2D histogram of ad-hoc chosen parameters (marginals now)
 
-if True:
+if False:
     points_array = np.stack(points) # columns for each parameter so that this[:, j] are j-th parameter values
     
     i, j = 2, 3

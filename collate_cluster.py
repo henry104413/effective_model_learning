@@ -15,21 +15,21 @@ Also saves collated subsampled models used for clustering in form of points
 and associalted tuples of (log likelihood, log prior), both as pickles.
 """
 
-import sys # for passing command line arguments
-import json
+#import sys # for passing command line arguments
+#import json
 import sklearn.cluster
 import sklearn.metrics
 import kneed
-import pandas as pd #
+#import pandas as pd #
 import pickle
 import configs
-import seaborn #
+#import seaborn #
 import matplotlib.pyplot as plt
-import scipy.cluster.hierarchy
-import scipy.spatial.distance
+#import scipy.cluster.hierarchy
+#import scipy.spatial.distance
 import numpy as np
 import time
-import copy
+#import copy
 
 # global plotting settings:
 plt.rcParams.update({'font.size': 6})
@@ -39,19 +39,19 @@ single_col_figsize=(1.6,1)
 
 
 # settings and source data:
-experiment_name_base = '261017-test1-MP'
+experiment_name_base = '261017-6M'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 noise_stdevs = [0.01]
 Ds = [2]#[1,2,3]
-Rs = [i for i in range(3)]#[1,2,3] # for combining chains - same for all Ds above
+Rs = [i for i in range(30)]#[1,2,3] # for combining chains - same for all Ds above
 Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
 min_clusters = 2
 max_clusters = 10
 bounds = []
 verbosity = 0
 burn = 0
-subsample = 1 # take every however-many-eth point; 1 means every point taken
+subsample = 1000 # take every however-many-eth point; 1 means every point taken
 only_saving_freshly_accepted = False # generally false as current proposal repeated in chain when new proposal rejected
 # note: needs to be set correctly for other lists lengths (likelihood etc) to match proposal lists lengths
 only_take_annealed = False
