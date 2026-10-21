@@ -9,9 +9,9 @@ Finds correlations for across selected clusters of models.
 
 # CHANGE: POSTERIORS NO LONGER SAVED - SWAP FOR IMPORTING LOG LIKELIHOODS PRIORS AND SUMMING 
 
-#import pandas as pd
+import pandas as pd
 import pickle
-#import seaborn
+import seaborn
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -81,6 +81,16 @@ assignments = list(outputs_each_k[chosen_k]['assignments'])
 with open(source_base + '_log_likelihoods_priors.pickle', 'rb') as filestream:
     log_likelihoods_priors = pickle.load(filestream)
 posteriors = [x[0] + x[1] for x in log_likelihoods_priors]
+
+
+# note: files needed for import given a choice of k are:
+# lowest are best model pickle (for extracting process labels)
+# combined_assignments pickle for that k
+# points (as subsampled and vectorised - prior to choice of k)
+# outputs for chosen k (contain assignments but also metrics - maybe redundant)
+# log likelihood priors pickle (independent of k again - maybe redundant)
+
+# !!! TO DO: check that posteriors use the correct temperature in calculation from log likelihood and prior
 
 
 #%%
@@ -197,7 +207,7 @@ if not True:
 # find correlations, dendrograms, and clustered parameters in selected cluster combinations
 # for now: do doing 1) all and 2) most popular cluster
 
-if False:
+if True:
     cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
     
     # list of lists, each inner list for combinations of cluster to analyse together: 
@@ -313,7 +323,7 @@ if True:
 
 # section settings:
 cluster_choices = list(range(chosen_k)) # note: now taken from above section, enable if required separately
-# cluster_choices = [0,2]#1,3,4]
+#cluster_choices = [0,1]#1,3,4]
 samples = 1000
 
 # target data:
@@ -388,8 +398,9 @@ for j, chosen_cluster in enumerate(cluster_choices):
 #%%    
 # plot all chosen clusters combined, and all chosen clusters separate dynamics overlay 
 if True:
+    cluster_choices = [0,1,3,4]
     measurement_observables = ['sigmax', 'sigmay']
-    colours = ['orange','purple', 'green', 'yellow', 'blue', 'firebrick']
+    colours = ['orange','purple', 'green', 'yellow', 'gray', 'firebrick']
     key = tuple(cluster_choices)
     clusters_label = 'clusters ' + ''.join([str(x) + ', ' for x in cluster_choices])[:-2]
     clusters_label_short = ''.join([str(x) + ',' for x in cluster_choices])[:-1]
@@ -406,11 +417,11 @@ if True:
         plt.xlabel(r't ($\mu s$)')
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-0.2, 0.8])
-        plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = 0.7, alpha = 0.7)
+        plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = 0.3, alpha = 0.7)
         plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
-                         alpha=0.3, color='tomato', label = clusters_label)
+                         alpha=0.2, facecolor='tomato', edgecolor = 'none', label = clusters_label)
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
-                     fmt = 'b.', ecolor = 'b', markersize = 2, label = 'target', alpha = 1, linewidth = 0.3)
+                     fmt = 'b.', ecolor = 'b', markersize = 0, label = 'target', alpha = 0.7, linewidth = 0.3)
         #plt.legend(fontsize = 'small')
         plt.savefig(output_name + '_Cs' + clusters_label_short
                     + '_samp' + str(min(samples, len(model_set)))
@@ -424,12 +435,12 @@ if True:
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-0.2, 0.8])
         for j, key in enumerate(cluster_choices): 
-            plt.plot(evaluation_ts, means[key][op], '-', linewidth = 0.7, alpha = 0.7, color = colours[j])
+            plt.plot(evaluation_ts, means[key][op], '-', linewidth = 0.3, alpha = 0.5, color = colours[j])
             plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
-                             alpha=0.2, label = '' + str(key), color = colours[j])
+                             alpha=0.1, label = '' + str(key), facecolor = colours[j], edgecolor = 'none')
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
-                     fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 0.7, linewidth = 0.5)
-        #plt.legend(ncol = 2, fontsize = 'small')
+                     fmt = 'b.', ecolor = 'b', markersize = 0, label = 'target', alpha = 0.7, linewidth = 0.3)
+        plt.legend(ncol = 2, fontsize = 'small')
         plt.savefig(output_name + '_Cs' + clusters_label_short
                     + '_samp' + str(min(samples, len(model_set)))
                     + '_' + op + '_overlay_adhoc.svg', dpi = 1000, bbox_inches='tight')
@@ -453,7 +464,7 @@ if True:
         
     champions_array = np.stack([champions[x] for x in cluster_choices])
     
-    plt.figure(figsize=single_col_figsize)
+    plt.figure(figsize=single_col_tall_figsize)
     axisfontsize = 6
     img = plt.imshow(np.transpose(champions_array), interpolation='none', aspect='1')
     cbar = plt.colorbar(img, fraction=0.015) # , cmap='viridis' ???? not doing anything?
