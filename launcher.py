@@ -31,10 +31,10 @@ import definitions
 # note: files are overwritten if saved with same name
 
 target_file = 'Wit-Fig4-6-0_025'
-experiment_name = '261017-6M'
+experiment_name = '261022-test'
 defects_count = 2
-repetition_numbers = list(range(30))
-max_iterations = 6000000
+repetition_numbers = list(range(1))
+max_iterations = 2000
 if max_iterations == 0:
     raise Exception('Maximum iterations not specified by launcher, hence using default.')
 proportion_to_use = 1
@@ -57,12 +57,12 @@ shock_anneal_at = 0
 # set iterations at which tweak width is fixed after adaptation
 # note: as currently named arguments not supported,
 # if subsequent arguments needed, this can be passed as == max_iterations
-fix_tweak_width_at = 500000
+fix_tweak_width_at = 1000
     
 # set iterations at which tweak width adaptation begins
 # note: as currently named arguments not supported,
 # if subsequent arguments needed, this can be passed as == max_iterations
-start_tweak_width_adaptation_at = 10000
+start_tweak_width_adaptation_at = 100
     
 # set iterations at which temperature is fixed after adaptation
 # note: as currently named arguments not supported,

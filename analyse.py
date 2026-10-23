@@ -43,7 +43,7 @@ og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e1000'
-chosen_k = 5 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
+chosen_k = 4 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -87,7 +87,7 @@ posteriors = [x[0] + x[1] for x in log_likelihoods_priors]
 # lowest are best model pickle (for extracting process labels)
 # combined_assignments pickle for that k
 # points (as subsampled and vectorised - prior to choice of k)
-# outputs for chosen k (contain assignments but also metrics - maybe redundant)
+# outputs for ks (contain assignments but also metrics for all k's - maybe redundant)
 # log likelihood priors pickle (independent of k again - maybe redundant)
 
 # !!! TO DO: check that posteriors use the correct temperature in calculation from log likelihood and prior
@@ -398,9 +398,10 @@ for j, chosen_cluster in enumerate(cluster_choices):
 #%%    
 # plot all chosen clusters combined, and all chosen clusters separate dynamics overlay 
 if True:
-    cluster_choices = [0,1,3,4]
+    cluster_choices = list(range(chosen_k))
+    #cluster_choices = [0,1,3,4]
     measurement_observables = ['sigmax', 'sigmay']
-    colours = ['orange','purple', 'green', 'yellow', 'gray', 'firebrick']
+    colours = ['orange','purple', 'green', 'cyan', 'firebrick', 'thistle']
     key = tuple(cluster_choices)
     clusters_label = 'clusters ' + ''.join([str(x) + ', ' for x in cluster_choices])[:-2]
     clusters_label_short = ''.join([str(x) + ',' for x in cluster_choices])[:-1]
@@ -421,25 +422,32 @@ if True:
         plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                          alpha=0.2, facecolor='tomato', edgecolor = 'none', label = clusters_label)
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
-                     fmt = 'b.', ecolor = 'b', markersize = 0, label = 'target', alpha = 0.7, linewidth = 0.3)
+                     linestyle = '', linewidth = 0, # this would connect the points - not wanted
+                     ecolor = 'b', elinewidth = 0.1, capsize = 0.2, capthick = 0.1,
+                     marker = 'D' , mfc = 'none', mec = 'b', mew = 0.1, markersize = 0.5, 
+                     label = 'target', alpha = 0.7)
         #plt.legend(fontsize = 'small')
         plt.savefig(output_name + '_Cs' + clusters_label_short
                     + '_samp' + str(min(samples, len(model_set)))
                     + '_' + op + '_lump_adhoc.svg', dpi = 1000, bbox_inches='tight')
     
     
-        # plot together means with stds filling for all clusters (overlay)
+        # plot together means with stds filling for different clusters (overlay)
         # note: maybe manually specify list of colours
         plt.figure(figsize=single_col_figsize)
         plt.xlabel(r't ($\mu s$)')
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-0.2, 0.8])
         for j, key in enumerate(cluster_choices): 
-            plt.plot(evaluation_ts, means[key][op], '-', linewidth = 0.3, alpha = 0.5, color = colours[j])
+            plt.plot(evaluation_ts, means[key][op], '-', linewidth = 0.1, alpha = 0.5, color = colours[j])
             plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                              alpha=0.1, label = '' + str(key), facecolor = colours[j], edgecolor = 'none')
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
-                     fmt = 'b.', ecolor = 'b', markersize = 0, label = 'target', alpha = 0.7, linewidth = 0.3)
+                     linestyle = '', linewidth = 0, # this would connect the points - not wanted
+                     ecolor = 'b', elinewidth = 0.1, capsize = 0.2, capthick = 0.1,
+                     marker = 'D' , mfc = 'none', mec = 'b', mew = 0.1, markersize = 0.5, 
+                     label = 'target', alpha = 0.7
+                     )
         plt.legend(ncol = 2, fontsize = 'small')
         plt.savefig(output_name + '_Cs' + clusters_label_short
                     + '_samp' + str(min(samples, len(model_set)))
