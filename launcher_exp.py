@@ -1,0 +1,256 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Effective model learning
+@author: Henry (henry104413)
+
+Launcher for experimental data -- loads the files in each job (process).
+
+TO DO:
+make sure temperature adaptation happens, default value should be set and none passed
+simulated switch off - make sure files loaded and learning happening, sy, sz produced
+modify multiprocessing function to take tuple and unpack into specifics of run
+test
+upload to DMOG
+check memory needs and run... can run many more jobs than 32!!! just don't allocate all memory available...
+"""
+
+
+import numpy as np
+import sys # for passing command line arguments
+import time
+import copy
+import pickle
+import multiprocessing
+import itertools
+# note: import os also called below in case of an exception
+
+
+import basic_model
+import learning_chain
+import output
+import configs
+import definitions
+
+
+# run parameters taken from additional command line arguments,
+# order: target_file, experiment_name, defects_count, repetition_number, max_iterations,
+# proportion_to_use (of data for training), configuration_number,
+# full_switch (3 observables as opposed to 1),
+# noise_stdev, shock_anneal_at iterations  
+# defaults specified here if unavailable
+# note: files are overwritten if saved with same name
+
+experiment_name = '261027-test2'
+target_files = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025"]#, "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2", "Wit-Fig4-7-0_1"]
+defects_count = 2
+defects_counts = [1,2]#,3]
+repetition_numbers = list(range(2))
+max_iterations = 2000
+if max_iterations == 0:
+    raise Exception('Maximum iterations not specified by launcher, hence using default.')
+proportion_to_use = 1
+configuration_number = 11
+FDRs = list(itertools.product(target_files, defects_counts, repetition_numbers))
+# note: each element is tuple of (target_file, defects_count, repetition_number) or (file, D, R)
+ 
+#%%
+# set switch for training on full set:
+# if 1 (or other true) uses sx, sy, sz from imported simulated data pickle,
+# if 0 (false when boolified) uses just sx (equal to original data):
+full_switch = 1
+    
+# noise standard deviation - currently if passed, also reset Metropolis-Hastings temperature to 2*this**2
+noise_stdev = 0 #0.01
+
+# set iterations at which shock annealing is performed
+# ie. when initial_jump_lengths are updated to annealed_jump_lengths
+# note: as currently named arguments not supported,
+# if subsequent arguments needed, this can be passed as == max_iterations
+shock_anneal_at = 0
+    
+# set iterations at which tweak width is fixed after adaptation
+# note: as currently named arguments not supported,
+# if subsequent arguments needed, this can be passed as == max_iterations
+fix_tweak_width_at = 1000
+    
+# set iterations at which tweak width adaptation begins
+# note: as currently named arguments not supported,
+# if subsequent arguments needed, this can be passed as == max_iterations
+start_tweak_width_adaptation_at = 100
+    
+# set iterations at which temperature is fixed after adaptation
+# note: as currently named arguments not supported,
+# if subsequent arguments needed, this can be passed as == max_iterations
+fix_temperature_at = 0
+    
+# set iterations at which temperature adaptation begins
+# note: as currently named arguments not supported,
+# if subsequent arguments needed, this can be passed as == max_iterations
+start_temperature_adaptation_at = 0
+
+# noise_stdev, shock_anneal_at,
+# fix_tweak_width_at, start_tweak_width_adaptation_at,
+# fix_temperature_adaptation_at, start_temperature_adaptation_at
+# note: latter three - if bash launcher sets that at zero, config file values are taken instead
+
+# get subexperiment name and  corresponding chain configuration:    
+subexperiment_name = list(configs.specific_experiment_chain_hyperparams.keys())[configuration_number]
+config = copy.deepcopy(configs.default_chain_hyperparams)
+for supersede in configs.specific_experiment_chain_hyperparams[subexperiment_name]:
+    config[supersede] = configs.specific_experiment_chain_hyperparams[subexperiment_name][supersede]
+# note: supersede is name of each hyperparam that is superseded in defaults
+# by value for this specific experiment (subexperiment)
+
+# if passed and set above, then populate in config both shock_anneal_at, 
+# and temperature (twice the noise variance, ie. 2* noise_stdev**2)
+# but NOT if in configs set as tuple in which case temperature will be sampled from inverse gamma distribution
+# TO DO: implement passing it here but tricky with  variably 1 or 2 parameter bash argument
+if noise_stdev:
+    if type(config['temperature_proposal']) in [int, float, bool]:
+        config['temperature_proposal'] = 2 * noise_stdev**2
+if shock_anneal_at:
+    config['shock_anneal_at'] = shock_anneal_at 
+if fix_tweak_width_at:
+    config['fix_tweak_width_at'] = fix_tweak_width_at 
+if start_tweak_width_adaptation_at:
+    config['start_tweak_width_adaptation_at'] = start_tweak_width_adaptation_at 
+if fix_temperature_at:
+    config['fix_temperature_at'] = fix_temperature_at 
+if start_temperature_adaptation_at:
+    config['start_temperature_adaptation_at'] = start_temperature_adaptation_at 
+
+    
+# also FOR NOW append noise stdev to experiment name:
+experiment_name = experiment_name + '_std' + str(noise_stdev).replace('.','p')
+
+
+#%% prepare simulated multi-observable training datasets:
+# !!! NOTE: this currently means not using specified target file but taking data from file below instead:
+
+
+
+# if qubit initial state required:
+qubit_initial_state = definitions.ops['plus']
+defect_initial_state = definitions.ops['mm']    
+
+
+#%% perform learning:
+
+
+def execute_chain(run_configs: tuple) -> None:
+    """
+    Make and run new chain for each configurations tuple 
+    (target_file, defects_count, repetition_number) or (target_file, D, R)
+    
+    Argument: repetition_number aka R (passed by multiprocessing map() function)
+    """
+    target_file, defects_count, repetition_number = run_configs
+    
+    # import experimental data (corresponding to sigma x)
+    imported_data = np.genfromtxt(target_file + '.csv', delimiter=',').transpose()
+    ts, sx = imported_data[0]/1000, imported_data[1] # note: convert time to us here (from original ns)
+    measurement_datasets = [sx]
+    measurement_observables = ['sigmax']
+                
+    # times and measurement data to use for training:
+    # (encapsulate into lists of datasets and corresponding observable lables:)
+    # note: currently here not training on subset but can be implemented like below:
+    # training_ts = ts[:int(proportion_to_use*len(ts))]
+    training_ts = ts
+    training_measurement_datasets = measurement_datasets
+    training_measurement_observables = measurement_observables
+
+    
+    # run's output files common name:
+    # example: '250421_Wit4b-grey_ForClusters'
+    filename = (experiment_name + '_' + target_file.replace('.csv', '') + '_' + subexperiment_name + '_D' + str(defects_count) +
+        '_R' + str(repetition_number))
+    
+    
+     
+    print(filename, flush = True)
+    
+    
+    # instance of learning (quest for best model):
+    quest = learning_chain.LearningChain(target_times = training_ts,
+                          target_datasets = training_measurement_datasets,
+                          target_observables = training_measurement_observables,
+                          
+                          initial = (1, defects_count), # (qubit energy, number of defects)
+                          #initial = initial_model,
+                          qubit_initial_state = qubit_initial_state,
+                          defect_initial_state = definitions.ops['mm'],    
+    
+                          max_chain_steps = max_iterations,
+                          
+                          store_all_proposals = False,
+                          
+                          **config # specific experiment chain hyperparameters
+                          
+                          )
+    
+    # import matplotlib.pyplot as plt
+    # plt.figure()
+    # plt.plot(new_ts := np.linspace(min(ts), max(ts)/1, 1000),
+    #           quest.initial.calculate_dynamics(new_ts, ['sigmax'])[0])
+    
+    #%%
+    best = quest.run()
+    
+    
+    
+    #%%
+    best = quest.best
+    evaluation_ts = np.linspace(ts[0], ts[-1], max(10*len(ts), int(1000)))
+    best_datasets = best.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables,
+                                            custom_function_on_return = False)
+    
+    
+    #%% chain run outputs:
+    
+    # output controls bundle:
+    class Toggles:    
+        comparison = True # plot comparison of dynamics
+        loss = True # loss progression
+        log_posterior = True # log posterior 
+        log_likelihood_prior = True # superimposed log likelihood and prior
+        acceptance_probability = False
+        acceptance_windows = True # plot acceptance ratios over subsequenct windows
+        graphs = False # plot model graphs with corresponding labels
+        pickle = True # save selected models as pickles
+        text = True # save selected models as text
+        all_proposals = True # save all proposals dictionary as created by chain 
+        hyperparams = True # save chain hyperparameters as json
+    
+    
+    # create outputs - measurements, training subset, prediction on evaluation_ts:
+    if True:
+        output.Output(toggles = Toggles, filename = filename,
+           dynamics_ts = [ts, training_ts, evaluation_ts],
+           dynamics_datasets = [measurement_datasets, training_measurement_datasets, best_datasets],
+           dynamics_datasets_labels = ['all measurements', 'training subset', 'prediction'],
+           dynamics_formatting = ['b+', 'b.', 'r-'],
+           observable_labels = measurement_observables,
+           best_loss = quest.best_loss,
+           # !!! TO DO: two lines below are new -- add elsewhere too!
+           overall_acceptance = {'parameters tweak': quest.acc_tweak_steps/max(quest.tot_tweak_steps, 1), # avoiding div by 0
+                                 'reversible jump': quest.acc_RJ_steps/max(quest.tot_RJ_steps, 1)}, # avoiding div by 0
+           tweak_widths_after_annealing = quest.tweak_widths_after_annealing,
+           windows_acc_rates = quest.windows_acc_rates,
+           models_to_save = [best],
+           model_names = ['best'],
+           chain_hyperparams = quest.get_init_hyperparams(),
+           all_proposals = quest.all_proposals,
+           shock_anneal_at = config['shock_anneal_at']
+           )
+        
+
+if __name__ == '__main__' and True:
+        
+
+    with multiprocessing.Pool() as pool:
+        
+        chain_outputs = pool.map(execute_chain, FDRs)
+
+

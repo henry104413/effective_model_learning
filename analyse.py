@@ -35,15 +35,15 @@ single_col_tall_figsize=(1.6,2)
 
 
 # settings:
-experiment_name = '261017-6M'
-noise_stdev = 0.01 # set None if not included in file name
+experiment_name = '261024-6M'
+noise_stdev = 0.05 # set None if not included in file name
 D = 2
 Rs = [i for i in range(30)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e1000'
-chosen_k = 4 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
+chosen_k = 5 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -84,7 +84,7 @@ posteriors = [x[0] + x[1] for x in log_likelihoods_priors]
 
 
 # note: files needed for import given a choice of k are:
-# lowest are best model pickle (for extracting process labels)
+# lowest R best model pickle (for extracting process labels)
 # combined_assignments pickle for that k
 # points (as subsampled and vectorised - prior to choice of k)
 # outputs for ks (contain assignments but also metrics for all k's - maybe redundant)
@@ -425,7 +425,7 @@ if True:
                      linestyle = '', linewidth = 0, # this would connect the points - not wanted
                      ecolor = 'b', elinewidth = 0.1, capsize = 0.2, capthick = 0.1,
                      marker = 'D' , mfc = 'none', mec = 'b', mew = 0.1, markersize = 0.5, 
-                     label = 'target', alpha = 0.7)
+                     label = 'target', alpha = 0.5)
         #plt.legend(fontsize = 'small')
         plt.savefig(output_name + '_Cs' + clusters_label_short
                     + '_samp' + str(min(samples, len(model_set)))
@@ -446,7 +446,7 @@ if True:
                      linestyle = '', linewidth = 0, # this would connect the points - not wanted
                      ecolor = 'b', elinewidth = 0.1, capsize = 0.2, capthick = 0.1,
                      marker = 'D' , mfc = 'none', mec = 'b', mew = 0.1, markersize = 0.5, 
-                     label = 'target', alpha = 0.7
+                     label = 'target', alpha = 0.5
                      )
         plt.legend(ncol = 2, fontsize = 'small')
         plt.savefig(output_name + '_Cs' + clusters_label_short
