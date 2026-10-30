@@ -35,15 +35,15 @@ single_col_tall_figsize=(1.6,2)
 
 
 # settings:
-experiment_name = '261024-6M'
-noise_stdev = 0.05 # set None if not included in file name
+experiment_name = '261017-6M'
+noise_stdev = 0.01 # set None if not included in file name
 D = 2
 Rs = [i for i in range(30)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
 clustering_name = 'e1000'
-chosen_k = 5 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
+chosen_k = 4 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -286,7 +286,7 @@ if True:
 # %%
 # popularity of different processes:
 # CURRENTLY compare UP TO 5 most popular clusters (slicing capped by number of clusters)
-if True:
+if not True:
     cluster_choices = clusters_by_pop_desc[0:5]
     # cluster_choices = [2,3,4] # for LN D=1
     # formatting - must have options for at least each cluster choice, can be longer:
@@ -323,7 +323,6 @@ if True:
 
 # section settings:
 cluster_choices = list(range(chosen_k)) # note: now taken from above section, enable if required separately
-#cluster_choices = [0,1]#1,3,4]
 samples = 1000
 
 # target data:
@@ -399,7 +398,7 @@ for j, chosen_cluster in enumerate(cluster_choices):
 # plot all chosen clusters combined, and all chosen clusters separate dynamics overlay 
 if True:
     cluster_choices = list(range(chosen_k))
-    #cluster_choices = [0,1,3,4]
+    if not False: cluster_choices = [0,1,2] # only showing dynamics of handpicked clusters
     measurement_observables = ['sigmax', 'sigmay']
     colours = ['orange','purple', 'green', 'cyan', 'firebrick', 'thistle']
     key = tuple(cluster_choices)
@@ -409,6 +408,14 @@ if True:
              for obs in measurement_observables}
     stds[key] = {obs: cumul_evaluated_arrays[obs].std(axis=0)
              for obs in measurement_observables}
+    
+    errorbarformatting = {'linestyle': '', 
+                          'linewidth': 0, # this would connect the points - not wanted
+                          'ecolor': 'b', 'elinewidth': 0.07, 'capsize': 0.14, 'capthick': 0.07,
+                          'marker': 'D' , 'mfc': 'b', 'mec': 'b', 'mew': 0.07, 'markersize': 0.5, 
+                          'alpha': 0.5,
+                          'label': 'target'
+                          }
     
     for i, op in enumerate(measurement_observables):
         
@@ -422,10 +429,8 @@ if True:
         plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                          alpha=0.2, facecolor='tomato', edgecolor = 'none', label = clusters_label)
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
-                     linestyle = '', linewidth = 0, # this would connect the points - not wanted
-                     ecolor = 'b', elinewidth = 0.1, capsize = 0.2, capthick = 0.1,
-                     marker = 'D' , mfc = 'none', mec = 'b', mew = 0.1, markersize = 0.5, 
-                     label = 'target', alpha = 0.5)
+                     **errorbarformatting
+                     )
         #plt.legend(fontsize = 'small')
         plt.savefig(output_name + '_Cs' + clusters_label_short
                     + '_samp' + str(min(samples, len(model_set)))
@@ -443,10 +448,7 @@ if True:
             plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                              alpha=0.1, label = '' + str(key), facecolor = colours[j], edgecolor = 'none')
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
-                     linestyle = '', linewidth = 0, # this would connect the points - not wanted
-                     ecolor = 'b', elinewidth = 0.1, capsize = 0.2, capthick = 0.1,
-                     marker = 'D' , mfc = 'none', mec = 'b', mew = 0.1, markersize = 0.5, 
-                     label = 'target', alpha = 0.5
+                     **errorbarformatting
                      )
         plt.legend(ncol = 2, fontsize = 'small')
         plt.savefig(output_name + '_Cs' + clusters_label_short

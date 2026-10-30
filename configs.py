@@ -23,7 +23,7 @@ Ls_shape_scale = (1.02, 4)
 
 default_chain_hyperparams = {    
         'chain_step_options': {
-            'tweak all parameters': 72,
+            'tweak all parameters': 36,
             'add qubit L': 1,
             'remove qubit L': 1,
             'add defect L': 1,
@@ -61,7 +61,7 @@ default_chain_hyperparams = {
         'temperature_adaptation_factor': 1, # now say 2?
         'acc_rate_max': 0.5,
         'acc_rate_min': 0.1,
-        'tweak_width_adaptation_factor_rescaling': 0.999, 
+        'tweak_width_adaptation_factor_rescaling': 0.995, 
         
         
         'params_handler_hyperparams': { 

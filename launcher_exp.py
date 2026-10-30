@@ -41,12 +41,12 @@ import definitions
 # defaults specified here if unavailable
 # note: files are overwritten if saved with same name
 
-experiment_name = '261027-test2'
-target_files = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025"]#, "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2", "Wit-Fig4-7-0_1"]
+experiment_name = '261027-2M-exp'
+target_files = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025", "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2", "Wit-Fig4-7-0_1"]
 defects_count = 2
-defects_counts = [1,2]#,3]
-repetition_numbers = list(range(2))
-max_iterations = 2000
+defects_counts = [1,2,3]
+repetition_numbers = list(range(5))
+max_iterations = 2000000
 if max_iterations == 0:
     raise Exception('Maximum iterations not specified by launcher, hence using default.')
 proportion_to_use = 1
@@ -72,12 +72,12 @@ shock_anneal_at = 0
 # set iterations at which tweak width is fixed after adaptation
 # note: as currently named arguments not supported,
 # if subsequent arguments needed, this can be passed as == max_iterations
-fix_tweak_width_at = 1000
+fix_tweak_width_at = 200000
     
 # set iterations at which tweak width adaptation begins
 # note: as currently named arguments not supported,
 # if subsequent arguments needed, this can be passed as == max_iterations
-start_tweak_width_adaptation_at = 100
+start_tweak_width_adaptation_at = 1000
     
 # set iterations at which temperature is fixed after adaptation
 # note: as currently named arguments not supported,
