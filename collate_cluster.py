@@ -39,13 +39,15 @@ single_col_figsize=(1.6,1)
 
 
 # settings and source data:
-experiment_name_base = '261017-6M'
+experiment_name_base = '261017-test1-MP'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 noise_stdevs = [0.01]
 Ds = [2]#[1,2,3]
-Rs = [i for i in range(30)]#[1,2,3] # for combining chains - same for all Ds above
-Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1]
+Rs = [i for i in range(4)]#[1,2,3] # for combining chains - same for all Ds above
+if False: Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1] # lists all Rs - may crash if file name too long
+if len(Rs)>1: Rs_tag = str(Rs[0]) + 'thru' + str(Rs[-1]) 
+else: Rs_tag = str(Rs[0])
 min_clusters = 2
 max_clusters = 10
 bounds = []
