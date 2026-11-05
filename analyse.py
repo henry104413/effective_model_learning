@@ -26,9 +26,13 @@ from definitions import observable_shorthand2pretty as ops_longlabels, ops
 plt.rcParams.update({'font.size': 6})
 plt.rcParams['font.family'] = 'Times New Roman'
 plt.rcParams['axes.labelpad'] = 0
-single_col_figsize=(1.6,1)
-single_col_tall_figsize=(1.6,2)
-
+plt.rcParams['axes.linewidth'] = 0.25
+plt.rcParams['xtick.major.width'] = 0.25
+plt.rcParams['ytick.major.width'] = 0.25
+single_col_figsize=(3.41,2)
+single_col_tall_figsize=(3.41,4)
+single_col_square_figsize=(3.41,3.41)
+#%%
 # # to try on cluster -- doesn't seem to work:
 # plt.rcParams['font.family'] = 'serif'
 # plt.rcParams['font.serif'] = ['Times New Roman'] + plt.rcParams['font.serif']
@@ -243,7 +247,7 @@ if True:
         Z = linkage(squareform(dissimilarity), 'complete')
         
         # plot correlation matrix:
-        plt.figure(figsize=(10,10))
+        plt.figure(figsize=single_col_square_figsize)
         seaborn.heatmap(CM, annot=False, cmap=cmap, fmt=".2f", linewidths=0.5, vmin = -1, vmax = 1)
         # colormaps: coolwarm, PiYG
         plt.savefig(output_name + '_Cs' + Cs_tag + '_mat.svg', dpi = 1000, bbox_inches='tight')
@@ -251,7 +255,7 @@ if True:
         # hierarchical clustering:
         
         # plot dendrogram:    
-        plt.figure(figsize=(10,5))
+        plt.figure(figsize=single_col_square_figsize)
         dendrogram(Z, labels=data.columns, orientation='top', 
                    leaf_rotation=90);
         plt.ylabel('dissimilarity')
@@ -275,7 +279,7 @@ if True:
                         clustered = pd.concat([clustered, df_to_append], axis=1)
                 
                 # plot:        
-                plt.figure(figsize=(10,10))
+                plt.figure(figsize=single_col_square_figsize)
                 clust_CM = clustered.corr()
                 # seaborn.heatmap(round(clust_CM,2), cmap='RdBu', annot=True, annot_kws={"size": 7}, vmin=-1, vmax=1);
                 seaborn.heatmap(clust_CM, cmap=cmap, annot=False, annot_kws={"size": 7}, vmin=-1, vmax=1);
@@ -395,7 +399,7 @@ for j, chosen_cluster in enumerate(cluster_choices):
             cumul_evaluated_arrays[obs] = np.concatenate((cumul_evaluated_arrays[obs], evaluated_arrays[obs]), axis = 0)
     
 #%%    
-# plot all chosen clusters combined, and all chosen clusters separate dynamics overlay 
+# plot dynamics sweep of all chosen clusters combined, and all chosen clusters separate dynamics overlay 
 if True:
     cluster_choices = list(range(chosen_k))
     if not False: cluster_choices = [0,1,2] # only showing dynamics of handpicked clusters
@@ -409,10 +413,13 @@ if True:
     stds[key] = {obs: cumul_evaluated_arrays[obs].std(axis=0)
              for obs in measurement_observables}
     
+    
+    curveLW = 0.5
+    ebarLW = 0.25
     errorbarformatting = {'linestyle': '', 
                           'linewidth': 0, # this would connect the points - not wanted
-                          'ecolor': 'b', 'elinewidth': 0.07, 'capsize': 0.14, 'capthick': 0.07,
-                          'marker': 'D' , 'mfc': 'b', 'mec': 'b', 'mew': 0.07, 'markersize': 0.5, 
+                          'ecolor': 'b', 'elinewidth': ebarLW, 'capsize': 0.2, 'capthick': ebarLW,
+                          'marker': 'D' , 'mfc': 'none', 'mec': 'b', 'mew': ebarLW, 'markersize': 0.75, 
                           'alpha': 0.5,
                           'label': 'target'
                           }
@@ -425,7 +432,7 @@ if True:
         plt.xlabel(r't ($\mu s$)')
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-0.2, 0.8])
-        plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = 0.3, alpha = 0.7)
+        plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = curveLW, alpha = 0.7)
         plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                          alpha=0.2, facecolor='tomato', edgecolor = 'none', label = clusters_label)
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
@@ -444,7 +451,7 @@ if True:
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-0.2, 0.8])
         for j, key in enumerate(cluster_choices): 
-            plt.plot(evaluation_ts, means[key][op], '-', linewidth = 0.1, alpha = 0.5, color = colours[j])
+            plt.plot(evaluation_ts, means[key][op], '-', linewidth = curveLW, alpha = 0.5, color = colours[j])
             plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                              alpha=0.1, label = '' + str(key), facecolor = colours[j], edgecolor = 'none')
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,

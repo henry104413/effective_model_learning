@@ -35,9 +35,15 @@ import time
 plt.rcParams.update({'font.size': 6})
 plt.rcParams['font.family'] = 'Times New Roman'
 plt.rcParams['axes.labelpad'] = 0
-single_col_figsize=(1.6,1)
+plt.rcParams['axes.linewidth'] = 0.25
+plt.rcParams['xtick.major.width'] = 0.25
+plt.rcParams['ytick.major.width'] = 0.25
+single_col_figsize=(3.41,2)
+single_col_tall_figsize=(3.41,4)
+single_col_square_figsize=(3.41,3.41)
 
 
+#%%
 # settings and source data:
 experiment_name_base = '261017-test1-MP'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
