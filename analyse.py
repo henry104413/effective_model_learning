@@ -13,8 +13,10 @@ import pandas as pd
 import pickle
 import seaborn
 import matplotlib.pyplot as plt
+import matplotlib
 import numpy as np
 import random
+#import copy
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import squareform
 
@@ -32,6 +34,8 @@ plt.rcParams['ytick.major.width'] = 0.25
 single_col_figsize=(3.41,2)
 single_col_tall_figsize=(3.41,4)
 single_col_square_figsize=(3.41,3.41)
+colours = list(matplotlib.colormaps['Set1'].resampled(9)(range(9)))
+
 #%%
 # # to try on cluster -- doesn't seem to work:
 # plt.rcParams['font.family'] = 'serif'
@@ -48,8 +52,8 @@ config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 if False: Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1] # lists all Rs - may crash if file name too long
 if len(Rs)>1: Rs_tag = str(Rs[0]) + 'thru' + str(Rs[-1]) 
 else: Rs_tag = str(Rs[0])
-clustering_name = 'e5000'
-chosen_k = 6 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
+clustering_name = 'e500'
+chosen_k = 3 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -244,6 +248,13 @@ if True:
         
         # parameter values dataframe, as well as correlation, dissimilarity, and linkage matrices:            
         data = pd.DataFrame(data = parameter_lists, columns = labels[:]) # columns! ?? is it still now without energies??
+        # note: assuming only one system, replace with nicer labels:
+        labels_cmat = [x.replace('S1','S') for x in labels_latex]
+        for i in range(len(labels_cmat)):
+            labels_cmat[i] = labels_cmat[i].replace(',', ' ')#'$\\leftrightarrow$')
+            for j in range(10):
+                labels_cmat[i] = labels_cmat[i].replace('V' + str(j), 'V' + '$_' + str(j) + '$')
+        data = data.rename(columns = {labels[i]: labels_cmat[i] for i in range(len(labels))})
         CM = data.corr()
         dissimilarity = 1 - abs(CM)
         Z = linkage(squareform(dissimilarity), 'complete')
@@ -284,7 +295,7 @@ if True:
                 plt.figure(figsize=single_col_square_figsize)
                 clust_CM = clustered.corr()
                 # seaborn.heatmap(round(clust_CM,2), cmap='RdBu', annot=True, annot_kws={"size": 7}, vmin=-1, vmax=1);
-                seaborn.heatmap(clust_CM, cmap=cmap, annot=False, annot_kws={"size": 7}, vmin=-1, vmax=1);
+                seaborn.heatmap(clust_CM, cmap=cmap, annot=False, vmin=-1, vmax=1);
                 plt.savefig(output_name + '_Cs' + Cs_tag + '_thr' + str(threshold) + '_cmat.svg', dpi = 1000, bbox_inches='tight')
             
         
@@ -296,7 +307,7 @@ if not True:
     cluster_choices = clusters_by_pop_desc[0:5]
     # cluster_choices = [2,3,4] # for LN D=1
     # formatting - must have options for at least each cluster choice, can be longer:
-    colours = ['red', 'blue', 'black', 'purple', 'orange']
+    
     heights = [0.8, 0.65, 0.40, 0.25, 0.1] # ideally descending
     alphas = [0.3, 0.3, 0.5, 0.7, 1] # ideally ascending or same
     pops_all = [sum([True for point in points if abs(point[p]) > 0])/len(points)
@@ -406,7 +417,7 @@ if True:
     cluster_choices = list(range(chosen_k))
     if False: cluster_choices = [4,5] # only showing dynamics of handpicked clusters
     measurement_observables = ['sigmax', 'sigmay']
-    colours = ['orange','purple', 'green', 'cyan', 'firebrick', 'thistle']
+    
     key = tuple(cluster_choices)
     clusters_label = 'clusters ' + ''.join([str(x) + ', ' for x in cluster_choices])[:-2]
     clusters_label_short = ''.join([str(x) + ',' for x in cluster_choices])[:-1]
