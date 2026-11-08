@@ -43,16 +43,16 @@ colours = list(matplotlib.colormaps['Set1'].resampled(9)(range(9)))
 
 
 # settings:
-experiment_name = '261103-4M'
-noise_stdev = 0.05 # set None if not included in file name
-D = 2
-Rs = [i for i in range(90)] # for D2
+experiment_name = '261027-2M-exp'
+noise_stdev = 0 # set None if not included in file name
+D = 3
+Rs = [i for i in range(5)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 if False: Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1] # lists all Rs - may crash if file name too long
 if len(Rs)>1: Rs_tag = str(Rs[0]) + 'thru' + str(Rs[-1]) 
 else: Rs_tag = str(Rs[0])
-clustering_name = 'e500'
+clustering_name = 'e1000'
 chosen_k = 3 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
@@ -61,7 +61,7 @@ target_data_pickle_file = (
 
 # consequent setup:
 hyperparams = configs.get_hyperparams(config_name)
-if noise_stdev:
+if noise_stdev or True:
     experiment_name += '_std' + str(noise_stdev).replace('.','p')
 experiment_name += og_source
 output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
@@ -428,11 +428,11 @@ if True:
     
     
     curveLW = 0.75
-    ebarLW = 0.5
+    ebarLW = 0.35
     errorbarformatting = {'linestyle': '', 
                           'linewidth': 0, # this would connect the points - not wanted
-                          'ecolor': 'b', 'elinewidth': ebarLW, 'capsize': 0.5, 'capthick': ebarLW,
-                          'marker': 'D' , 'mfc': 'b', 'mec': 'none', 'mew': ebarLW, 'markersize': 1.0, 
+                          'ecolor': 'k', 'elinewidth': ebarLW, 'capsize': 0.35, 'capthick': ebarLW,
+                          'marker': 'D' , 'mfc': 'k', 'mec': 'none', 'mew': ebarLW, 'markersize': 1.0, 
                           'alpha': 0.5,
                           'label': 'target'
                           }
@@ -445,7 +445,7 @@ if True:
         plt.xlabel(r't ($\mu s$)')
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-0.2, 0.8])
-        plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = curveLW, alpha = 0.7)
+        plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = curveLW, alpha = 0.75)
         plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                          alpha=0.2, facecolor='tomato', edgecolor = 'none', label = clusters_label)
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
@@ -464,7 +464,7 @@ if True:
         plt.ylabel(ops_longlabels[op])
         plt.ylim([-0.2, 0.8])
         for j, key in enumerate(cluster_choices): 
-            plt.plot(evaluation_ts, means[key][op], '-', linewidth = curveLW, alpha = 0.5, color = colours[j])
+            plt.plot(evaluation_ts, means[key][op], '-', linewidth = curveLW, alpha = 0.75, color = colours[j])
             plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                              alpha=0.1, label = '' + str(key), facecolor = colours[j], edgecolor = 'none')
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,

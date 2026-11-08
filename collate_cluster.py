@@ -45,7 +45,7 @@ single_col_square_figsize=(3.41,3.41)
 
 #%%
 # settings and source data:
-experiment_name_base = '261017-test1-MP'
+experiment_name_base = '261027-2M-exp'
 og_source = '_Wit-Fig4-6-0_025' # in naming convention referencing original data used to create simulated data 
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 noise_stdevs = [0.01]
