@@ -25,7 +25,7 @@ from definitions import observable_shorthand2pretty as ops_longlabels, ops
 # global plotting settings (works locally):
 plt.rcParams.update({'font.size': 6})
 plt.rcParams['font.family'] = 'Times New Roman'
-plt.rcParams['axes.labelpad'] = 0
+plt.rcParams['axes.labelpad'] = -0
 plt.rcParams['axes.linewidth'] = 0.25
 plt.rcParams['xtick.major.width'] = 0.25
 plt.rcParams['ytick.major.width'] = 0.25
@@ -39,15 +39,17 @@ single_col_square_figsize=(3.41,3.41)
 
 
 # settings:
-experiment_name = '261017-6M'
-noise_stdev = 0.01 # set None if not included in file name
+experiment_name = '261103-4M'
+noise_stdev = 0.05 # set None if not included in file name
 D = 2
-Rs = [i for i in range(30)] # for D2
+Rs = [i for i in range(90)] # for D2
 og_source = '_Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
-Rs_tag = ''.join([str(x) + ',' for x in Rs])[:-1]
-clustering_name = 'e1000'
-chosen_k = 4 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
+if False: Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1] # lists all Rs - may crash if file name too long
+if len(Rs)>1: Rs_tag = str(Rs[0]) + 'thru' + str(Rs[-1]) 
+else: Rs_tag = str(Rs[0])
+clustering_name = 'e5000'
+chosen_k = 6 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -402,7 +404,7 @@ for j, chosen_cluster in enumerate(cluster_choices):
 # plot dynamics sweep of all chosen clusters combined, and all chosen clusters separate dynamics overlay 
 if True:
     cluster_choices = list(range(chosen_k))
-    if not False: cluster_choices = [0,1,2] # only showing dynamics of handpicked clusters
+    if False: cluster_choices = [4,5] # only showing dynamics of handpicked clusters
     measurement_observables = ['sigmax', 'sigmay']
     colours = ['orange','purple', 'green', 'cyan', 'firebrick', 'thistle']
     key = tuple(cluster_choices)
@@ -414,12 +416,12 @@ if True:
              for obs in measurement_observables}
     
     
-    curveLW = 0.5
-    ebarLW = 0.25
+    curveLW = 0.75
+    ebarLW = 0.5
     errorbarformatting = {'linestyle': '', 
                           'linewidth': 0, # this would connect the points - not wanted
-                          'ecolor': 'b', 'elinewidth': ebarLW, 'capsize': 0.2, 'capthick': ebarLW,
-                          'marker': 'D' , 'mfc': 'none', 'mec': 'b', 'mew': ebarLW, 'markersize': 0.75, 
+                          'ecolor': 'b', 'elinewidth': ebarLW, 'capsize': 0.5, 'capthick': ebarLW,
+                          'marker': 'D' , 'mfc': 'b', 'mec': 'none', 'mew': ebarLW, 'markersize': 1.0, 
                           'alpha': 0.5,
                           'label': 'target'
                           }
