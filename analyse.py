@@ -25,7 +25,8 @@ import learning_model
 from definitions import observable_shorthand2pretty as ops_longlabels, ops
 
 # global plotting settings (works locally):
-plt.rcParams.update({'font.size': 6})
+fontsize = 6
+plt.rcParams.update({'font.size': fontsize})
 plt.rcParams['font.family'] = 'Times New Roman'
 plt.rcParams['axes.labelpad'] = -0
 plt.rcParams['axes.linewidth'] = 0.25
@@ -43,16 +44,16 @@ colours = list(matplotlib.colormaps['Set1'].resampled(9)(range(9)))
 
 
 # settings:
-experiment_name = '261027-2M-exp'
-noise_stdev = 0 # set None if not included in file name
-D = 3
-Rs = [i for i in range(5)] # for D2
-og_source = '_Wit-Fig4-6-0_025'
+experiment_name = '261103-4M'
+noise_stdev = 0.05 # set None if not included in file name
+D = 2
+Rs = [i for i in range(90)] # for D2
+og_source = 'Wit-Fig4-6-0_025'
 config_name = 'Lsyst-sx,sy,sz-Lvirt-sz,sy,sz-Cs2v-sx,sy,sz-Cv2v-sx,sy,sz-'
 if False: Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1] # lists all Rs - may crash if file name too long
 if len(Rs)>1: Rs_tag = str(Rs[0]) + 'thru' + str(Rs[-1]) 
 else: Rs_tag = str(Rs[0])
-clustering_name = 'e1000'
+clustering_name = 'e500'
 chosen_k = 3 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
@@ -63,7 +64,7 @@ target_data_pickle_file = (
 hyperparams = configs.get_hyperparams(config_name)
 if noise_stdev or True:
     experiment_name += '_std' + str(noise_stdev).replace('.','p')
-experiment_name += og_source
+experiment_name += '_' + og_source
 output_name = (experiment_name + '_' + config_name + '_D' + str(D) + '_Rs' + Rs_tag + '_'
                + clustering_name + '_k' + str(chosen_k) + '_select')
 
@@ -267,12 +268,16 @@ if True:
         
         # hierarchical clustering:
         
-        # plot dendrogram:    
-        plt.figure(figsize=single_col_square_figsize)
-        dendrogram(Z, labels=data.columns, orientation='top', 
-                   leaf_rotation=90);
-        plt.ylabel('dissimilarity')
-        plt.savefig(output_name + '_Cs' + Cs_tag + '_dendrogram.svg', dpi = 1000, bbox_inches='tight')
+        # plot dendrogram: 
+        with plt.rc_context({'lines.linewidth': 0.5}):
+            plt.figure(figsize=single_col_square_figsize)
+            #plt.gca().tick_params(axis='y', rotation=0)
+            dendrogram(Z, labels=data.columns, orientation='right'
+                       ,leaf_rotation=0
+                       ,leaf_font_size=fontsize
+                       )
+            plt.ylabel('dissimilarity')
+            plt.savefig(output_name + '_Cs' + Cs_tag + '_dendrogram.svg', dpi = 1000, bbox_inches='tight')
         
         # plot correlation matrix with clustered parameters
         # note: now clustering parameters not models!!
@@ -495,11 +500,11 @@ if True:
     champions_array = np.stack([champions[x] for x in cluster_choices])
     
     plt.figure(figsize=single_col_tall_figsize)
-    axisfontsize = 6
+    axisfontsize = fontsize
     img = plt.imshow(np.transpose(champions_array), interpolation='none', aspect='1')
     cbar = plt.colorbar(img, fraction=0.015) # , cmap='viridis' ???? not doing anything?
     plt.set_cmap('viridis')
-    cbar.ax.tick_params(labelsize=6)
+    cbar.ax.tick_params(labelsize=fontsize)
     plt.xticks(ticks = [x for x in range(champions_array.shape[0])], labels = [x for x in range(champions_array.shape[0])])
     plt.ylabel('parameter', fontsize=axisfontsize)
     plt.yticks(range(len(labels_latex)), labels = labels_latex)
