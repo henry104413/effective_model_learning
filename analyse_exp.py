@@ -7,7 +7,7 @@ Effective model learning
 Finds correlations for across selected clusters of models.
 """
 
-# CHANGE: POSTERIORS NO LONGER SAVED - SWAP FOR IMPORTING LOG LIKELIHOODS PRIORS AND SUMMING 
+# TO DO: now uses the same k for all - this should change and be manually controllable
 
 import pandas as pd
 import pickle
@@ -20,6 +20,7 @@ import random
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import squareform
 import multiprocessing
+import itertools
 
 import configs
 import learning_model
@@ -41,22 +42,34 @@ colours += colours
 
 # assuming same D for each og_file and same number of Rs for each combination
 og_sources = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025", "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2", "Wit-Fig4-7-0_1"]
-#og_sources = ["Wit-Fig4-6-0_025", "Wit-Fig4-7-0_1"]
+#og_sources = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025"]
 Ds = [1,2,3]
+#Ds = [1,2]
 og_sources_Ds = [(og_source, D) for og_source in og_sources for D in Ds]
 human_labels = {"Wit-Fig4-5-0_1": '5\n0.1',
                 "Wit-Fig4-6-0_025": '6\n0.025',
                 "Wit-Fig4-6-0_1": '6\n0.1',
                 "Wit-Fig4-6-0_2": '6\n0.2',
                 "Wit-Fig4-7-0_1": '7\n0.1'}
-    
+
+ks = [4,4,5,
+     4,4,7,
+     4,5,5,
+     4,4,4,
+     4,5,5,
+     ]
+#ks = [4,4,4,4]
+# chosen ks CORRESPONDING TO each combination in order: first og_source with all its Ds etc.
+# !!! this currently has to be populated manually (user choice of k)
+
+og_sources_Ds_ks = [(og_sources_Ds[i][0], og_sources_Ds[i][1], ks[i]) for i in range(len(og_sources_Ds))]
     # restoring - damping (MHz)
 
+#%%
 
-
-def execute(og_source_D: tuple[str]) -> dict[tuple[list]]:
+def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     
-    og_source, D = og_source_D
+    og_source, D, k = og_source_D_k
     
     # settings:
     experiment_name = '261027-2M-exp'
@@ -67,7 +80,7 @@ def execute(og_source_D: tuple[str]) -> dict[tuple[list]]:
     if len(Rs)>1: Rs_tag = str(Rs[0]) + 'thru' + str(Rs[-1]) 
     else: Rs_tag = str(Rs[0])
     clustering_name = 'e500'
-    chosen_k = 4 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
+    chosen_k = k # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
     correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
     
     # consequent setup:
@@ -537,15 +550,14 @@ if __name__ == '__main__' and True:
 
     with multiprocessing.Pool() as pool:
         
-        cumul_dynamics_sets = pool.map(execute, og_sources_Ds)
+        cumul_dynamics_sets = pool.map(execute, og_sources_Ds_ks)
 
 #%%
 # cumul dynamics set: list of dicts (keys obs, entries tuples of (ts, means, stds, target))
 # corresponds to elements of list (og_source, D)
 experiment_name = '261027-2M-exp'
 clustering_name = 'e500'
-chosen_k = 5
-filename = experiment_name + '_' + clustering_name + '_k' + str(chosen_k)
+filename = experiment_name + '_' + clustering_name
 curveLW = 0.75
 ebarLW = 0.5
 errorbarformatting = {}
@@ -559,9 +571,9 @@ for plotting_D in plotting_Ds:
         plt.figure(figsize=single_col_figsize)
         plt.ylabel(ops_longlabels[op])
         plt.xlabel(r't ($\mu s$)')
-        for i, og_source_D in enumerate(og_sources_Ds): 
+        for i, og_source_D_k in enumerate(og_sources_Ds_ks): 
             # i is the index of the og_file (trace) to plot for this observable and D
-            og_source, D = og_source_D
+            og_source, D, k = og_source_D_k
             if D == plotting_D:
                 cumul_dynamics_set = cumul_dynamics_sets[i]
                 ts, means, stds, target = cumul_dynamics_set[op]
