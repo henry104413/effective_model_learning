@@ -54,7 +54,7 @@ if False: Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1] # lists all Rs 
 if len(Rs)>1: Rs_tag = str(Rs[0]) + 'thru' + str(Rs[-1]) 
 else: Rs_tag = str(Rs[0])
 clustering_name = 'e500'
-chosen_k = 3 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
+chosen_k = 8 #
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -224,7 +224,7 @@ if True:
     # list of lists, each inner list for combinations of cluster to analyse together: 
     cluster_combinations = []
     # each separately - CURRENTLY DISABLED:
-    if False:
+    if not False:
         cluster_combinations.extend([x] for x in (models_by_clusters.keys()))
     # all together: 
     cluster_combinations.append(list(list(models_by_clusters.keys())))
