@@ -37,15 +37,21 @@ single_col_figsize=(3.41,2)
 single_col_tall_figsize=(3.41,4)
 single_col_square_figsize=(3.41,3.41)
 colours = list(matplotlib.colormaps['Set1'].resampled(9)(range(9)))
+colours += colours
 
 # assuming same D for each og_file and same number of Rs for each combination
 og_sources = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025", "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2", "Wit-Fig4-7-0_1"]
+#og_sources = ["Wit-Fig4-6-0_025", "Wit-Fig4-7-0_1"]
 Ds = [1,2,3]
 og_sources_Ds = [(og_source, D) for og_source in og_sources for D in Ds]
+human_labels = {"Wit-Fig4-5-0_1": '5\n0.1',
+                "Wit-Fig4-6-0_025": '6\n0.025',
+                "Wit-Fig4-6-0_1": '6\n0.1',
+                "Wit-Fig4-6-0_2": '6\n0.2',
+                "Wit-Fig4-7-0_1": '7\n0.1'}
+    
+    # restoring - damping (MHz)
 
-#TO DO
-#ADD MULTIPROCESSING
-#ADD OUTPUT AND PLOTTING FOR DIFFERENT OG_FILES AND D_S ON TOP OF EACH OTHER
 
 
 def execute(og_source_D: tuple[str]) -> dict[tuple[list]]:
@@ -61,7 +67,7 @@ def execute(og_source_D: tuple[str]) -> dict[tuple[list]]:
     if len(Rs)>1: Rs_tag = str(Rs[0]) + 'thru' + str(Rs[-1]) 
     else: Rs_tag = str(Rs[0])
     clustering_name = 'e500'
-    chosen_k = 5 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
+    chosen_k = 4 # e1000: 0.1: 5, 0.05: 4/7, 0.01: 6 none good
     correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
     
     # consequent setup:
@@ -373,12 +379,14 @@ def execute(og_source_D: tuple[str]) -> dict[tuple[list]]:
                              alpha=0.2, facecolor='tomato', edgecolor = 'none', label = clusters_label)
             if op in measurement_observables: # assuming measurement observables not repeated in additional observables (which they shouldn't be)
                 plt.plot(ts, measurement_datasets[i], **errorbarformatting)
+                target_datapoints = measurement_datasets[i]
+            else: target_datapoints = [None for x in measurement_datasets[0]]
             #plt.legend(fontsize = 'small')
             plt.savefig(output_name + '_Cs' + clusters_label_short
                         + '_samp' + str(min(samples, len(model_set)))
                         + '_' + op + '_lump_adhoc.svg', dpi = 1000, bbox_inches='tight')
             # # save cumulative dynamics (deepcopy should not be necessary) as output to overlay different datasets/Ds
-            cumul_dynamics[op] = (means[key][op], stds[key][op]) # tuple of lists
+            cumul_dynamics[op] = (ts, means[key][op], stds[key][op], target_datapoints) # tuple of lists
             
             
             # plot together means with stds filling for different clusters (overlay)
@@ -523,3 +531,50 @@ def execute(og_source_D: tuple[str]) -> dict[tuple[list]]:
 
     #%%
     return cumul_dynamics                         
+
+if __name__ == '__main__' and True:
+        
+
+    with multiprocessing.Pool() as pool:
+        
+        cumul_dynamics_sets = pool.map(execute, og_sources_Ds)
+
+#%%
+# cumul dynamics set: list of dicts (keys obs, entries tuples of (ts, means, stds, target))
+# corresponds to elements of list (og_source, D)
+experiment_name = '261027-2M-exp'
+clustering_name = 'e500'
+chosen_k = 5
+filename = experiment_name + '_' + clustering_name + '_k' + str(chosen_k)
+curveLW = 0.75
+ebarLW = 0.5
+errorbarformatting = {}
+
+plotting_Ds = Ds
+
+# plot for chosen plotting Ds, all evaluation observables (assumed same for all combinations of og_sources and Ds):
+# ...the overlay of dynamics for different og_sources (traces)
+for plotting_D in plotting_Ds:
+    for op in cumul_dynamics_sets[0].keys():
+        plt.figure(figsize=single_col_figsize)
+        plt.ylabel(ops_longlabels[op])
+        plt.xlabel(r't ($\mu s$)')
+        for i, og_source_D in enumerate(og_sources_Ds): 
+            # i is the index of the og_file (trace) to plot for this observable and D
+            og_source, D = og_source_D
+            if D == plotting_D:
+                cumul_dynamics_set = cumul_dynamics_sets[i]
+                ts, means, stds, target = cumul_dynamics_set[op]
+                plt.plot(ts, means, '-', linewidth = curveLW, alpha = 0.75, label = human_labels[og_source], color=colours[i])
+                plt.fill_between(ts, means-stds, means+stds,
+                                 alpha=0.2, facecolor=colours[i], edgecolor = 'none')
+                plt.plot(ts, target, linestyle = '',
+                         linewidth = 0, # this would connect the points - not wanted
+                         marker = '.' , mfc = 'none', mec = colours[i], mew = ebarLW, markersize = 4.0, 
+                         alpha = 1,
+                         #label = 'target'
+                         )
+        plt.legend(title = r'$D = $' + str(plotting_D) + '\n' + r'$rest.$' + ' (MHz)\n' + r'$damp.$' + ' (MHz)' )
+        plt.savefig(filename + '_' + str(op) + '_' + str(plotting_D)
+                    + '.svg', dpi = 1000, bbox_inches='tight')
+    
