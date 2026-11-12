@@ -37,14 +37,14 @@ plt.rcParams['ytick.major.width'] = 0.25
 single_col_figsize=(3.41,2)
 single_col_tall_figsize=(3.41,4)
 single_col_square_figsize=(3.41,3.41)
-colours = list(matplotlib.colormaps['Set1'].resampled(9)(range(9)))
-colours += colours
+colours = list(matplotlib.colormaps['Set1'].resampled(15)(range(15)))
+#colours += colours
 
 # assuming same D for each og_file and same number of Rs for each combination
 og_sources = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025", "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2", "Wit-Fig4-7-0_1"]
 #og_sources = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025"]
 Ds = [1,2,3]
-#Ds = [1,2]
+Ds = [1,2]
 og_sources_Ds = [(og_source, D) for og_source in og_sources for D in Ds]
 human_labels = {"Wit-Fig4-5-0_1": '5\n0.1',
                 "Wit-Fig4-6-0_025": '6\n0.025',
@@ -58,7 +58,8 @@ ks = [4,4,5,
      4,4,4,
      4,5,5,
      ]
-#ks = [4,4,4,4]
+ks = [4,4,4,4]
+ks = [4 for x in og_sources_Ds]
 # chosen ks CORRESPONDING TO each combination in order: first og_source with all its Ds etc.
 # !!! this currently has to be populated manually (user choice of k)
 
@@ -128,7 +129,7 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     
     
     #%%
-    if True:
+    if not True:
         # bar plot of clusters' popularity:
         plt.figure(figsize=single_col_figsize)
         clusters_popularity = [len(models_by_clusters[x]) for x in models_by_clusters]
@@ -152,7 +153,7 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     # find correlations, dendrograms, and clustered parameters in selected cluster combinations
     # for now: do doing 1) all and 2) most popular cluster
     
-    if True:
+    if not True:
         cmap = 'RdBu' # 'RdBu' or 'PiYG' are good
         
         # list of lists, each inner list for combinations of cluster to analyse together: 
@@ -298,6 +299,8 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     
     
     # turn each parameters vector into model and evaluate and save observables:
+    # !!!! note: done for each cluster separately where EACH CLUSTER IS SAMPLED INDEPENDENTLY
+    # ie. CANNOT JUST COMBINE THEM -- THEY HAVE DIFFERENT WEIGHTS !!!!
     for j, chosen_cluster in enumerate(cluster_choices):
         model_set = models_by_clusters[chosen_cluster]
         vectors = random.sample(model_set, min(samples, len(model_set)))
@@ -344,22 +347,35 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
              
             
         # also add to cumulative array:
+        key = tuple(range(chosen_k)) # all clusterrs together
+        cumul_dynamics = {} # one output dictionary of dynamics for each combination of og_file and D,
+        ## where keys are evaluation observables and entries are (means, stds) 
         for obs in evaluation_observables:
             if j == 0: # ie. first iteration
                 cumul_evaluated_arrays[obs] = evaluated_arrays[obs]
             elif j > 0:
-                cumul_evaluated_arrays[obs] = np.concatenate((cumul_evaluated_arrays[obs], evaluated_arrays[obs]), axis = 0)
+                cumul_evaluated_arrays[obs] = np.concatenate((cumul_evaluated_arrays[obs], evaluated_arrays[obs]), axis = 0)      
+        means[key] = {obs: cumul_evaluated_arrays[obs].mean(axis=0)
+                 for obs in evaluation_observables}
+        stds[key] = {obs: cumul_evaluated_arrays[obs].std(axis=0)
+                 for obs in evaluation_observables}
+        for i, op in enumerate(evaluation_observables):
+            if op in measurement_observables: # assuming measurement observables not repeated in additional observables (which they shouldn't be)
+                target_datapoints = measurement_datasets[i]
+            else: target_datapoints = [None for x in measurement_datasets[0]]
+            cumul_dynamics[op] = (ts, means[key][op], stds[key][op], target_datapoints) # tuple of lists 
+        
         
     #%%    
     # plot dynamics sweep of all chosen clusters combined, and all chosen clusters separate dynamics overlay 
     
-    cumul_dynamics = {} # one output dictionary of dynamics for each combination of og_file and D,
-    # where keys are evaluation observables and entries are (means, stds) 
+    # cumul_dynamics = {} # one output dictionary of dynamics for each combination of og_file and D,
+    ## where keys are evaluation observables and entries are (means, stds) 
     
-    if True:
-        cluster_choices = list(range(chosen_k))
+    if not True:
+        cluster_choices = [] # additional cluster choices for plotting together
+        # note: all clusters together is already included above for calculation of all-model means and stds
         if False: cluster_choices = [4,5] # only showing dynamics of handpicked clusters
-        
         key = tuple(cluster_choices)
         clusters_label = 'clusters ' + ''.join([str(x) + ', ' for x in cluster_choices])[:-2]
         clusters_label_short = ''.join([str(x) + ',' for x in cluster_choices])[:-1]
@@ -387,19 +403,16 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
             plt.xlabel(r't ($\mu s$)')
             plt.ylabel(ops_longlabels[op])
             plt.ylim([-0.2, 0.8])
+            plt.plot(ts, target_datapoints, **errorbarformatting)
             plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = curveLW, alpha = 0.75)
             plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                              alpha=0.2, facecolor='tomato', edgecolor = 'none', label = clusters_label)
-            if op in measurement_observables: # assuming measurement observables not repeated in additional observables (which they shouldn't be)
-                plt.plot(ts, measurement_datasets[i], **errorbarformatting)
-                target_datapoints = measurement_datasets[i]
-            else: target_datapoints = [None for x in measurement_datasets[0]]
             #plt.legend(fontsize = 'small')
             plt.savefig(output_name + '_Cs' + clusters_label_short
                         + '_samp' + str(min(samples, len(model_set)))
                         + '_' + op + '_lump_adhoc.svg', dpi = 1000, bbox_inches='tight')
-            # # save cumulative dynamics (deepcopy should not be necessary) as output to overlay different datasets/Ds
-            cumul_dynamics[op] = (ts, means[key][op], stds[key][op], target_datapoints) # tuple of lists
+            ## save cumulative dynamics (deepcopy should not be necessary) as output to overlay different datasets/Ds
+            # cumul_dynamics[op] = (ts, means[key][op], stds[key][op], target_datapoints) # tuple of lists
             
             
             # plot together means with stds filling for different clusters (overlay)
@@ -425,7 +438,7 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     
     #%%
     # also plot champion parameter vectors for chosen clusters:
-    if True:
+    if not True:
         champions = {}
         #champ_posteriors = {}
         
@@ -564,6 +577,12 @@ errorbarformatting = {}
 
 plotting_Ds = Ds
 
+human_labels = {"Wit-Fig4-5-0_1": '5   0.1',
+                "Wit-Fig4-6-0_025": '6   0.025',
+                "Wit-Fig4-6-0_1": '6   0.1',
+                "Wit-Fig4-6-0_2": '6   0.2',
+                "Wit-Fig4-7-0_1": '7   0.1'}
+
 # plot for chosen plotting Ds, all evaluation observables (assumed same for all combinations of og_sources and Ds):
 # ...the overlay of dynamics for different og_sources (traces)
 for plotting_D in plotting_Ds:
@@ -586,7 +605,8 @@ for plotting_D in plotting_Ds:
                          alpha = 1,
                          #label = 'target'
                          )
-        plt.legend(title = r'$D = $' + str(plotting_D) + '\n' + r'$rest.$' + ' (MHz)\n' + r'$damp.$' + ' (MHz)' )
-        plt.savefig(filename + '_' + str(op) + '_' + str(plotting_D)
+        plt.legend(title = r'$D = $' + str(plotting_D) + '\n' + r'$rest.$' + '   ' + r'$damp.$' + ' (MHz)',
+                   loc = 'upper right')
+        plt.savefig(filename + '_' + str(op) + '_D' + str(plotting_D)
                     + '.svg', dpi = 1000, bbox_inches='tight')
     
