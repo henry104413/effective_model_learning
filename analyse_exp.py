@@ -13,14 +13,15 @@ import pandas as pd
 import pickle
 import seaborn
 import matplotlib.pyplot as plt
-import matplotlib
+#import matplotlib
 import numpy as np
 import random
 #import copy
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import squareform
 import multiprocessing
-import itertools
+#import itertools
+import colorcet
 
 import configs
 import learning_model
@@ -37,14 +38,15 @@ plt.rcParams['ytick.major.width'] = 0.25
 single_col_figsize=(3.41,2)
 single_col_tall_figsize=(3.41,4)
 single_col_square_figsize=(3.41,3.41)
-colours = list(matplotlib.colormaps['Set1'].resampled(15)(range(15)))
-#colours += colours
+#colours = list(matplotlib.colormaps['Set1'].resampled(15)(range(15)))
+colours = colorcet.glasbey_dark[:15]
+
 
 # assuming same D for each og_file and same number of Rs for each combination
 og_sources = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025", "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2", "Wit-Fig4-7-0_1"]
 #og_sources = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025"]
 Ds = [1,2,3]
-Ds = [1,2]
+Ds = [1]
 og_sources_Ds = [(og_source, D) for og_source in og_sources for D in Ds]
 human_labels = {"Wit-Fig4-5-0_1": '5\n0.1',
                 "Wit-Fig4-6-0_025": '6\n0.025',
@@ -129,10 +131,11 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     
     
     #%%
+    clusters_popularity = [len(models_by_clusters[x]) for x in models_by_clusters]
+    # will be used in weighting of dynamics as well!!!
     if not True:
         # bar plot of clusters' popularity:
         plt.figure(figsize=single_col_figsize)
-        clusters_popularity = [len(models_by_clusters[x]) for x in models_by_clusters]
         plt.bar(list(models_by_clusters.keys()), clusters_popularity,
                 color = 'navy')
         plt.xlabel('cluster')
@@ -280,7 +283,7 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     
     # section settings:
     cluster_choices = list(range(chosen_k)) # note: now taken from above section, enable if required separately
-    samples = 1000
+    samples = 10
     
     # target data:
     # note: datasets and observable labels must be encapsulated into lists
@@ -300,11 +303,12 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     
     # turn each parameters vector into model and evaluate and save observables:
     # !!!! note: done for each cluster separately where EACH CLUSTER IS SAMPLED INDEPENDENTLY
-    # ie. CANNOT JUST COMBINE THEM -- THEY HAVE DIFFERENT WEIGHTS !!!!
+    # ie. CANNOT JUST COMBINE THEM -- THEY HAVE DIFFERENT WEIGHTS!!!!
+    samples_per_cluster = []
     for j, chosen_cluster in enumerate(cluster_choices):
         model_set = models_by_clusters[chosen_cluster]
-        vectors = random.sample(model_set, min(samples, len(model_set)))
-        
+        vectors = random.sample(model_set, samples_this_cluster := min(samples, len(model_set)))
+        samples_per_cluster.append(samples_this_cluster)
         evaluation_ts = ts
         evaluated_datasets = {obs: [] for obs in evaluation_observables} 
         model = learning_model.LearningModel()
@@ -346,25 +350,39 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
                             + '_' + op + '_solo.svg', dpi = 1000, bbox_inches='tight')
              
             
-        # also add to cumulative array:
-        key = tuple(range(chosen_k)) # all clusterrs together
-        cumul_dynamics = {} # one output dictionary of dynamics for each combination of og_file and D,
-        ## where keys are evaluation observables and entries are (means, stds) 
+        # note:
+        # so means and stds now hold {cluster: {obs: array}} - freshly added for this cluster
+        # eval datasets and eval arrays will be reset so store current ones in cumulative arrays
+        # and add to means and stds a new key - tuple of all cluster numbers combined
+        # but it makes no sense to do it within iteration????? do it outside loop...
+        
+        # add to cumulative arrays the actual dynamics of the samples
         for obs in evaluation_observables:
             if j == 0: # ie. first iteration
                 cumul_evaluated_arrays[obs] = evaluated_arrays[obs]
             elif j > 0:
                 cumul_evaluated_arrays[obs] = np.concatenate((cumul_evaluated_arrays[obs], evaluated_arrays[obs]), axis = 0)      
-        means[key] = {obs: cumul_evaluated_arrays[obs].mean(axis=0)
-                 for obs in evaluation_observables}
-        stds[key] = {obs: cumul_evaluated_arrays[obs].std(axis=0)
-                 for obs in evaluation_observables}
-        for i, op in enumerate(evaluation_observables):
-            if op in measurement_observables: # assuming measurement observables not repeated in additional observables (which they shouldn't be)
-                target_datapoints = measurement_datasets[i]
-            else: target_datapoints = [None for x in measurement_datasets[0]]
-            cumul_dynamics[op] = (ts, means[key][op], stds[key][op], target_datapoints) # tuple of lists 
         
+    key = tuple(range(chosen_k)) # all clusterrs together
+    cumul_dynamics = {} # one output dictionary of dynamics for each combination of og_file and D,
+    ## where keys are evaluation observables and entries are (means, stds) 
+    
+    weights = [clusters_popularity[j] for j in range(chosen_k) for i in range(samples_per_cluster[j])]
+    # means[key] = {obs: cumul_evaluated_arrays[obs].mean(axis=0)
+    #          for obs in evaluation_observables}
+    means[key] = {obs: np.average(cumul_evaluated_arrays[obs], axis=0, weights=weights)
+              for obs in evaluation_observables}
+    # stds[key] = {obs: cumul_evaluated_arrays[obs].std(axis=0)
+    #          for obs in evaluation_observables}
+    stds[key] = {obs: np.sqrt(np.average((cumul_evaluated_arrays[obs] - means[key][obs])**2, axis=0, weights=weights))
+              for obs in evaluation_observables}
+    for i, op in enumerate(evaluation_observables):
+        if op in measurement_observables: # assuming measurement observables not repeated in additional observables (which they shouldn't be)
+            target_datapoints = measurement_datasets[i]
+        else: target_datapoints = [None for x in measurement_datasets[0]]
+        cumul_dynamics[op] = (ts, means[key][op], stds[key][op], target_datapoints) # tuple of lists 
+        # this is just cumulative dynamics across all clusters to return for this combination of D and og_file on top of its target data
+    
         
     #%%    
     # plot dynamics sweep of all chosen clusters combined, and all chosen clusters separate dynamics overlay 
@@ -605,8 +623,11 @@ for plotting_D in plotting_Ds:
                          alpha = 1,
                          #label = 'target'
                          )
-        plt.legend(title = r'$D = $' + str(plotting_D) + '\n' + r'$rest.$' + '   ' + r'$damp.$' + ' (MHz)',
+        leg = plt.gca().legend(title = r'$D = $' + str(plotting_D) + '\n' + r'$rest.$' + '   ' + r'$damp.$' + ' (MHz)',
                    loc = 'upper right')
+        title = leg.get_title()
+        title.set_ha("center")
+        title.set_multialignment("center")
         plt.savefig(filename + '_' + str(op) + '_D' + str(plotting_D)
                     + '.svg', dpi = 1000, bbox_inches='tight')
     
