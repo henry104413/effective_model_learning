@@ -42,11 +42,12 @@ single_col_square_figsize=(3.41,3.41)
 colours = colorcet.glasbey_dark[:15]
 
 
+
 # assuming same D for each og_file and same number of Rs for each combination
 og_sources = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025", "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2", "Wit-Fig4-7-0_1"]
 #og_sources = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025"]
 Ds = [1,2,3]
-Ds = [1]
+#Ds = [1]
 og_sources_Ds = [(og_source, D) for og_source in og_sources for D in Ds]
 human_labels = {"Wit-Fig4-5-0_1": '5\n0.1',
                 "Wit-Fig4-6-0_025": '6\n0.025',
@@ -60,8 +61,7 @@ ks = [4,4,5,
      4,4,4,
      4,5,5,
      ]
-ks = [4,4,4,4]
-ks = [4 for x in og_sources_Ds]
+#ks = [4 for x in og_sources_Ds]
 # chosen ks CORRESPONDING TO each combination in order: first og_source with all its Ds etc.
 # !!! this currently has to be populated manually (user choice of k)
 
@@ -391,6 +391,7 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     ## where keys are evaluation observables and entries are (means, stds) 
     
     if not True:
+        # !!! CAREFUL!! this has not yet been updated with weights for just specific clusters selection
         cluster_choices = [] # additional cluster choices for plotting together
         # note: all clusters together is already included above for calculation of all-model means and stds
         if False: cluster_choices = [4,5] # only showing dynamics of handpicked clusters

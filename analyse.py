@@ -13,7 +13,8 @@ import pandas as pd
 import pickle
 import seaborn
 import matplotlib.pyplot as plt
-import matplotlib
+#import matplotlib
+import colorcet
 import numpy as np
 import random
 #import copy
@@ -35,7 +36,9 @@ plt.rcParams['ytick.major.width'] = 0.25
 single_col_figsize=(3.41,2)
 single_col_tall_figsize=(3.41,4)
 single_col_square_figsize=(3.41,3.41)
-colours = list(matplotlib.colormaps['Set1'].resampled(9)(range(9)))
+#colours = list(matplotlib.colormaps['Set1'].resampled(9)(range(9)))
+colours = colorcet.glasbey_dark[:15]
+
 
 #%%
 # # to try on cluster -- doesn't seem to work:
@@ -54,7 +57,7 @@ if False: Rs_tag = ''.join([x + ',' for x in map(str, Rs)])[:-1] # lists all Rs 
 if len(Rs)>1: Rs_tag = str(Rs[0]) + 'thru' + str(Rs[-1]) 
 else: Rs_tag = str(Rs[0])
 clustering_name = 'e500'
-chosen_k = 8 #
+chosen_k = 6 #
 correlation_hierarchical_clustering_thresholds = [0.7, 0.5]
 target_data_pickle_file = (
     'simulated-std' + str(noise_stdev).replace('.', 'p')
@@ -105,10 +108,11 @@ posteriors = [x[0] + x[1] for x in log_likelihoods_priors]
 
 
 #%%
+clusters_popularity = [len(models_by_clusters[x]) for x in models_by_clusters]
+# note: used in weighting for dynamics prediction as well
 if True:
     # bar plot of clusters' popularity:
     plt.figure(figsize=single_col_figsize)
-    clusters_popularity = [len(models_by_clusters[x]) for x in models_by_clusters]
     plt.bar(list(models_by_clusters.keys()), clusters_popularity,
             color = 'navy')
     plt.xlabel('cluster')
@@ -141,6 +145,7 @@ if not True:
     # (encapsulate datasets and corresponding observable labels into lists)
     measurement_datasets = [sx, sy, sz]
     measurement_observables = ['sigmax', 'sigmay', 'sigmaz']
+    evaluation_observables = ['sigmax', 'sigmay']
     
     # ts for evaluating models at for comparison with target:
     evaluation_ts = ts
@@ -159,7 +164,7 @@ if not True:
                                                 D = D,  
                                                 qubit_initial_state = ops['plus'],
                                                 defect_initial_state = ops['mm'])
-        temp = centre_model.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables)
+        temp = centre_model.calculate_dynamics(evaluation_ts, observable_ops = evaluation_observables)
         for o, op in enumerate(centres_datasets.keys()):
             centres_datasets[op].append(temp[o])
             plt.figure(figsize=single_col_figsize)
@@ -194,7 +199,7 @@ if not True:
                                                 D = D,  
                                                 qubit_initial_state = ops['plus'],
                                                 defect_initial_state = ops['mm'])
-        temp = champion_model.calculate_dynamics(evaluation_ts, observable_ops = measurement_observables)
+        temp = champion_model.calculate_dynamics(evaluation_ts, observable_ops = evaluation_observables)
         for o, op in enumerate(champions_datasets.keys()):
             champions_datasets[op].append(temp[o])
             plt.figure(figsize=single_col_figsize)
@@ -355,6 +360,7 @@ with open(target_data_pickle_file,
 ts, sx, sy, sz = [simulated_data[x] for x in ['ts', 'sx', 'sy', 'sz']]
 measurement_datasets = [sx, sy, sz]
 measurement_observables = ['sigmax', 'sigmay', 'sigmaz']
+evaluation_observables = ['sigmax', 'sigmay']
 
 # cumulative evaluated arrays combining all chosen clusters,
 # also means and stds now as dictionaries storing this for each chosen cluster for overlaying:
@@ -364,36 +370,37 @@ stds = {}
 
 
 # turn each parameters vector into model and evaluate and save observables:
+samples_per_cluster = []
 for j, chosen_cluster in enumerate(cluster_choices):
     model_set = models_by_clusters[chosen_cluster]
-    vectors = random.sample(model_set, min(samples, len(model_set)))
-    
+    vectors = random.sample(model_set, samples_this_cluster := min(samples, len(model_set)))
+    samples_per_cluster.append(samples_this_cluster)
     evaluation_ts = ts
-    evaluated_datasets = {obs: [] for obs in measurement_observables} 
+    evaluated_datasets = {obs: [] for obs in evaluation_observables} 
     model = learning_model.LearningModel()
     for vector in vectors:
         model.configure_to_params_vector((vector, labels, labels_latex),
                                          D = D,  
                                          qubit_initial_state = ops['plus'],
                                          defect_initial_state = ops['mm'])
-        temp = model.calculate_dynamics(evaluation_ts, measurement_observables)
-        for i in range(len(measurement_observables)):
-            evaluated_datasets[measurement_observables[i]].append(temp[i])
+        temp = model.calculate_dynamics(evaluation_ts, evaluation_observables)
+        for i in range(len(evaluation_observables)):
+            evaluated_datasets[evaluation_observables[i]].append(temp[i])
         
     # stack sample models evaluated data:
     # entry for each observable is array, each row for one model,
     # each column for one evaluation time, to find mean and std along columns     
     evaluated_arrays = {obs: np.stack(evaluated_datasets[obs])
-                        for obs in measurement_observables}
+                        for obs in evaluation_observables}
     
     means[chosen_cluster] = {obs: evaluated_arrays[obs].mean(axis=0)
-             for obs in measurement_observables}
+             for obs in evaluation_observables}
     
     stds[chosen_cluster] = {obs: evaluated_arrays[obs].std(axis=0)
-             for obs in measurement_observables}
+             for obs in evaluation_observables}
     
     if not True: # individual plots for each cluster
-        for i, op in enumerate(measurement_observables):
+        for i, op in enumerate(evaluation_observables):
             plt.figure(figsize=single_col_figsize)
             plt.xlabel(r't ($\mu s$)')
             plt.ylabel(ops_longlabels[op])
@@ -410,26 +417,35 @@ for j, chosen_cluster in enumerate(cluster_choices):
          
         
     # also add to cumulative array:
-    for obs in measurement_observables:
+    for obs in evaluation_observables:
         if j == 0: # ie. first iteration
             cumul_evaluated_arrays[obs] = evaluated_arrays[obs]
         elif j > 0:
             cumul_evaluated_arrays[obs] = np.concatenate((cumul_evaluated_arrays[obs], evaluated_arrays[obs]), axis = 0)
+            
+# calculate cumulative dynamics (samples from all clusters, weighted by cluster popularity)
+key = tuple(range(chosen_k)) # all clusterrs together
+
+weights = [clusters_popularity[j] for j in range(chosen_k) for i in range(samples_per_cluster[j])]
+# means[key] = {obs: cumul_evaluated_arrays[obs].mean(axis=0)
+#          for obs in evaluation_observables}
+means[key] = {obs: np.average(cumul_evaluated_arrays[obs], axis=0, weights=weights)
+          for obs in evaluation_observables}
+# stds[key] = {obs: cumul_evaluated_arrays[obs].std(axis=0)
+#          for obs in evaluation_observables}
+stds[key] = {obs: np.sqrt(np.average((cumul_evaluated_arrays[obs] - means[key][obs])**2, axis=0, weights=weights))
+          for obs in evaluation_observables}
     
 #%%    
 # plot dynamics sweep of all chosen clusters combined, and all chosen clusters separate dynamics overlay 
 if True:
-    cluster_choices = list(range(chosen_k))
-    if False: cluster_choices = [4,5] # only showing dynamics of handpicked clusters
-    measurement_observables = ['sigmax', 'sigmay']
+    # !!! CAREFUL!! this has not yet been updated with weights for just specific clusters selection
     
-    key = tuple(cluster_choices)
+    cluster_choices = key
+    if False: cluster_choices = [4,5] # only showing dynamics of handpicked clusters
     clusters_label = 'clusters ' + ''.join([str(x) + ', ' for x in cluster_choices])[:-2]
     clusters_label_short = ''.join([str(x) + ',' for x in cluster_choices])[:-1]
-    means[key] = {obs: cumul_evaluated_arrays[obs].mean(axis=0)
-             for obs in measurement_observables}
-    stds[key] = {obs: cumul_evaluated_arrays[obs].std(axis=0)
-             for obs in measurement_observables}
+
     
     
     curveLW = 0.75
@@ -442,7 +458,7 @@ if True:
                           'label': 'target'
                           }
     
-    for i, op in enumerate(measurement_observables):
+    for i, op in enumerate(evaluation_observables):
         
         # plot cumulative means and stds (combining all chosen clusters):
         key = tuple(cluster_choices)
