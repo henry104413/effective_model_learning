@@ -175,7 +175,7 @@ if not True:
             plt.errorbar(ts, simulated_data[op], yerr = noise_stdev, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
             plt.plot(evaluation_ts, centres_datasets[op][c], 
                      'r-', linewidth = 1, alpha = 0.7, label = 'model')
-            plt.legend(fontsize = 'small')
+            plt.legend()
             plt.title('cluster centre ' + str(c))
             plt.savefig(output_name + '_C' + str(c) + '_centre_' + str(op) + '_comparison' + '.svg', 
                         dpi = 1000, bbox_inches='tight')
@@ -209,7 +209,7 @@ if not True:
             plt.errorbar(ts, simulated_data[op], yerr = noise_stdev, fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target')
             plt.plot(evaluation_ts, champions_datasets[op][c], 
                      'r-', linewidth = 1, alpha = 0.7, label = 'model')
-            plt.legend(fontsize = 'small')
+            plt.legend()
             plt.title('cluster champion ' + str(c))
             plt.savefig(output_name + '_C' + str(c) + '_champion_' + str(op) + '_comparison' + '.svg',
                         dpi = 1000, bbox_inches='tight')
@@ -333,7 +333,7 @@ if not True:
     plt.xlabel('presence')
     plt.ylabel('parameter')
     plt.yticks(range(len(labels)), labels_latex)
-    plt.legend(fontsize = 'small')
+    plt.legend()
     plt.savefig(output_name + '_process_popularity' + '.svg', 
                 dpi = 1000, bbox_inches='tight')
 
@@ -410,7 +410,7 @@ for j, chosen_cluster in enumerate(cluster_choices):
                              alpha=0.3, color='tomato', label = 'cluster ' + str(chosen_cluster))
             plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                          fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
-            plt.legend(fontsize = 'small')
+            plt.legend()
             plt.savefig(output_name + '_C' + str(chosen_cluster)
                         + '_samp' + str(min(samples, len(model_set)))
                         + '_' + op + '_solo.svg', dpi = 1000, bbox_inches='tight')
@@ -472,7 +472,7 @@ if True:
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                      **errorbarformatting
                      )
-        #plt.legend(fontsize = 'small')
+        #plt.legend()
         plt.savefig(output_name + '_Cs' + clusters_label_short
                     + '_samp' + str(min(samples, len(model_set)))
                     + '_' + op + '_lump_adhoc.svg', dpi = 1000, bbox_inches='tight')
@@ -491,7 +491,7 @@ if True:
         plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                      **errorbarformatting
                      )
-        plt.legend(ncol = 2, fontsize = 'small')
+        plt.legend(ncol = 2)
         plt.savefig(output_name + '_Cs' + clusters_label_short
                     + '_samp' + str(min(samples, len(model_set)))
                     + '_' + op + '_overlay_adhoc.svg', dpi = 1000, bbox_inches='tight')

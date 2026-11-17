@@ -45,9 +45,9 @@ colours = colorcet.glasbey_dark[:15]
 
 # assuming same D for each og_file and same number of Rs for each combination
 og_sources = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025", "Wit-Fig4-6-0_1", "Wit-Fig4-6-0_2", "Wit-Fig4-7-0_1"]
-#og_sources = ["Wit-Fig4-5-0_1", "Wit-Fig4-6-0_025"]
+og_sources = ["Wit-Fig4-6-0_025"]
 Ds = [1,2,3]
-#Ds = [1]
+Ds = [2]
 og_sources_Ds = [(og_source, D) for og_source in og_sources for D in Ds]
 human_labels = {"Wit-Fig4-5-0_1": '5\n0.1',
                 "Wit-Fig4-6-0_025": '6\n0.025',
@@ -61,7 +61,7 @@ ks = [4,4,5,
      4,4,4,
      4,5,5,
      ]
-#ks = [4 for x in og_sources_Ds]
+ks = [4 for x in og_sources_Ds]
 # chosen ks CORRESPONDING TO each combination in order: first og_source with all its Ds etc.
 # !!! this currently has to be populated manually (user choice of k)
 
@@ -266,7 +266,7 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
         plt.xlabel('presence')
         plt.ylabel('parameter')
         plt.yticks(range(len(labels)), labels_latex)
-        plt.legend(fontsize = 'small')
+        plt.legend()
         plt.savefig(output_name + '_process_popularity' + '.svg', 
                     dpi = 1000, bbox_inches='tight')
     
@@ -283,7 +283,7 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     
     # section settings:
     cluster_choices = list(range(chosen_k)) # note: now taken from above section, enable if required separately
-    samples = 10
+    samples = 1000
     
     # target data:
     # note: datasets and observable labels must be encapsulated into lists
@@ -344,7 +344,7 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
                                  alpha=0.3, color='tomato', label = 'cluster ' + str(chosen_cluster))
                 plt.errorbar(ts, measurement_datasets[i], yerr = noise_stdev,
                              fmt = 'b.', ecolor = 'b', markersize = 1, label = 'target', alpha = 1, linewidth = 0.5)
-                plt.legend(fontsize = 'small')
+                plt.legend()
                 plt.savefig(output_name + '_C' + str(chosen_cluster)
                             + '_samp' + str(min(samples, len(model_set)))
                             + '_' + op + '_solo.svg', dpi = 1000, bbox_inches='tight')
@@ -390,9 +390,9 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     # cumul_dynamics = {} # one output dictionary of dynamics for each combination of og_file and D,
     ## where keys are evaluation observables and entries are (means, stds) 
     
-    if not True:
+    if True:
         # !!! CAREFUL!! this has not yet been updated with weights for just specific clusters selection
-        cluster_choices = [] # additional cluster choices for plotting together
+        cluster_choices = key # additional cluster choices for plotting together
         # note: all clusters together is already included above for calculation of all-model means and stds
         if False: cluster_choices = [4,5] # only showing dynamics of handpicked clusters
         key = tuple(cluster_choices)
@@ -426,7 +426,7 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
             plt.plot(evaluation_ts, means[key][op], 'r-', linewidth = curveLW, alpha = 0.75)
             plt.fill_between(evaluation_ts, means[key][op]-stds[key][op], means[key][op]+stds[key][op],
                              alpha=0.2, facecolor='tomato', edgecolor = 'none', label = clusters_label)
-            #plt.legend(fontsize = 'small')
+            #plt.legend()
             plt.savefig(output_name + '_Cs' + clusters_label_short
                         + '_samp' + str(min(samples, len(model_set)))
                         + '_' + op + '_lump_adhoc.svg', dpi = 1000, bbox_inches='tight')
@@ -446,7 +446,7 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
                                  alpha=0.1, label = '' + str(key), facecolor = colours[j], edgecolor = 'none')
             if op in measurement_observables: # assuming measurement observables not repeated in additional observables (which they shouldn't be)
                 plt.plot(ts, measurement_datasets[i], **errorbarformatting)
-            plt.legend(ncol = 2, fontsize = 'small')
+            plt.legend(ncol = 2)
             plt.savefig(output_name + '_Cs' + clusters_label_short
                         + '_samp' + str(min(samples, len(model_set)))
                         + '_' + op + '_overlay_adhoc.svg', dpi = 1000, bbox_inches='tight')
@@ -604,31 +604,32 @@ human_labels = {"Wit-Fig4-5-0_1": '5   0.1',
 
 # plot for chosen plotting Ds, all evaluation observables (assumed same for all combinations of og_sources and Ds):
 # ...the overlay of dynamics for different og_sources (traces)
-for plotting_D in plotting_Ds:
-    for op in cumul_dynamics_sets[0].keys():
-        plt.figure(figsize=single_col_figsize)
-        plt.ylabel(ops_longlabels[op])
-        plt.xlabel(r't ($\mu s$)')
-        for i, og_source_D_k in enumerate(og_sources_Ds_ks): 
-            # i is the index of the og_file (trace) to plot for this observable and D
-            og_source, D, k = og_source_D_k
-            if D == plotting_D:
-                cumul_dynamics_set = cumul_dynamics_sets[i]
-                ts, means, stds, target = cumul_dynamics_set[op]
-                plt.plot(ts, means, '-', linewidth = curveLW, alpha = 0.75, label = human_labels[og_source], color=colours[i])
-                plt.fill_between(ts, means-stds, means+stds,
-                                 alpha=0.2, facecolor=colours[i], edgecolor = 'none')
-                plt.plot(ts, target, linestyle = '',
-                         linewidth = 0, # this would connect the points - not wanted
-                         marker = '.' , mfc = 'none', mec = colours[i], mew = ebarLW, markersize = 4.0, 
-                         alpha = 1,
-                         #label = 'target'
-                         )
-        leg = plt.gca().legend(title = r'$D = $' + str(plotting_D) + '\n' + r'$rest.$' + '   ' + r'$damp.$' + ' (MHz)',
-                   loc = 'upper right')
-        title = leg.get_title()
-        title.set_ha("center")
-        title.set_multialignment("center")
-        plt.savefig(filename + '_' + str(op) + '_D' + str(plotting_D)
-                    + '.svg', dpi = 1000, bbox_inches='tight')
-    
+if not True:
+    for plotting_D in plotting_Ds:
+        for op in cumul_dynamics_sets[0].keys():
+            plt.figure(figsize=single_col_figsize)
+            plt.ylabel(ops_longlabels[op])
+            plt.xlabel(r't ($\mu s$)')
+            for i, og_source_D_k in enumerate(og_sources_Ds_ks): 
+                # i is the index of the og_file (trace) to plot for this observable and D
+                og_source, D, k = og_source_D_k
+                if D == plotting_D:
+                    cumul_dynamics_set = cumul_dynamics_sets[i]
+                    ts, means, stds, target = cumul_dynamics_set[op]
+                    plt.plot(ts, means, '-', linewidth = curveLW, alpha = 0.75, label = human_labels[og_source], color=colours[i])
+                    plt.fill_between(ts, means-stds, means+stds,
+                                     alpha=0.2, facecolor=colours[i], edgecolor = 'none')
+                    plt.plot(ts, target, linestyle = '',
+                             linewidth = 0, # this would connect the points - not wanted
+                             marker = '.' , mfc = 'none', mec = colours[i], mew = ebarLW, markersize = 4.0, 
+                             alpha = 1,
+                             #label = 'target'
+                             )
+            leg = plt.gca().legend(title = r'$D = $' + str(plotting_D) + '\n' + r'$rest.$' + '   ' + r'$damp.$' + ' (MHz)',
+                       loc = 'upper right')
+            title = leg.get_title()
+            title.set_ha("center")
+            title.set_multialignment("center")
+            plt.savefig(filename + '_' + str(op) + '_D' + str(plotting_D)
+                        + '.svg', dpi = 1000, bbox_inches='tight')
+        
