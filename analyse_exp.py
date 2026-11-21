@@ -40,6 +40,8 @@ single_col_tall_figsize=(3.41,4)
 single_col_square_figsize=(3.41,3.41)
 #colours = list(matplotlib.colormaps['Set1'].resampled(15)(range(15)))
 colours = colorcet.glasbey_dark[:15]
+inset_figsize=(1.5,1)
+
 
 
 
@@ -135,12 +137,12 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
     # will be used in weighting of dynamics as well!!!
     if not True:
         # bar plot of clusters' popularity:
-        plt.figure(figsize=single_col_figsize)
-        plt.bar(list(models_by_clusters.keys()), clusters_popularity,
+        plt.figure(figsize=inset_figsize)
+        plt.bar(list(models_by_clusters.keys()), [x/sum(clusters_popularity) for x in clusters_popularity],
                 color = 'navy')
         plt.xlabel('cluster')
         plt.xticks(list(range(chosen_k)), labels = [str(x) for x in list(range(chosen_k))])
-        plt.ylabel('number of models')
+        plt.ylabel('relative population')
         plt.savefig(output_name + '_cluster_popularity' + '.svg', 
                     dpi = 1000, bbox_inches='tight')
         
@@ -213,8 +215,10 @@ def execute(og_source_D_k: tuple[str|int|int]) -> dict[tuple[list]]:
                 dendrogram(Z, labels=data.columns, orientation='right'
                            ,leaf_rotation=0
                            ,leaf_font_size=fontsize
+                           , color_threshold = 0 # default: 0.7*max(Z[:,2])
+                           , above_threshold_color = 'purple'
                            )
-                plt.ylabel('dissimilarity')
+                plt.xlabel('dissimilarity')
                 plt.savefig(output_name + '_Cs' + Cs_tag + '_dendrogram.svg', dpi = 1000, bbox_inches='tight')
             
             # plot correlation matrix with clustered parameters
@@ -602,9 +606,11 @@ human_labels = {"Wit-Fig4-5-0_1": '5   0.1',
                 "Wit-Fig4-6-0_2": '6   0.2',
                 "Wit-Fig4-7-0_1": '7   0.1'}
 
+colours_datasets = {x: colours[i] for i, x in enumerate(human_labels)}
+
 # plot for chosen plotting Ds, all evaluation observables (assumed same for all combinations of og_sources and Ds):
 # ...the overlay of dynamics for different og_sources (traces)
-if not True:
+if True:
     for plotting_D in plotting_Ds:
         for op in cumul_dynamics_sets[0].keys():
             plt.figure(figsize=single_col_figsize)
@@ -616,7 +622,8 @@ if not True:
                 if D == plotting_D:
                     cumul_dynamics_set = cumul_dynamics_sets[i]
                     ts, means, stds, target = cumul_dynamics_set[op]
-                    plt.plot(ts, means, '-', linewidth = curveLW, alpha = 0.75, label = human_labels[og_source], color=colours[i])
+                    plt.plot(ts, means, '-', linewidth = curveLW, alpha = 0.75, label = human_labels[og_source],
+                             color=colours_datasets[og_source])
                     plt.fill_between(ts, means-stds, means+stds,
                                      alpha=0.2, facecolor=colours[i], edgecolor = 'none')
                     plt.plot(ts, target, linestyle = '',

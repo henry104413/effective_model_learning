@@ -9,6 +9,7 @@ Created on Mon Nov 16 16:35:28 2026
 
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import numpy as np
 import colorcet
 
@@ -45,5 +46,7 @@ plt.ylim([-0.0, 1])
 #plt.plot(ks, silh, '-', color = colours[1], linewidth = 1, alpha = 0.75, label = r'$silhouette\ score$')
 plt.plot(ks, SSEs, '-', color = colours[0], linewidth = 1, alpha = 0.75, label = r'$SSE$')
 plt.plot(ks, silh, '-', color = colours[1], linewidth = 1, alpha = 0.75, label = r'$silh.$')
+plt.gca().xaxis.set_major_locator(MaxNLocator(integer=True)) # looks like all integers get tick
+#plt.gca().xaxis.get_major_locator().set_params(integer=True) # looks like only some ticks but all are integer
 plt.legend(loc = 'upper right')
 plt.savefig(clustering_name + '_metrics.svg', dpi = 1000, bbox_inches='tight')

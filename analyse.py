@@ -38,6 +38,7 @@ single_col_tall_figsize=(3.41,4)
 single_col_square_figsize=(3.41,3.41)
 #colours = list(matplotlib.colormaps['Set1'].resampled(9)(range(9)))
 colours = colorcet.glasbey_dark[:15]
+inset_figsize=(1.5,1)
 
 
 #%%
@@ -112,12 +113,14 @@ clusters_popularity = [len(models_by_clusters[x]) for x in models_by_clusters]
 # note: used in weighting for dynamics prediction as well
 if True:
     # bar plot of clusters' popularity:
-    plt.figure(figsize=single_col_figsize)
-    plt.bar(list(models_by_clusters.keys()), clusters_popularity,
-            color = 'navy')
+    plt.figure(figsize=inset_figsize)
+    plt.bar(list(models_by_clusters.keys()), [x/sum(clusters_popularity) for x in clusters_popularity],
+            color = 'navy', width = 0.8)
+    
+    
     plt.xlabel('cluster')
     plt.xticks(list(range(chosen_k)), labels = [str(x) for x in list(range(chosen_k))])
-    plt.ylabel('number of models')
+    plt.ylabel('relative population')
     plt.savefig(output_name + '_cluster_popularity' + '.svg', 
                 dpi = 1000, bbox_inches='tight')
     
@@ -280,8 +283,10 @@ if True:
             dendrogram(Z, labels=data.columns, orientation='right'
                        ,leaf_rotation=0
                        ,leaf_font_size=fontsize
+                       , color_threshold = 0 # default: 0.7*max(Z[:,2])
+                       , above_threshold_color = 'purple'
                        )
-            plt.ylabel('dissimilarity')
+            plt.xlabel('dissimilarity')
             plt.savefig(output_name + '_Cs' + Cs_tag + '_dendrogram.svg', dpi = 1000, bbox_inches='tight')
         
         # plot correlation matrix with clustered parameters
@@ -313,7 +318,7 @@ if True:
 # %%
 # popularity of different processes:
 # CURRENTLY compare UP TO 5 most popular clusters (slicing capped by number of clusters)
-if not True:
+if True:
     cluster_choices = clusters_by_pop_desc[0:5]
     # cluster_choices = [2,3,4] # for LN D=1
     # formatting - must have options for at least each cluster choice, can be longer:
